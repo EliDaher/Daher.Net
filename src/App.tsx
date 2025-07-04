@@ -39,7 +39,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route 
-              path="/dashboard" 
+              path="/Daher.Net/dashboard" 
               element={
                 <PrivateRoute  allowedRoles={["admin"]}>
                   <Dashboard />
@@ -47,7 +47,7 @@ const App = () => (
               } 
             />
             <Route 
-              path="/balance" 
+              path="/Daher.Net/balance" 
               element={
                 <PrivateRoute  allowedRoles={["admin"]}>
                   <Balance />
@@ -55,7 +55,7 @@ const App = () => (
               } 
             />
             <Route 
-              path="/users" 
+              path="/Daher.Net/users" 
               element={
                 <PrivateRoute  allowedRoles={["admin"]}>
                   <Users />
@@ -63,7 +63,7 @@ const App = () => (
               } 
             />
             <Route 
-              path="/CustomerDetails/:id" 
+              path="/Daher.Net/CustomerDetails/:id" 
               element={
                 <PrivateRoute  allowedRoles={["admin"]}>
                   <CustomerDetails />
@@ -71,12 +71,12 @@ const App = () => (
               } 
             />
 
-            <Route path="/unauthorized" element={<UnauthorizedPage/>}/>
-            <Route path="/login" element={<Login/>}/>
-            <Route path="/signUp" element={<SignUp/>}/>
-            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/Daher.Net/unauthorized" element={<UnauthorizedPage/>}/>
+            <Route path="/Daher.Net/login" element={<Login/>}/>
+            <Route path="/Daher.Net/signUp" element={<SignUp/>}/>
+            <Route path="/Daher.Net/analytics" element={<Analytics />} />
             <Route
-              path="/posts"
+              path="/Daher.Net/posts"
               element={
                 <div className="min-h-screen flex items-center justify-center">
                   <div className="text-center">
@@ -87,7 +87,7 @@ const App = () => (
               }
             />
             <Route
-              path="/tasks"
+              path="/Daher.Net/tasks"
               element={
                 <div className="min-h-screen flex items-center justify-center">
                   <div className="text-center">
@@ -98,7 +98,7 @@ const App = () => (
               }
             />
             <Route
-              path="/settings"
+              path="/Daher.Net/settings"
               element={
                 <div className="min-h-screen flex items-center justify-center">
                   <div className="text-center">

@@ -9,9 +9,9 @@ export function PrivateRoute({ children, allowedRoles }: { children: React.React
     if (allowedRoles.includes(user.role)) {
       return <>{children}</>;
     } else {
-      return <Navigate to="/unauthorized" replace />;
+      return <Navigate to="/Daher.Net/unauthorized" replace />;
     }
   } catch {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/Daher.Net/login" replace />;
   }
 }
