@@ -339,7 +339,7 @@ export default function Users() {
                 {currentItems.map((customer) => (
                   <Card key={customer.id} className="shadow-sm">
                     <CardContent className="p-4 space-y-1" onClick={()=>{
-                      navigate(`/CustomerDetails/${customer.id}`)
+                      navigate(`/Daher.Net/CustomerDetails/${customer.id}`)
                     }}>
                       <p><strong>الاسم:</strong> {customer.Name}</p>
                       <p><strong>اسم المستخدم:</strong> {customer.UserName}</p>

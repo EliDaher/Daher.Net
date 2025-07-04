@@ -171,7 +171,7 @@ export default function Dashboard() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             onClick={()=>{
-              navigate('/users')
+              navigate('/Daher.Net/users')
             }}
             title="عدد مشتركين الفضائي"
             value={customers.length || 0}
@@ -181,7 +181,7 @@ export default function Dashboard() {
           />
           <StatsCard
             onClick={()=>{
-              navigate('/users', {state: 'unpaid'})
+              navigate('/Daher.Net/users', {state: 'unpaid'})
             }}
             title="الفواتير الغير مدفوعة"
             value={unpaidValue || 0}
