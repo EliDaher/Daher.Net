@@ -21,7 +21,7 @@ export default function Login() {
       navigate("/Daher.Net/dashboard");
 
     } else {
-        console.log(res)
+      console.log(res)
       alert(res?.error || "فشل تسجيل الدخول");
     }
   };
