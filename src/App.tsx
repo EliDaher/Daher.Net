@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/ThemeProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 
 // Import pages
 import Dashboard from "./pages/Dashboard";
@@ -36,10 +36,10 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <HashRouter>
           <Routes>
             <Route 
-              path="/Daher.Net/dashboard" 
+              path="/dashboard" 
               element={
                 <PrivateRoute  allowedRoles={["admin"]}>
                   <Dashboard />
@@ -47,7 +47,7 @@ const App = () => (
               } 
             />
             <Route 
-              path="/Daher.Net/balance" 
+              path="/balance" 
               element={
                 <PrivateRoute  allowedRoles={["admin"]}>
                   <Balance />
@@ -55,7 +55,7 @@ const App = () => (
               } 
             />
             <Route 
-              path="/Daher.Net/users" 
+              path="/users" 
               element={
                 <PrivateRoute  allowedRoles={["admin"]}>
                   <Users />
@@ -63,7 +63,7 @@ const App = () => (
               } 
             />
             <Route 
-              path="/Daher.Net/CustomerDetails/:id" 
+              path="/CustomerDetails/:id" 
               element={
                 <PrivateRoute  allowedRoles={["admin"]}>
                   <CustomerDetails />
@@ -71,12 +71,12 @@ const App = () => (
               } 
             />
 
-            <Route path="/Daher.Net/unauthorized" element={<UnauthorizedPage/>}/>
-            <Route path="/Daher.Net/login" element={<Login/>}/>
-            <Route path="/Daher.Net/signUp" element={<SignUp/>}/>
-            <Route path="/Daher.Net/analytics" element={<Analytics />} />
+            <Route path="/unauthorized" element={<UnauthorizedPage/>}/>
+            <Route path="/login" element={<Login/>}/>
+            <Route path="/signUp" element={<SignUp/>}/>
+            <Route path="/analytics" element={<Analytics />} />
             <Route
-              path="/Daher.Net/posts"
+              path="/posts"
               element={
                 <div className="min-h-screen flex items-center justify-center">
                   <div className="text-center">
@@ -87,7 +87,7 @@ const App = () => (
               }
             />
             <Route
-              path="/Daher.Net/tasks"
+              path="/tasks"
               element={
                 <div className="min-h-screen flex items-center justify-center">
                   <div className="text-center">
@@ -98,7 +98,7 @@ const App = () => (
               }
             />
             <Route
-              path="/Daher.Net/settings"
+              path="/settings"
               element={
                 <div className="min-h-screen flex items-center justify-center">
                   <div className="text-center">
@@ -111,7 +111,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
+        </HashRouter>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>

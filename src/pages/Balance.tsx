@@ -381,7 +381,7 @@ export default function Balance() {
               />
             <StatsCard
             onClick={()=>{
-              navigate('/Daher.Net/users', {state: 'unpaid'})
+              navigate('/users', {state: 'unpaid'})
             }}
             title="الديون"
             value={unpaidValue || 0}

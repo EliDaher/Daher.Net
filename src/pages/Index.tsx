@@ -6,7 +6,7 @@ const Index = () => {
 
   useEffect(() => {
     // Redirect to dashboard as the main app page
-    navigate("/Daher.Net/dashboard", { replace: true });
+    navigate("/dashboard", { replace: true });
   }, [navigate]);
 
   return null;
