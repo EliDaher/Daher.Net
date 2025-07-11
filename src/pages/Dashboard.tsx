@@ -2,9 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Users,
-  FileText,
-  CheckSquare,
-  TrendingUp,
   Activity,
   CreditCard,
 } from "lucide-react";
@@ -27,6 +24,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const daherUser = JSON.parse(localStorage.getItem('DaherUser'))
 
   const [totalBalance, setTotalBalance] = useState(0)
   const [customers, setCustomers] = useState([])
@@ -47,7 +45,11 @@ export default function Dashboard() {
     const res = await getWifiCustomers();
 
     if (res?.success) {
-      setCustomers(res.customers);
+      if(daherUser.role == "dealer"){
+        setCustomers(res.customers.filter(customer => customer.dealer === "habeb"));
+      }else{
+        setCustomers(res.customers);
+      }
 
     } else {
       alert(res?.error || "فشل جلب البيانات");
@@ -94,67 +96,6 @@ export default function Dashboard() {
 
   }, [todayBalance])
 
-  // Fetch dashboard data using React Query
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ["dashboard-stats"],
-    queryFn: apiService.getDashboardStats,
-  });
-
-
-  const { data: users, isLoading: usersLoading } = useQuery({
-    queryKey: ["users"],
-    queryFn: apiService.getUsers,
-  });
-
-  const { data: posts, isLoading: postsLoading } = useQuery({
-    queryKey: ["posts"],
-    queryFn: apiService.getPosts,
-  });
-
-  // Transform data for tables
-  const userTableData =
-    users?.slice(0, 10).map((user: User) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      company: user.company.name,
-      status: Math.random() > 0.5 ? "active" : "inactive",
-    })) || [];
-
-  const postTableData =
-    posts?.slice(0, 8).map((post: Post) => ({
-      id: post.id,
-      title: post.title.substring(0, 50) + "...",
-      author: `User ${post.userId}`,
-      status: Math.random() > 0.3 ? "published" : "draft",
-      date: new Date().toLocaleDateString(),
-    })) || [];
-
-  const userColumns = [
-    { key: "id", label: "ID", sortable: true },
-    { key: "name", label: "Name", sortable: true },
-    { key: "email", label: "Email", sortable: true },
-    { key: "company", label: "Company", sortable: true },
-    { key: "status", label: "Status", sortable: true },
-  ];
-
-  const postColumns = [
-    { key: "id", label: "ID", sortable: true },
-    { key: "title", label: "Title", sortable: true },
-    { key: "author", label: "Author", sortable: true },
-    { key: "status", label: "Status", sortable: true },
-    { key: "date", label: "Date", sortable: true },
-  ];
-
-  if (statsLoading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </DashboardLayout>
-    );
-  }
 
   return (
     <DashboardLayout>
@@ -168,16 +109,14 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div dir="rtl" className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             onClick={()=>{
               navigate('/users')
             }}
             title="عدد مشتركين الفضائي"
             value={customers.length || 0}
-            description="from last month"
             icon={Users}
-            trend={{ value: stats?.userGrowth || 0, isPositive: true }}
           />
           <StatsCard
             onClick={()=>{
@@ -185,9 +124,7 @@ export default function Dashboard() {
             }}
             title="الفواتير الغير مدفوعة"
             value={unpaidValue || 0}
-            description=""
             icon={CreditCard}
-            trend={{ value: stats?.userGrowth || 0, isPositive: true }}
           />
         </div>
 
@@ -223,40 +160,45 @@ export default function Dashboard() {
             dataKey2='customerCount'
             dataKey="totalSpeed"
           />
-          <ChartContainer
+
+          { daherUser.role != 'admin' ? <></> : <>
+            <ChartContainer
             title="صناديق اليوم"
             data={todayBalance}
             type="line"
             dataKey2='count'
             desc={totalBalance.toString()}
             dataKey="total" // OK لأنك استخدمته أثناء التحويل
-          />
+            />
+          </>}
+
           <ChartContainer
-            title="عدد المشتركين حسب السرعة"
-            type="pie"
-            dataKey="value"
-            data={
-              Object.values(
-                customers.reduce(
-                  (acc: Record<string, { name: string; value: number }>, customer: any) => {
-                    const speed = customer.SubscriptionSpeed || "غير محددة";
-                    if (!acc[speed]) {
-                      acc[speed] = { name: `${speed} Mbps`, value: 0 };
-                    }
-                    acc[speed].value += 1;
-                    return acc;
-                  },
-                  {}
-                )
+          title="عدد المشتركين حسب السرعة"
+          type="pie"
+          dataKey="value"
+          data={
+            Object.values(
+              customers.reduce(
+                (acc: Record<string, { name: string; value: number }>, customer: any) => {
+                  const speed = customer.SubscriptionSpeed || "غير محددة";
+                  if (!acc[speed]) {
+                    acc[speed] = { name: `${speed} Mbps`, value: 0 };
+                  }
+                  acc[speed].value += 1;
+                  return acc;
+                },
+                {}
               )
-            }
-            desc={
-              totalSpeed.toString() + ' Mbps'
-            }
+            )
+          }
+          desc={
+            totalSpeed.toString() + ' Mbps'
+          }
           />
 
         </div>
 
+        { daherUser.role != 'admin' ? <></> : <>
         {/* Advanced Analytics */}
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
@@ -345,22 +287,7 @@ export default function Dashboard() {
             </div>
           </TabsContent>
         </Tabs>
-
-        {/* Data Tables */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <DataTable
-            title="Recent Users"
-            description="Latest user registrations"
-            columns={userColumns}
-            data={userTableData}
-          />
-          <DataTable
-            title="Recent Posts"
-            description="Latest published content"
-            columns={postColumns}
-            data={postTableData}
-          />
-        </div>
+        </>}
       </div>
     </DashboardLayout>
   );

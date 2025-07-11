@@ -13,10 +13,10 @@ import { Button } from "@/components/ui/button";
 import DaherLogo from "../ui/logo";
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: Home, allowed: ['admin'] },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
-  { name: "Customers", href: "/users", icon: Users },
-  { name: "Balance", href: "/balance", icon: WalletIcon },
+  { name: "Dashboard", href: "/dashboard", icon: Home, allowed: ['admin', 'dealer'] },
+  { name: "Customers", href: "/users", icon: Users, allowed: ['admin', 'dealer'] },
+  { name: "Analytics", href: "/analytics", icon: BarChart3, allowed: ['admin'] },
+  { name: "Balance", href: "/balance", icon: WalletIcon, allowed: ['admin'] },
 ];
 
 interface SidebarProps {

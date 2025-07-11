@@ -75,11 +75,13 @@ export function Header({ onToggleSidebar }: HeaderProps) {
                     <p className="text-sm font-medium leading-none">{daherUser?.username}</p>
                   </div>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem>Profile</DropdownMenuItem>
                 <DropdownMenuItem>Settings</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={()=>{navigate('/login')}}>Log out</DropdownMenuItem>
+                <DropdownMenuItem onClick={()=>{
+                  localStorage.removeItem('DaherUser')
+                  navigate('/login')
+                }}>Log out</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </nav>

@@ -32,11 +32,11 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     // Handle common errors
-    if (error.response?.status === 401) {
+    /*if (error.response?.status === 401) {
       // Handle unauthorized access
       localStorage.removeItem("auth_token");
-      window.location.href = "/login";
-    }
+      window.location.href = "/Daher.Net/#/login";
+    }*/
 
     return Promise.reject(error);
   },

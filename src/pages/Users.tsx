@@ -32,6 +32,8 @@ export default function Users() {
   const navigate = useNavigate()
   const location = useLocation()
 
+  const daherUser = JSON.parse(localStorage.getItem('DaherUser'))
+
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -118,6 +120,12 @@ export default function Users() {
     setSelectedSpeed("all");
     setSelectedBalance("all");
   };
+
+  useEffect(()=>{
+    if(daherUser.role != 'admin'){
+      setSelectedDealer(daherUser.username)
+    }
+  }, [])
 
   const exportToExcel = () => {
     const exportData = filteredCustomers.map((c) => ({
@@ -284,7 +292,7 @@ export default function Users() {
               </Select>
             
               {/* السرعة */}
-              <Select value={selectedDealer} onValueChange={setSelectedDealer}>
+              <Select disabled={daherUser.role != "admin" ? true : false} value={selectedDealer} onValueChange={setSelectedDealer}>
                 <SelectTrigger className="w-36">
                   <SelectValue placeholder="البائع" />
                 </SelectTrigger>

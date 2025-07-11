@@ -41,7 +41,7 @@ const App = () => (
             <Route 
               path="/dashboard" 
               element={
-                <PrivateRoute  allowedRoles={["admin"]}>
+                <PrivateRoute  allowedRoles={["admin", "dealer"]}>
                   <Dashboard />
                 </PrivateRoute>
               } 
@@ -57,7 +57,7 @@ const App = () => (
             <Route 
               path="/users" 
               element={
-                <PrivateRoute  allowedRoles={["admin"]}>
+                <PrivateRoute  allowedRoles={["admin", 'dealer']}>
                   <Users />
                 </PrivateRoute>
               } 
@@ -65,7 +65,7 @@ const App = () => (
             <Route 
               path="/CustomerDetails/:id" 
               element={
-                <PrivateRoute  allowedRoles={["admin"]}>
+                <PrivateRoute  allowedRoles={["admin", 'dealer']}>
                   <CustomerDetails />
                 </PrivateRoute>
               } 
@@ -74,7 +74,12 @@ const App = () => (
             <Route path="/unauthorized" element={<UnauthorizedPage/>}/>
             <Route path="/login" element={<Login/>}/>
             <Route path="/signUp" element={<SignUp/>}/>
-            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/analytics" element={
+                <PrivateRoute  allowedRoles={["admin"]}>
+                  <Analytics />
+                </PrivateRoute>
+              }
+            />
             <Route
               path="/posts"
               element={

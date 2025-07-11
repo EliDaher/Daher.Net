@@ -20,11 +20,13 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { DataTable } from "@/components/dashboard/DataTable";
+import addPaymentDealer from "@/services/dealer";
 
 
 export default function CustomerDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const daherUser = JSON.parse(localStorage.getItem('DaherUser'))
 
   const [customer, setCustomer] = useState(null);
   const [transactions, setTransactions] = useState([]);
@@ -71,49 +73,65 @@ export default function CustomerDetails() {
   };
 
   const handleSubmit = async (e) => {
-    setLoading(true)
-    if(window.confirm('هل تريد طباعة ايصال ؟')){ handlePrint() }
     e.preventDefault();
-    const payload = {
-      amount: paymentValue,
-      date: paymentDate ? dayjs(paymentDate).format("YYYY-MM-DD") : '',
-      details: paymentDetails,
-      subscriberID: id,
-      total: Number(customer.Balance) || 0,
-      //dealer: "dealer01", // (اختياري)
-    };
-
-    if(formTitle == 'اضافة فاتورة'){
+    setLoading(true);
+    
+    try {
+      // تحقق من صحة البيانات قبل الإرسال
+      if (!paymentValue || !paymentDate || !paymentDetails || !id) {
+        alert("يرجى ملء جميع الحقول المطلوبة");
+        setLoading(false);
+        return;
+      }
+    
+      const payload = {
+        amount: paymentValue,
+        date: paymentDate ? dayjs(paymentDate).format("YYYY-MM-DD") : '',
+        details: paymentDetails,
+        subscriberID: id,
+        total: Number(customer.Balance) || 0,
+        dealer: daherUser.role === 'dealer' ? daherUser.name : undefined,
+      };
+    
+      let res;
+    
+      if (formTitle === 'اضافة فاتورة') {
+        res = await addInvoice(payload);
+      } else {
+        res = daherUser.role === 'dealer'
+          ? await addPaymentDealer(payload)
+          : await addPayment(payload);
+      }
+    
+      if (res?.message && res.message.includes('success')) {
+        if (window.confirm('هل تريد طباعة إيصال؟')) {
+          handlePrint();
+        }
       
-      const res = await addInvoice(payload);
-      if (res.message && res.message.includes('success')) {
         alert("تمت الإضافة بنجاح");
+      
+        // تنظيف الحقول
         setIsOpen(false);
         reloadTransactions();
         setPaymentDate(null);
         setPaymentValue(0);
         setPaymentDetails("");
       } else {
-        alert("حدث خطأ أثناء الإرسال");
+        console.error("API Error Response:", res);
+        alert(res?.error || "حدث خطأ أثناء الإرسال، يرجى المحاولة لاحقًا.");
       }
-
-    }else{
-      
-      const res = await addPayment(payload);
-      if (res.message && res.message.includes('success')) {
-        alert("تمت الإضافة بنجاح");
-        setIsOpen(false);
-        reloadTransactions();
-        setPaymentDate(null);
-        setPaymentValue(0);
-        setPaymentDetails("");
+    } catch (error) {
+      console.error("Exception in handleSubmit:", error);
+      if (error?.response?.data?.error) {
+        alert("خطأ: " + error.response.data.error);
       } else {
-        alert("حدث خطأ أثناء الإرسال");
+        alert("حدث خطأ غير متوقع. يرجى التحقق من الاتصال أو المحاولة لاحقًا.");
       }
-      
+    } finally {
+      setLoading(false);
     }
-    setLoading(false)
   };
+  
 
 
   const tableRef = useRef();
@@ -292,16 +310,19 @@ export default function CustomerDetails() {
         </Card>
 
         <div className="flex justify-start gap-2">
-          <Button
+          {
+            daherUser.role == 'admin' &&
+            <Button
             variant="destructive"
             onClick={() => {
               setFormTitle("اضافة فاتورة");
               setPrintOnly(false)
               setIsOpen(true);
             }}
-          >
-            <Plus className="w-4 h-4 ml-2" /> إضافة فاتورة
-          </Button>
+            >
+              <Plus className="w-4 h-4 ml-2" /> إضافة فاتورة
+            </Button>
+          }
           <Button
             variant="default"
             onClick={() => {
@@ -317,11 +338,7 @@ export default function CustomerDetails() {
           </Button>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>البيان المالي</CardTitle>
-          </CardHeader>
-          <CardContent className="overflow-x-auto">
+        <Card className="overflow-x-auto">
             {loadingTransactions ? (
               <Skeleton className="h-48 w-full" />
             ) : currentItems.length === 0 ? (
@@ -355,7 +372,6 @@ export default function CustomerDetails() {
                 />
               </>
             )}
-          </CardContent>
         </Card>
       </div>
     </DashboardLayout>
