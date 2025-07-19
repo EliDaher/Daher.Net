@@ -1,14 +1,18 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import FinalTableCom from "./FinalTableCom";
 import axios from "axios";
 import { useReactToPrint } from "react-to-print";
 
 function ConfirmInvForm({ clearAllTables, TotalInvoices, setTotalInvoices, finalTable, isOpen, onClose, onSubmit }) {
+
+    const [loading, setLoading] = useState(false)
+
   if (!isOpen) return null;
   const user = JSON.parse(localStorage.getItem('DaherUser'))
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true)
 
     try {
       const invoiceData = {
@@ -28,6 +32,7 @@ function ConfirmInvForm({ clearAllTables, TotalInvoices, setTotalInvoices, final
 
     copyToClipboard(finalTable)
 
+    setLoading(false)
     clearAllTables();
     onSubmit();
     onClose();
@@ -213,10 +218,11 @@ function ConfirmInvForm({ clearAllTables, TotalInvoices, setTotalInvoices, final
             </div>
             <div className="flex justify-start gap-3">
               <button
+                disabled={loading ? true : false}
                 type="submit"
                 className="bg-primary-500 text-white font-bold px-3 py-1 rounded hover:bg-primary-600"
               >
-                Save
+                {loading ? 'جاري الحفظ ...' : 'Save'}
               </button>
               <button
                 onClick={(e) => {
