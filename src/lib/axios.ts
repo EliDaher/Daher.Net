@@ -10,6 +10,15 @@ export const apiClient = axios.create({
   },
 });
 
+export const googleClient = axios.create({
+  baseURL:
+    import.meta.env.VITE_API_BASE_URL || "https://daherserver-zgmy.onrender.com",
+  timeout: 10000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {

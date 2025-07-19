@@ -1,0 +1,245 @@
+import React, { useRef } from "react";
+import FinalTableCom from "./FinalTableCom";
+import axios from "axios";
+import { useReactToPrint } from "react-to-print";
+
+function ConfirmInvForm({ clearAllTables, TotalInvoices, setTotalInvoices, finalTable, isOpen, onClose, onSubmit }) {
+  if (!isOpen) return null;
+  const user = JSON.parse(localStorage.getItem('DaherUser'))
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const invoiceData = {
+        amount: TotalInvoices, // قيمة الفاتورة
+        employee: user.username, // اسم الموظف
+        details: { ...finalTable },
+      };
+
+      const response = await axios.post("https://server-uvnz.onrender.com/addInvoice", invoiceData);
+
+      if (response.data.success) {
+        console.log("تمت إضافة الفاتورة بنجاح!");
+      }
+    } catch (error) {
+      console.error("حدث خطأ أثناء إرسال الفاتورة:", error.response?.data || error.message);
+    }
+
+    copyToClipboard(finalTable)
+
+    clearAllTables();
+    onSubmit();
+    onClose();
+  };
+
+  const tableRef = useRef();
+
+  const handlePrint = useReactToPrint({
+    contentRef: tableRef, // استخدام contentRef بشكل صحيح
+    pageStyle: `
+      @page {
+        size: 80mm auto; /* ضبط عرض الورقة والطول تلقائي */
+        margin: 0; /* إزالة الهوامش */
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+      }
+
+      td, th {
+        border: 1px solid black;
+        padding: 1px;
+        font-weight: bold;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal; /* السماح بلف النص داخل الخلية */
+        text-align: center;
+        max-width: 65px; /* تحديد عرض ثابت للخلايا */
+        width: 65px; /* التأكد من بقاء الخلايا ضمن الحجم المطلوب */
+        height: auto; /* السماح للارتفاع بالتكيف مع المحتوى */
+      }
+      .no-print {
+        display: none; /* إخفاء العناصر غير المرغوبة أثناء الطباعة */
+      }
+
+      .totalValue{
+        font-weight: bold;
+        font-size: 24px;
+      }
+
+      @media print {
+        body, table, th, td {
+          color: black !important;
+        }
+
+        body {
+          width: 80mm;
+          height: auto; /* السماح للطباعة بتحديد الطول حسب المحتوى */
+          margin: 0;
+          padding-bottom: 20px; /* إضافة 20px هامش سفلي */
+          display: flex;
+          flex-direction: column;
+          align-items: center; /* توسيط المحتوى */
+          justify-content: flex-start;
+          font-family: Arial, sans-serif; /* استخدام خط واضح */
+          font-size: 14px; /* زيادة حجم الخط */
+        }
+
+        .header {
+          text-align: center;
+          font-size: 16px;
+          margin-bottom: 10px;
+          margin-top: 10px;
+          font-weight: 900;
+        }
+
+        .header span {
+          display: block;
+          margin-bottom: 2px;
+        }
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        td, th {
+          border: 1px solid black;
+          padding: 2px;
+          font-weight: bold;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          white-space: normal; /* السماح بلف النص داخل الخلية */
+          text-align: center;
+          max-width: 65px; /* تحديد عرض ثابت للخلايا */
+          width: 65px; /* التأكد من بقاء الخلايا ضمن الحجم المطلوب */
+          height: auto; /* السماح للارتفاع بالتكيف مع المحتوى */
+        }
+
+        .total {
+          font-weight: bold;
+        }
+
+        .totalValue{
+          font-weight: bold;
+          font-size: 24px;
+        }
+
+        /* إضافة قطع الورقة بناءً على المحتوى */
+        .cut {
+          page-break-before: always; /* قطع الصفحة عند هذه النقطة */
+        }
+      }
+    `,
+    onAfterPrint: () => {
+      console.log("تمت الطباعة بنجاح!");
+      onClose(); // إغلاق النافذة بعد الطباعة
+    },
+  });
+
+  const getCurrentDateTime = (): string => {
+      const now = new Date();
+      const options: Intl.DateTimeFormatOptions = {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        weekday: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      };
+
+      return now.toLocaleDateString("en-GB", options);
+    };
+
+  const copyToClipboard = (copyText) => {
+    /*const formattedText = copyText.map((item, index) => 
+      `Customer ${index + 1}:
+      - Details: ${item.customerDetails}
+      - Name: ${item.customerName}
+      - Number: ${item.customerNumber}
+      - Invoice #: ${item.invoiceNumber}
+      - Invoice Value: ${item.invoiceValue}
+      `
+    ).join("\n\n"); // Separate each object with a newline
+
+    navigator.clipboard.writeText(formattedText)
+   */
+  };
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
+        <div className="bg-white rounded-lg shadow-lg p-6 relative">
+          <button
+            className="absolute top-6 left-6 text-gray-500 hover:text-gray-800"
+            onClick={onClose}
+          >
+            ✕
+          </button>
+          <h2 className="text-xl font-bold text-gray-800 mb-4 text-right">
+            تأكيد الفواتير
+          </h2>
+          <form onSubmit={handleFormSubmit}>
+            <div className="h-96 overflow-y-scroll mb-3 shadow scrollbar-sm">
+              <div ref={tableRef}>
+                {/* رأس الفاتورة */}
+                <div className="header">
+                  <span>Daher.Net</span>
+                  <span>{getCurrentDateTime()}</span>
+                </div>
+
+                <div className="text-right">
+                  <FinalTableCom finalTable={finalTable}></FinalTableCom>
+                </div>
+                <div className="totalValue" dir="rtl">
+                  <h3 className="my-3">المجموع : 
+                  <input 
+                    lang="en"
+                    dir="ltr"
+                    className="p-1 font-bold text-left"
+                    type="number"
+                    min="0"
+                    value={TotalInvoices}
+                    onChange={(e) => {
+                      const englishNumbers = e.target.value.replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d) as any);
+                      setTotalInvoices(englishNumbers);
+                    }}
+                  />
+                  </h3>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-start gap-3">
+              <button
+                type="submit"
+                className="bg-primary-500 text-white font-bold px-3 py-1 rounded hover:bg-primary-600"
+              >
+                Save
+              </button>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  handlePrint(); // فتح نافذة الطباعة
+                  handleFormSubmit(e)
+                }}
+                className="bg-accent-500 text-white font-bold px-3 py-1 rounded hover:bg-accent-600"
+              >
+                Print
+              </button>
+              <button
+                onClick={onClose}
+                className="bg-red-500 text-white font-bold px-3 py-1 rounded hover:bg-red-600"
+              >
+                Close
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default ConfirmInvForm;

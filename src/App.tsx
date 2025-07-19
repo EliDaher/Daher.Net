@@ -16,6 +16,8 @@ import { PrivateRoute } from "./components/auth/PrivateRoute";
 import UnauthorizedPage from "./pages/Unauthorized";
 import CustomerDetails from "./pages/CustomerDetails";
 import Balance from "./pages/Balance";
+import Invoices from "./pages/Invoices";
+import MyBalance from "./pages/MyBalance";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -78,6 +80,15 @@ const App = () => (
                 <PrivateRoute  allowedRoles={["admin"]}>
                   <Analytics />
                 </PrivateRoute>
+              }
+            />
+            <Route path="/invoices" element={
+                <Invoices />
+              }
+            />
+            <Route path="/myBalance" 
+              element={
+                <MyBalance />
               }
             />
             <Route

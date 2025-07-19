@@ -7,6 +7,10 @@ import {
   ChevronLeft,
   ChevronRight,
   WalletIcon,
+  ReceiptText,
+  Box,
+  BoxesIcon,
+  HandCoins,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -17,6 +21,8 @@ const navigation = [
   { name: "Customers", href: "/users", icon: Users, allowed: ['admin', 'dealer'] },
   { name: "Analytics", href: "/analytics", icon: BarChart3, allowed: ['admin'] },
   { name: "Balance", href: "/balance", icon: WalletIcon, allowed: ['admin'] },
+  { name: "Invoices", href: "/invoices", icon: ReceiptText, allowed: ['admin', 'employee'] },
+  { name: "My Balance", href: "/myBalance", icon: HandCoins, allowed: ['admin', 'employee'] },
 ];
 
 interface SidebarProps {

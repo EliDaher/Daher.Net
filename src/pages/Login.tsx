@@ -18,7 +18,11 @@ export default function Login() {
 
     if (res?.message.includes('successful')) {
       localStorage.setItem("DaherUser", JSON.stringify(res.user));
-      navigate("/dashboard");
+      if(res.user.role == 'employee'){
+        navigate('/invoices')
+      }else {
+        navigate("/dashboard");
+      }
 
     } else {
       console.log(res)

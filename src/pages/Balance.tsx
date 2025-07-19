@@ -4,6 +4,9 @@ import {
   TrendingUp,
   CreditCard,
   HandCoins,
+  DollarSign,
+  BadgeDollarSign,
+  Coins,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
@@ -383,11 +386,18 @@ export default function Balance() {
             onClick={()=>{
               navigate('/users', {state: 'unpaid'})
             }}
-            title="الديون"
-            value={unpaidValue || 0}
-            description=""
-            icon={HandCoins}
-            trend={{ value: stats?.userGrowth || 0, isPositive: true }}
+              title="الديون"
+              value={unpaidValue || 0}
+              description=""
+              icon={HandCoins}
+              trend={{ value: stats?.userGrowth || 0, isPositive: true }}
+            />
+            <StatsCard
+              title="للتحويل"
+              value={0}
+              description=""
+              icon={Coins}
+              trend={{ value: stats?.userGrowth || 0, isPositive: true }}
             />
           </div>
           }
