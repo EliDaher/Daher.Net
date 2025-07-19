@@ -5,38 +5,38 @@ import { useReactToPrint } from "react-to-print";
 
 function ConfirmInvForm({ clearAllTables, TotalInvoices, setTotalInvoices, finalTable, isOpen, onClose, onSubmit }) {
 
-    const [loading, setLoading] = useState(false)
+    
+    if (!isOpen) return null;
+        const user = JSON.parse(localStorage.getItem('DaherUser'))
+        const [loading, setLoading] = useState(false)
 
-  if (!isOpen) return null;
-  const user = JSON.parse(localStorage.getItem('DaherUser'))
-
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true)
-
-    try {
-      const invoiceData = {
-        amount: TotalInvoices, // قيمة الفاتورة
-        employee: user.username, // اسم الموظف
-        details: { ...finalTable },
-      };
-
-      const response = await axios.post("https://server-uvnz.onrender.com/addInvoice", invoiceData);
-
-      if (response.data.success) {
-        console.log("تمت إضافة الفاتورة بنجاح!");
-      }
-    } catch (error) {
-      console.error("حدث خطأ أثناء إرسال الفاتورة:", error.response?.data || error.message);
-    }
-
-    copyToClipboard(finalTable)
-
-    setLoading(false)
-    clearAllTables();
-    onSubmit();
-    onClose();
-  };
+        const handleFormSubmit = async (e) => {
+            e.preventDefault();
+            setLoading(true)
+            
+                try {
+                  const invoiceData = {
+                    amount: TotalInvoices, // قيمة الفاتورة
+                    employee: user.username, // اسم الموظف
+                    details: { ...finalTable },
+                  };
+              
+                  const response = await axios.post("https://server-uvnz.onrender.com/addInvoice", invoiceData);
+              
+                  if (response.data.success) {
+                    console.log("تمت إضافة الفاتورة بنجاح!");
+                  }
+                } catch (error) {
+                  console.error("حدث خطأ أثناء إرسال الفاتورة:", error.response?.data || error.message);
+                }
+            
+                copyToClipboard(finalTable)
+            
+            setLoading(false)
+            clearAllTables();
+            onSubmit();
+            onClose();
+    };
 
   const tableRef = useRef();
 

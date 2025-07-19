@@ -84,7 +84,7 @@ function Invoice(){
             <div className="space-y-6">
 
                 <div className="flex-col w-full">
-                    <div className="sticky top-0 z-30 py-3 shadow bg-foreground/10 flex flex-wrap justify-center mx-auto mt-4 select-none">
+                    <div className="sticky top-0 z-30 py-3 shadow bg-foreground/10 flex flex-wrap justify-center mt-4 select-none">
                         <div className="flex gap-3 px-2 mr-10">
                             <button onClick={()=>{
                                 setPayOrInv("pay")
