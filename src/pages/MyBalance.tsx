@@ -123,14 +123,14 @@ export default function MyBalance() {
       <div dir='rtl' className="space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <h1 className="text-2xl font-bold text-gray-800">البيان المالي</h1>
+          <h1 className="text-2xl font-bold text-foreground">البيان المالي</h1>
 
           <div className="flex gap-4">
             {/* Date Picker */}
             <Popover.Root>
               <Popover.Trigger asChild>
                 <button
-                  className="border border-gray-300 rounded-lg px-4 py-2 text-gray-700 flex items-center gap-2 hover:bg-gray-100"
+                  className="border border-gray-300 rounded-lg px-4 py-2 text-foreground flex items-center gap-2 hover:bg-foreground/30"
                   aria-label="اختر التاريخ"
                 >
                   {date}
@@ -139,13 +139,13 @@ export default function MyBalance() {
               </Popover.Trigger>
               <Popover.Content
                 sideOffset={8}
-                className="bg-white shadow-lg rounded-lg p-4 border border-gray-200"
+                className="bg-background shadow-lg rounded-lg p-4 border border-gray-200"
               >
                 <input
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 w-full"
+                  className="border border-gray-300 rounded-lg px-3 py-2 w-full bg-background"
                 />
               </Popover.Content>
             </Popover.Root>
@@ -158,7 +158,7 @@ export default function MyBalance() {
               disabled={loadingEmployees}
             >
               <Select.Trigger
-                className="border border-gray-300 rounded-lg px-4 py-2 flex items-center justify-between gap-2 w-40 disabled:opacity-50"
+                className="border border-gray-300 rounded-lg px-4 py-2 flex items-center justify-between gap-2 w-40 disabled:opacity-50 hover:bg-foreground/30"
                 aria-label="اختر الموظف"
               >
                 <Select.Value placeholder={loadingEmployees ? '...' : 'اختر الموظف'} />
@@ -166,13 +166,13 @@ export default function MyBalance() {
                   <ChevronDownIcon className="w-4 h-4" />
                 </Select.Icon>
               </Select.Trigger>
-               <Select.Content className="bg-white border border-gray-200 rounded-lg shadow-md max-h-56 overflow-y-auto">
+               <Select.Content className="bg-background border border-gray-200 rounded-lg shadow-md max-h-56 overflow-y-auto">
                 <Select.Viewport>
                   {employees.map((emp) => (
                     <Select.Item
                       key={emp}
                       value={emp}
-                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                      className="px-4 py-2 hover:bg-foreground/30 cursor-pointer"
                     >
                       <Select.ItemText>
                         {emp === 'all' ? 'جميع الموظفين' : emp}
@@ -186,15 +186,15 @@ export default function MyBalance() {
         </div>
 
         {/* Data Table */}
-        <div className="bg-white rounded-xl shadow-md overflow-x-auto">
+        <div className="bg-background rounded-xl shadow-md overflow-x-auto">
           {loading ? (
-            <div className="p-6 text-center text-gray-500">جاري التحميل...</div>
+            <div className="p-6 text-center text-foreground">جاري التحميل...</div>
           ) : data.length === 0 ? (
-            <div className="p-6 text-center text-gray-500">لا توجد بيانات</div>
+            <div className="p-6 text-center text-foreground">لا توجد بيانات</div>
           ) : (
-            <table className="min-w-full text-sm text-gray-600">
+            <table className="min-w-full text-sm text-foreground">
               <thead>
-                <tr className="bg-gray-100 text-gray-700 text-left">
+                <tr className="bg-foreground/20 text-foreground text-right">
                   <th className="py-3 px-4">#</th>
                   {username === 'all' && <th className="py-3 px-4">الموظف</th>}
                   <th className="py-3 px-4">التفاصيل</th>
@@ -206,7 +206,7 @@ export default function MyBalance() {
                 {data.map((item, index) => (
                   <tr
                     key={item.id}
-                    className="border-b hover:bg-gray-50 transition"
+                    className="border-b hover:bg-foreground/20 transition"
                   >
                     <td className="py-3 px-4">{index + 1}</td>
                     {username === 'all' && <th className="py-3 px-4">{item.employee}</th>}
@@ -223,11 +223,11 @@ export default function MyBalance() {
                           <Popover.Content
                             side="bottom"
                             align="start"
-                            className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-lg"
+                            className="bg-background border border-gray-200 rounded-lg shadow-lg p-4 max-w-lg"
                           >
                             <table className="text-sm w-full border-collapse">
                               <thead>
-                                <tr className="bg-gray-50 text-gray-700">
+                                <tr className="bg-foreground/30 text-foreground">
                                   <th className="border px-2 py-1">العميل</th>
                                   <th className="border px-2 py-1">الهاتف</th>
                                   <th className="border px-2 py-1">رقم الفاتورة</th>
@@ -254,7 +254,7 @@ export default function MyBalance() {
                       )}
                     </td>
 
-                    <td className="py-3 px-4 text-blue-600 font-semibold">{item.amount}</td>
+                    <td className="py-3 px-4 text-blue-600 dark:text-primary-300 font-semibold">{item.amount}</td>
                     <td className="py-3 px-4">{item.timestamp}</td>
                   </tr>
                   
@@ -267,7 +267,7 @@ export default function MyBalance() {
         {/* الإجمالي */}
         {!loading && data.length > 0 && (
           <div className="flex justify-end">
-            <div className="bg-blue-50 px-6 py-3 rounded-lg text-blue-700 font-bold shadow">
+            <div className="bg-foreground/10 px-6 py-3 rounded-lg text-blue-700 dark:text-primary-300 font-bold shadow dark:shadow-lg dark:shadow-white/15">
               الإجمالي: {totalAmount}
             </div>
           </div>
