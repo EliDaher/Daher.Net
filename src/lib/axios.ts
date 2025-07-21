@@ -19,6 +19,15 @@ export const googleClient = axios.create({
   },
 });
 
+export const invoiceClient = axios.create({
+  baseURL:
+    import.meta.env.VITE_API_BASE_URL || "https://paynet-cdji.onrender.com",
+  timeout: 10000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {

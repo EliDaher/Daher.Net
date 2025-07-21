@@ -48,7 +48,20 @@ export default function DetailsInputs({ customer, setCustomer }) {
   return (
     <div>
       {Object.entries(customer).map(([key, value]) => (
-        key == 'id' ? <></> :
+        key == 'id' ? <></> : key == 'createdAt' ?
+        
+        <p key={key} className="flex gap-2 relative group mb-4 items-end">
+          <label className="block font-bold w-36">{convertLabel(key)}:</label>
+          <input
+            type="text"
+            value={new Date(value as any).toLocaleString("en-GB")}
+            className="bg-transparent border-b-2 border-transparent focus:border-primary-500 outline-none transition-all w-full"
+          />
+          <span className="absolute bottom-0 right-0 w-full h-[2px] bg-primary-500 scale-x-0 group-hover:scale-x-100 origin-right transition-transform duration-300"></span>
+        </p>
+        
+        :
+
         <p key={key} className="flex gap-2 relative group mb-4 items-end">
           <label className="block font-bold w-36">{convertLabel(key)}:</label>
           <input

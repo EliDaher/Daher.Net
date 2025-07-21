@@ -23,6 +23,7 @@ interface TableColumn {
   key: string;
   label: string;
   sortable?: boolean;
+  hidden?: boolean;
 }
 
 interface TableData {
@@ -95,8 +96,8 @@ export function DataTable({
     if (key === "status") {
       return (
         <Badge
-          variant={value === "completed" ? "default" : "secondary"}
-          className="capitalize"
+          variant={value == "completed" || value == 'تم التسديد' ? "default" : value == 'جاري التسديد' ? 'secondary' : "destructive"}
+          className="capitalize text-center"
         >
           {value}
         </Badge>
@@ -104,6 +105,9 @@ export function DataTable({
     }
     if (key === "email") {
       return <span className="text-muted-foreground">{value}</span>;
+    }
+    if (key === "createdAt" || key === "date") {
+      return <span className="text-muted-foreground">{new Date(value).toLocaleString("en-GB")}</span>;
     }
     return value;
   };
@@ -140,12 +144,12 @@ export function DataTable({
             <TableHeader>
               <TableRow>
                 {columns.map((column) => (
-                  <TableHead key={column.key}>
+                  <TableHead className={column.hidden ? 'hidden' : 'text-center'} key={column.key}>
                     {column.sortable ? (
                       <Button
                         variant="ghost"
-                        onClick={() => handleSort(column.key)}
-                        className="h-auto p-0 font-medium"
+                        onClick={() => {handleSort(column.key); console.log(column.hidden)}}
+                        className={`h-auto p-0 font-medium`}
                       >
                         {column.label}
                         {sortConfig?.key === column.key && (
@@ -170,7 +174,7 @@ export function DataTable({
                     className={getRowClassName ? getRowClassName(row) : ""}
                   >
                     {columns.map((column) => (
-                      <TableCell key={column.key}>
+                      <TableCell className={column.hidden ? 'hidden' : ''} key={column.key}>
                         {renderCellContent(row[column.key], column.key)}
                       </TableCell>
                     ))}

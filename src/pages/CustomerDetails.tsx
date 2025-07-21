@@ -116,9 +116,23 @@ export default function CustomerDetails() {
         setPaymentDate(null);
         setPaymentValue(0);
         setPaymentDetails("");
+        
       } else {
         console.error("API Error Response:", res);
         alert(res?.error || "حدث خطأ أثناء الإرسال، يرجى المحاولة لاحقًا.");
+      }
+      if (formTitle === 'اضافة فاتورة'){
+        
+        setCustomer({
+          ...customer,
+          Balance: customer.Balance - paymentValue
+        });  
+
+      }else{
+        setCustomer({
+          ...customer,
+          Balance: customer.Balance + paymentValue
+        });    
       }
     } catch (error) {
       console.error("Exception in handleSubmit:", error);
