@@ -1,1 +1,0 @@
-import{j as a}from"./index-BHksyjCu.js";import{D as r}from"./DashboardLayout-847lGXMB.js";import"./button-Bi0Jjsn1.js";import"./house-BbC6Qasz.js";function e(){return a.jsx(r,{children:a.jsx("div",{className:"space-y-6"})})}export{e as default};
