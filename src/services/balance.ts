@@ -35,3 +35,14 @@ export async function getEmployeeBalanceTable(username: string, date?: string) {
     console.error("خطأ في جلب الرصيد اليومي:", err);
   }
 }
+
+export async function getDailyBalance() {
+  try {
+    const response = await apiClient.get("/api/balance/getDailyBalance");
+
+    console.log(response)
+    return response.data;
+  } catch (err) {
+    console.error("خطأ في جلب الرصيد اليومي:", err);
+  }
+}

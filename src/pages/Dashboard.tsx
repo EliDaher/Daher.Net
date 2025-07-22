@@ -1,18 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Users,
   Activity,
   CreditCard,
+  ReceiptIcon,
 } from "lucide-react";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ChartContainer } from "@/components/dashboard/ChartContainer";
-import { DataTable } from "@/components/dashboard/DataTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { apiService, User, Post } from "@/services/api";
 import getWifiCustomers from "@/services/wifi";
 import getTodyBalance, { getBalanceByDate } from "@/services/balance";
 import { DemoContainer } from '@mui/x-date-pickers/internals/demo';
@@ -21,6 +20,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
+import getPendingInvoices from "@/services/invoices";
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -93,9 +93,13 @@ export default function Dashboard() {
       temValue += ele.total
     })
     setTotalBalance(temValue)
-
+    
   }, [todayBalance])
-
+  
+  const { data: pendingData, isLoading: pendingLoading } = useQuery({
+    queryKey: ['pending-table'],
+    queryFn: getPendingInvoices,
+  });
 
   return (
     <DashboardLayout>
@@ -122,9 +126,17 @@ export default function Dashboard() {
             onClick={()=>{
               navigate('/users', {state: 'unpaid'})
             }}
-            title="الفواتير الغير مدفوعة"
+            title="ديون الفضائي"
             value={unpaidValue || 0}
             icon={CreditCard}
+          />
+          <StatsCard
+            onClick={()=>{
+              navigate('/PendingTransactions')
+            }}
+            title="الفواتير الغير مدفوعة"
+            value={pendingData ? pendingData.length : 0}
+            icon={ReceiptIcon}
           />
         </div>
 

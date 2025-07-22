@@ -118,7 +118,7 @@ export function DataTable({
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <CardTitle>{title}</CardTitle>
-            {description && <CardDescription>{description}</CardDescription>}
+            {description && <CardDescription className="mt-2">{description}</CardDescription>}
           </div>
           {searchable && (
             <div className="flex w-full max-w-sm items-center space-x-2">

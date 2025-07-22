@@ -6,6 +6,7 @@ interface ThreadsProps {
   amplitude?: number;
   distance?: number;
   enableMouseInteraction?: boolean;
+  quality?: "auto" | "high" | "medium" | "low"; // جودة الخلفية
 }
 
 const vertexShader = `
@@ -27,10 +28,9 @@ uniform vec3 uColor;
 uniform float uAmplitude;
 uniform float uDistance;
 uniform vec2 uMouse;
+uniform int uLineCount;
 
 #define PI 3.1415926538
-
-const int u_line_count = 40;
 const float u_line_width = 7.0;
 const float u_line_blur = 10.0;
 
@@ -102,8 +102,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec2 uv = fragCoord / iResolution.xy;
 
     float line_strength = 1.0;
-    for (int i = 0; i < u_line_count; i++) {
-        float p = float(i) / float(u_line_count);
+    for (int i = 0; i < 100; i++) {
+        if (i >= uLineCount) break;
+        float p = float(i) / float(uLineCount);
         line_strength *= (1.0 - lineFn(
             uv,
             u_line_width * pixel(1.0, iResolution.xy) * (1.0 - p),
@@ -125,11 +126,22 @@ void main() {
 }
 `;
 
+/** دالة لاختيار الجودة حسب أداء الجهاز */
+function detectQuality(): "high" | "medium" | "low" {
+  const cores = navigator.hardwareConcurrency || 4;
+  const memory = (navigator as any).deviceMemory || 4;
+
+  if (cores >= 8 && memory >= 8) return "high";
+  if (cores >= 4 && memory >= 4) return "medium";
+  return "low";
+}
+
 const Threads: React.FC<ThreadsProps> = ({
   color = [1, 1, 1],
   amplitude = 1,
   distance = 0,
   enableMouseInteraction = false,
+  quality = "auto",
   ...rest
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -139,6 +151,8 @@ const Threads: React.FC<ThreadsProps> = ({
     if (!containerRef.current) return;
     const container = containerRef.current;
 
+    const selectedQuality = quality === "auto" ? detectQuality() : quality;
+
     const renderer = new Renderer({ alpha: true });
     const gl = renderer.gl;
     gl.clearColor(0, 0, 0, 0);
@@ -147,22 +161,21 @@ const Threads: React.FC<ThreadsProps> = ({
     container.appendChild(gl.canvas);
 
     const geometry = new Triangle(gl);
+
+    const lineCount = selectedQuality === "high" ? 40 : selectedQuality === "medium" ? 25 : 15;
+    const scaleFactor = selectedQuality === "high" ? 1 : selectedQuality === "medium" ? 0.7 : 0.5;
+
     const program = new Program(gl, {
       vertex: vertexShader,
       fragment: fragmentShader,
       uniforms: {
         iTime: { value: 0 },
-        iResolution: {
-          value: new Color(
-            gl.canvas.width,
-            gl.canvas.height,
-            gl.canvas.width / gl.canvas.height
-          ),
-        },
+        iResolution: { value: new Color(gl.canvas.width, gl.canvas.height, gl.canvas.width / gl.canvas.height) },
         uColor: { value: new Color(...color) },
         uAmplitude: { value: amplitude },
         uDistance: { value: distance },
         uMouse: { value: new Float32Array([0.5, 0.5]) },
+        uLineCount: { value: lineCount },
       },
     });
 
@@ -170,7 +183,9 @@ const Threads: React.FC<ThreadsProps> = ({
 
     function resize() {
       const { clientWidth, clientHeight } = container;
-      renderer.setSize(clientWidth, clientHeight);
+      renderer.setSize(clientWidth * scaleFactor, clientHeight * scaleFactor);
+      gl.canvas.style.width = clientWidth + "px";
+      gl.canvas.style.height = clientHeight + "px";
       program.uniforms.iResolution.value.r = clientWidth;
       program.uniforms.iResolution.value.g = clientHeight;
       program.uniforms.iResolution.value.b = clientWidth / clientHeight;
@@ -195,29 +210,27 @@ const Threads: React.FC<ThreadsProps> = ({
       container.addEventListener("mouseleave", handleMouseLeave);
     }
 
+    let lastTime = 0;
     function update(t: number) {
-      if (enableMouseInteraction) {
-        const smoothing = 0.05;
-        currentMouse[0] += smoothing * (targetMouse[0] - currentMouse[0]);
-        currentMouse[1] += smoothing * (targetMouse[1] - currentMouse[1]);
-        program.uniforms.uMouse.value[0] = currentMouse[0];
-        program.uniforms.uMouse.value[1] = currentMouse[1];
-      } else {
-        program.uniforms.uMouse.value[0] = 0.5;
-        program.uniforms.uMouse.value[1] = 0.5;
+      if (t - lastTime > 33) { // 30 FPS
+        if (enableMouseInteraction) {
+          const smoothing = 0.05;
+          currentMouse[0] += smoothing * (targetMouse[0] - currentMouse[0]);
+          currentMouse[1] += smoothing * (targetMouse[1] - currentMouse[1]);
+          program.uniforms.uMouse.value[0] = currentMouse[0];
+          program.uniforms.uMouse.value[1] = currentMouse[1];
+        }
+        program.uniforms.iTime.value = t * 0.001;
+        renderer.render({ scene: mesh });
+        lastTime = t;
       }
-      program.uniforms.iTime.value = t * 0.001;
-
-      renderer.render({ scene: mesh });
       animationFrameId.current = requestAnimationFrame(update);
     }
     animationFrameId.current = requestAnimationFrame(update);
 
     return () => {
-      if (animationFrameId.current)
-        cancelAnimationFrame(animationFrameId.current);
+      if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
       window.removeEventListener("resize", resize);
-
       if (enableMouseInteraction) {
         container.removeEventListener("mousemove", handleMouseMove);
         container.removeEventListener("mouseleave", handleMouseLeave);
@@ -225,11 +238,9 @@ const Threads: React.FC<ThreadsProps> = ({
       if (container.contains(gl.canvas)) container.removeChild(gl.canvas);
       gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
-  }, [color, amplitude, distance, enableMouseInteraction]);
+  }, [color, amplitude, distance, enableMouseInteraction, quality]);
 
-  return (
-    <div ref={containerRef} className="w-full h-full relative" {...rest} />
-  );
+  return <div ref={containerRef} className="w-full h-full relative" {...rest} />;
 };
 
 export default Threads;
