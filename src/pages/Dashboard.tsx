@@ -21,6 +21,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import getPendingInvoices from "@/services/invoices";
+import { io, Socket } from "socket.io-client";
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -31,6 +32,23 @@ export default function Dashboard() {
   const [todayBalance, setTodayBalance] = useState([])
   const [monthBalance, setMonthBalance] = useState([])
   const [balanceDate, setBalanceDate] = useState('')
+
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const queryClient = useQueryClient();
+
+
+  useEffect(() => {
+    const newSocket = io("https://paynet-cdji.onrender.com");
+    setSocket(newSocket);
+
+    newSocket.on("pendingPaymentsUpdate", (updatedPayments) => {
+      queryClient.setQueryData(['pending-table'], updatedPayments);
+    });
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [queryClient]);
 
   const getMonthTable = async () => {
     const res = await getBalanceByDate("");

@@ -5,7 +5,8 @@ import PopupForm from '@/components/ui/custom/PopupForm';
 import { Input } from '@/components/ui/input';
 import getPendingInvoices, { confirmInvoice, rejectInvoice } from '@/services/invoices';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { io, Socket } from "socket.io-client";
 
 export default function PendingTransactions() {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,14 +15,26 @@ export default function PendingTransactions() {
   const [selectedRow, setSelectedRow] = useState<any | null>(null);
 
   const queryClient = useQueryClient();
+  const [socket, setSocket] = useState<Socket | null>(null);
 
-  // جلب الفواتير المعلقة
+  useEffect(() => {
+    const newSocket = io("https://paynet-cdji.onrender.com");
+    setSocket(newSocket);
+
+    newSocket.on("pendingPaymentsUpdate", (updatedPayments) => {
+      queryClient.setQueryData(['pending-table'], updatedPayments);
+    });
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [queryClient]);
+
   const { data: pendingData, isLoading: pendingLoading } = useQuery({
     queryKey: ['pending-table'],
     queryFn: getPendingInvoices,
   });
 
-  // Mutation لتأكيد الدفع
   const confirmMutation = useMutation({
     mutationFn: (invoiceId: string) => confirmInvoice(invoiceId),
     onSuccess: () => {
@@ -29,7 +42,6 @@ export default function PendingTransactions() {
     },
   });
 
-  // Mutation لرفض العملية
   const deleteMutation = useMutation({
     mutationFn: (data: { payment: object; reason: string }) => rejectInvoice(data),
     onSuccess: () => {
@@ -48,7 +60,6 @@ export default function PendingTransactions() {
     { key: 'createdAt', label: 'الوقت', sortable: true },
   ];
 
-  // عرض حالة التحميل
   if (pendingLoading) {
     return (
       <DashboardLayout>
@@ -68,7 +79,6 @@ export default function PendingTransactions() {
             onSubmit={(e) => {
               e.preventDefault();
               if (selectedRow) {
-                console.log(selectedRow)
                 deleteMutation.mutate({
                   payment: {
                     id: selectedRow._id,
@@ -108,7 +118,7 @@ export default function PendingTransactions() {
               <Button
                 variant="default"
                 size="sm"
-                onClick={() => {window.confirm('هل انت متأكد من انهاء العملية') ? confirmMutation.mutate(row._id) : console.log('') }}
+                onClick={() => { window.confirm('هل انت متأكد من انهاء العملية') ? confirmMutation.mutate(row._id) : null }}
                 disabled={confirmMutation.isPending}
               >
                 {confirmMutation.isPending ? '...' : 'تأكيد'}

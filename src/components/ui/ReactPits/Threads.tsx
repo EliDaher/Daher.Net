@@ -126,11 +126,10 @@ void main() {
 }
 `;
 
-/** دالة لاختيار الجودة حسب أداء الجهاز */
+
 function detectQuality(): "high" | "medium" | "low" {
   const cores = navigator.hardwareConcurrency || 4;
   const memory = (navigator as any).deviceMemory || 4;
-
   if (cores >= 8 && memory >= 8) return "high";
   if (cores >= 4 && memory >= 4) return "medium";
   return "low";
@@ -147,12 +146,12 @@ const Threads: React.FC<ThreadsProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const animationFrameId = useRef<number>();
 
+  const selectedQuality = quality === "auto" ? detectQuality() : quality;
+
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (selectedQuality !== "high" || !containerRef.current) return;
+
     const container = containerRef.current;
-
-    const selectedQuality = quality === "auto" ? detectQuality() : quality;
-
     const renderer = new Renderer({ alpha: true });
     const gl = renderer.gl;
     gl.clearColor(0, 0, 0, 0);
@@ -161,9 +160,8 @@ const Threads: React.FC<ThreadsProps> = ({
     container.appendChild(gl.canvas);
 
     const geometry = new Triangle(gl);
-
-    const lineCount = selectedQuality === "high" ? 40 : selectedQuality === "medium" ? 25 : 15;
-    const scaleFactor = selectedQuality === "high" ? 1 : selectedQuality === "medium" ? 0.7 : 0.5;
+    const lineCount = 40; // فقط للجودة high
+    const scaleFactor = 1;
 
     const program = new Program(gl, {
       vertex: vertexShader,
@@ -238,7 +236,12 @@ const Threads: React.FC<ThreadsProps> = ({
       if (container.contains(gl.canvas)) container.removeChild(gl.canvas);
       gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
-  }, [color, amplitude, distance, enableMouseInteraction, quality]);
+  }, [selectedQuality, color, amplitude, distance, enableMouseInteraction]);
+
+  // **الخلفية البيضاء إذا لم تكن الجودة High**
+  if (selectedQuality !== "high") {
+    return <div className="w-full h-full relative bg-white" {...rest} />;
+  }
 
   return <div ref={containerRef} className="w-full h-full relative" {...rest} />;
 };
