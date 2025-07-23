@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 const NotFound = () => {
+  const daherUser = JSON.parse(localStorage.getItem('DaherUser'))
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
       <Card className="w-full max-w-md">
@@ -22,9 +23,9 @@ const NotFound = () => {
 
           <div className="space-y-3">
             <Button asChild className="w-full">
-              <Link to="/dashboard">
+              <Link to={['admin', 'dealer'].includes(daherUser.role) ? `/dashboard` : '/invoices'}>
                 <Home className="mr-2 h-4 w-4" />
-                Go to Dashboard
+                {['admin', 'dealer'].includes(daherUser.role) ? 'Go to Dashboard' : 'Go to Invoices'}
               </Link>
             </Button>
             <Button variant="outline" onClick={() => window.history.back()}>
