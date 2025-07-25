@@ -30,13 +30,13 @@ function Invoice(){
     const handleFormSubmit = () => closeModal();
 
     const [payIsOpen, setPayIsOpen] = useState(false);
-        const [payOrInv, setPayOrInv] = useState("pay");
-        const closePayModal = () => setPayIsOpen(false);
-        const openAddBalanceForm = () => setPayIsOpen(true);
-      
-        const handlePayFormSubmit = () => {
-          closePayModal(); // إغلاق النموذج بعد الإرسال
-        }; 
+    const [payOrInv, setPayOrInv] = useState("pay");
+    const closePayModal = () => setPayIsOpen(false);
+    const openAddBalanceForm = () => setPayIsOpen(true);
+    
+    const handlePayFormSubmit = () => {
+      closePayModal(); // إغلاق النموذج بعد الإرسال
+    }; 
 
     const [loading, setLoading] = useState(false);
     

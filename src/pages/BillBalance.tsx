@@ -1,5 +1,6 @@
 import { DataTable } from '@/components/dashboard/DataTable'
 import { StatsCard } from '@/components/dashboard/StatsCard';
+import AddBalanceForm from '@/components/invoices/AddBalanceForm';
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { getDailyBalance, getEmployeeBalanceTable } from '@/services/balance';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,6 +32,15 @@ export default function BillBalance() {
     const [totalBalance, setTotalBalance] = useState(0)
     const [todayBalance, setTodayBalance] = useState(0)
     const [BalanceByEmployee, setBalanceByEmployee] = useState([])
+
+    const [payIsOpen, setPayIsOpen] = useState(false);
+    const [payOrInv, setPayOrInv] = useState("pay");
+    const closePayModal = () => setPayIsOpen(false);
+    const openAddBalanceForm = () => setPayIsOpen(true);
+    
+    const handlePayFormSubmit = () => {
+      closePayModal(); // إغلاق النموذج بعد الإرسال
+    }; 
 
     useEffect(() => {
 
@@ -87,45 +97,68 @@ export default function BillBalance() {
 
     return (
 
-        <DashboardLayout>
+        <>
+            <DashboardLayout>
 
-            <div dir='rtl' className='space-y-6'>
+                <div dir='rtl' className='space-y-6'>
 
-                <div dir="rtl" className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div dir="rtl" className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 
-                    <StatsCard
-                        title="الرصيد الحالي"
-                        value={totalBalance || 0}
-                        description=""
-                        icon={BoxIcon}
+                        <div className="">
+                            <div className='flex flex-col w-full'>
+                                <StatsCard
+                                    title="الرصيد الحالي"
+                                    value={totalBalance || 0}
+                                    description=""
+                                    icon={BoxIcon}
+                                    className='rounded-b-none'
+                                />
+                                <div className='w-full'>
+                                    <button onClick={()=>{
+                                        setPayOrInv("pay")
+                                        openAddBalanceForm()
+                                    }} 
+                                    className="p-2 w-1/2 bg-primary-500 text-white rounded-br hover:bg-primary-600"
+                                    >قبض</button>
+                                    <button 
+                                    onClick={()=>{
+                                        setPayOrInv("inv")
+                                        openAddBalanceForm()
+                                    }}
+                                    className="p-2 w-1/2 bg-red-500 text-white rounded-bl hover:bg-red-600"
+                                    >دفع</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <StatsCard
+                            title="صناديق اليوم"
+                            value={todayBalance || 0}
+                            description=""
+                            icon={Plus}
+                        />
+
+                    </div>
+
+                    <DataTable
+                        title='الرصيد'
+                        description={`المجموع ${totalBalance - todayBalance}`}
+                        columns={BalanceColumns}
+                        data={balance ? balance.reverse() : []}
                     />
-                    <StatsCard
-                        title="صناديق اليوم"
-                        value={todayBalance || 0}
-                        description=""
-                        icon={Plus}
+
+                    <DataTable  
+                        searchable={false}
+                        title=''
+                        description=''
+                        columns={BalanceByEmployeeColumns}
+                        data={BalanceByEmployee ? BalanceByEmployee : []}
                     />
 
                 </div>
 
-                <DataTable
-                    title='الرصيد'
-                    description={`المجموع ${totalBalance - todayBalance}`}
-                    columns={BalanceColumns}
-                    data={balance ? balance.reverse() : []}
-                />
-                
-                <DataTable  
-                    searchable={false}
-                    title=''
-                    description=''
-                    columns={BalanceByEmployeeColumns}
-                    data={BalanceByEmployee ? BalanceByEmployee : []}
-                />
-
-            </div>
-
-        </DashboardLayout>
-
+            </DashboardLayout>
+            <AddBalanceForm mahal={true} payOrInv={payOrInv} isOpen={payIsOpen} onClose={closePayModal} onSubmit={handlePayFormSubmit} />
+        </>
     )
 }
