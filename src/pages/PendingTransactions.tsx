@@ -60,16 +60,6 @@ export default function PendingTransactions() {
     { key: 'createdAt', label: 'الوقت', sortable: true },
   ];
 
-  if (pendingLoading) {
-    return (
-      <DashboardLayout>
-        <div dir="rtl" className="space-y-6 text-center text-lg font-semibold">
-          جارِ تحميل البيانات...
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   useEffect(() => {
     if ("Notification" in window) {
       Notification.requestPermission().then(permission => {
@@ -105,7 +95,15 @@ export default function PendingTransactions() {
     }
   }, [pendingData]);
 
-  
+    if (pendingLoading) {
+    return (
+      <DashboardLayout>
+        <div dir="rtl" className="space-y-6 text-center text-lg font-semibold">
+          جارِ تحميل البيانات...
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
