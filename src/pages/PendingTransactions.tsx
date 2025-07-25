@@ -5,7 +5,7 @@ import PopupForm from '@/components/ui/custom/PopupForm';
 import { Input } from '@/components/ui/input';
 import getPendingInvoices, { confirmInvoice, rejectInvoice } from '@/services/invoices';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { io, Socket } from "socket.io-client";
 
 export default function PendingTransactions() {
@@ -69,6 +69,43 @@ export default function PendingTransactions() {
       </DashboardLayout>
     );
   }
+
+  useEffect(() => {
+    if ("Notification" in window) {
+      Notification.requestPermission().then(permission => {
+        console.log("Notification permission:", permission);
+      });
+    }
+  }, []);
+  
+  const prevDataRef = useRef<any[]>([]);
+
+  useEffect(() => {
+    if (pendingData && pendingData.length > 0) {
+      const prevData = prevDataRef.current;
+
+      // استخراج الطلبات الجديدة فقط
+      const newItems = pendingData.filter(
+        (item) => !prevData.some((prev) => prev._id === item._id)
+      );
+
+      if (newItems.length > 0) {
+        // إرسال إشعار بأول عنصر جديد كمثال
+        new Notification("طلب دفع جديد", {
+          body: `المبلغ: ${newItems[0].amount} - الشركة: ${newItems[0].company}`,
+          icon: "/logo.png"
+        });
+
+        const audio = new Audio("/notification.mp3");
+        audio.play();
+      }
+
+      // تحديث النسخة السابقة
+      prevDataRef.current = pendingData;
+    }
+  }, [pendingData]);
+
+  
 
   return (
     <DashboardLayout>

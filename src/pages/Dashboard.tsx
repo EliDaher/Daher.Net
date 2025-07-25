@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Users,
@@ -36,6 +36,46 @@ export default function Dashboard() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const queryClient = useQueryClient();
 
+  const { data: pendingData, isLoading: pendingLoading } = useQuery({
+    queryKey: ['pending-table'],
+    queryFn: getPendingInvoices,
+  });
+
+  useEffect(() => {
+    if ("Notification" in window) {
+      Notification.requestPermission().then(permission => {
+        console.log("Notification permission:", permission);
+      });
+    }
+  }, []);
+  
+  const prevDataRef = useRef<any[]>([]);
+  
+  useEffect(() => {
+    if (pendingData && pendingData.length > 0) {
+      const prevData = prevDataRef.current;
+
+      // استخراج الطلبات الجديدة فقط
+      const newItems = pendingData.filter(
+        (item) => !prevData.some((prev) => prev._id === item._id)
+      );
+
+      if (newItems.length > 0) {
+        // إرسال إشعار بأول عنصر جديد كمثال
+        new Notification("طلب دفع جديد", {
+          body: `المبلغ: ${newItems[0].amount} - الشركة: ${newItems[0].company}`,
+          icon: "/logo.png"
+        });
+
+        const audio = new Audio("/notification.mp3");
+        audio.play();
+      }
+
+      // تحديث النسخة السابقة
+      prevDataRef.current = pendingData;
+    }
+  }, [pendingData]);
+  
 
   useEffect(() => {
     const newSocket = io("https://paynet-cdji.onrender.com");
@@ -113,11 +153,6 @@ export default function Dashboard() {
     setTotalBalance(temValue)
     
   }, [todayBalance])
-  
-  const { data: pendingData, isLoading: pendingLoading } = useQuery({
-    queryKey: ['pending-table'],
-    queryFn: getPendingInvoices,
-  });
 
   return (
     <DashboardLayout>
