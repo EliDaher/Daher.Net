@@ -67,7 +67,7 @@ export default function Dashboard() {
           icon: "/logo.png"
         });
 
-        const audio = new Audio("/notification.mp3");
+        const audio = new Audio("../../public/notification.mp3");
         audio.play();
       }
 

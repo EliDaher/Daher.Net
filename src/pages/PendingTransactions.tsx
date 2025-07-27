@@ -3,7 +3,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import PopupForm from '@/components/ui/custom/PopupForm';
 import { Input } from '@/components/ui/input';
-import getPendingInvoices, { confirmInvoice, rejectInvoice } from '@/services/invoices';
+import getPendingInvoices, { confirmInvoice, rejectInvoice, startPayment } from '@/services/invoices';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useRef } from 'react';
 import { io, Socket } from "socket.io-client";
@@ -44,6 +44,13 @@ export default function PendingTransactions() {
 
   const deleteMutation = useMutation({
     mutationFn: (data: { payment: object; reason: string }) => rejectInvoice(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pending-table'] });
+    },
+  });
+  
+  const startMutation = useMutation({
+    mutationFn: ( id: string ) => startPayment(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pending-table'] });
     },
@@ -144,11 +151,13 @@ export default function PendingTransactions() {
       {/* جدول الفواتير */}
       <div dir="rtl" className="space-y-6">
         <DataTable
+          amountBold={true}
           title="تسديدات معلقة"
           description=""
           columns={invoicesColumns}
           data={pendingData || []}
           renderRowActions={(row) => (
+            row.status != 'جاري التسديد' ? (
             <div className="flex gap-2">
               <Button
                 variant="default"
@@ -170,6 +179,21 @@ export default function PendingTransactions() {
                 {deleteMutation.isPending ? '...' : 'رفض'}
               </Button>
             </div>
+            ) : (
+              <>
+                <div>
+                  <Button
+                    variant='default'
+                    disabled={startMutation.isPending}
+                    onClick={()=>{
+                      startMutation.mutate(row._id)
+                    }}
+                  >
+                    {startMutation.isPending ? '...' : 'بدء التنفيذ'}
+                  </Button>
+                </div>
+              </>
+            )
           )}
         />
       </div>

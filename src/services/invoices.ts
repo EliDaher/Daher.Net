@@ -70,3 +70,13 @@ export async function rejectInvoice({payment, reason}: any) {
         return { success: false, error };
     }
 }
+
+export async function startPayment(id: string){
+    try {
+        const res = await invoiceClient.patch(`/api/admin/start/${id}`)
+        return res.data;
+    } catch (error) {
+        console.error("Error getting invoices:", error);
+        return { success: false, error };
+    }
+}

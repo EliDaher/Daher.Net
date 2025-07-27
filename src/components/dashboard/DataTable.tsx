@@ -41,6 +41,7 @@ interface DataTableProps {
   defaultPageSize?: number;
   getRowClassName?: (row: TableData) => string;
   renderRowActions?: (row: TableData) => React.ReactNode;
+  amountBold?: boolean
 }
 
 export function DataTable({
@@ -54,6 +55,7 @@ export function DataTable({
   defaultPageSize = 10,
   getRowClassName,
   renderRowActions,
+  amountBold = false,
 }: DataTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{
@@ -108,6 +110,9 @@ export function DataTable({
     }
     if (key === "createdAt" || key === "date") {
       return <span className="text-muted-foreground">{new Date(value).toLocaleString("en-GB")}</span>;
+    }
+    if (key === "amount" && amountBold) {
+      return <span className="text-primary font-extrabold text-xl">{value}</span>;
     }
     return value;
   };
