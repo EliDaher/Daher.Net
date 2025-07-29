@@ -88,6 +88,7 @@ export default function POSPayments() {
                     data={paymentData ? paymentData : []}
                     renderRowActions={(row: any) => (
                         <Button
+                            disabled={confirmMutation.isPending ? true : false}
                             variant={row.isConfirmed ? "default" : "destructive"}
                             className="capitalize"
                             onClick={()=>{
@@ -95,7 +96,7 @@ export default function POSPayments() {
                                 setIsOpen(true)
                             }}
                           >
-                          {row.isConfirmed ? "تم التأكيد" : 'بحاجة الى تأكيد'}
+                          {confirmMutation.isPending ? '...' : row.isConfirmed ? "تم التأكيد" : 'بحاجة الى تأكيد'}
                         </Button>
                     )}
                 />

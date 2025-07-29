@@ -186,6 +186,18 @@ export default function PendingTransactions() {
                     variant='default'
                     disabled={startMutation.isPending}
                     onClick={()=>{
+                      const number = row.landline as string;
+
+                      let textToCopy = number;
+
+                      if (number.startsWith('033')) {
+                        textToCopy = number.slice(3); 
+                      } else if (number.startsWith('33')) {
+                        textToCopy = number.slice(2);
+                      }
+
+                      navigator.clipboard.writeText(textToCopy)
+
                       startMutation.mutate(row._id)
                     }}
                   >
