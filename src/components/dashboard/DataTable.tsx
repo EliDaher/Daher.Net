@@ -108,7 +108,7 @@ export function DataTable({
     if (key === "email") {
       return <span className="text-muted-foreground">{value}</span>;
     }
-    if (key === "createdAt" || key === "date") {
+    if (key === "createdAt" || key === "date" || key === 'timestamp') {
       return <span className="text-muted-foreground">{new Date(value).toLocaleString("en-GB")}</span>;
     }
     if (key === "amount" && amountBold) {

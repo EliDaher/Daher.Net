@@ -24,6 +24,9 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useReactToPrint } from "react-to-print";
 import dayjs from "dayjs";
+import { getPendingExchange } from "@/services/exchange";
+import ExchangeFrom from "@/components/balance/exchangeFrom";
+import DoneExForm from "@/components/balance/DoneExForm";
 
 export default function Balance() {
   const navigate = useNavigate()
@@ -32,6 +35,9 @@ export default function Balance() {
   const [customers, setCustomers] = useState([])
   const [todayTotal, setTodayTotal] = useState(0)
   const [monthTotal, setMonthTotal] = useState(0)
+  
+  const [openRowId, setOpenRowId] = useState<string | null>(null);
+  const [isOpenEx, setIsOpenEx] = useState(false);
 
   const [isOpen, setIsOpen] = useState(false);
   const [formTitle, setFormTitle] = useState("");
@@ -128,12 +134,39 @@ export default function Balance() {
     queryFn: apiService.getDashboardStats,
   });
 
+  const { data: pendingData, isLoading: pendingLoading } = useQuery({
+    queryKey: ['pendingEx'],
+    queryFn: getPendingExchange,
+  })
+
+    const totalAmounts = useMemo(() => {
+    let sypTotal = 0;
+    let usdTotal = 0;
+
+    pendingData?.pendingList.forEach((item) => {
+      sypTotal += item.sypAmount || 0;
+      usdTotal += item.usdAmount || 0;
+    });
+
+    return {
+      sypTotal,
+      usdTotal,
+    };
+  }, [pendingData]); 
+
 
   const { data: monthly, isLoading: monthlyLoading } = useQuery({
     queryKey: ["monthlyRevenue"],
     queryFn: monthlyRevenue,
   });
 
+  const PendingColumns = [
+    { key: "id", label: "المعرف", sortable: true, hidden: true },
+    { key: "sypAmount", label: "السوري", sortable: true },
+    { key: "usdAmount", label: "دولار", sortable: true },
+    { key: "details", label: "التفاصيل", sortable: true },
+    { key: "timestamp", label: "الوقت", sortable: true },
+  ];
   const BalanceColumns = [
     { key: "amount", label: "الكمية", sortable: true },
     { key: "details", label: "التفاصيل", sortable: true },
@@ -381,7 +414,9 @@ export default function Balance() {
               description=" . اليوم"
               icon={CreditCard}
               trend={{ value: todayTotal || 0, isPositive: true }}
-              />
+            />
+
+
             <StatsCard
             onClick={()=>{
               navigate('/users', {state: 'unpaid'})
@@ -392,13 +427,22 @@ export default function Balance() {
               icon={HandCoins}
               trend={{ value: stats?.userGrowth || 0, isPositive: true }}
             />
-            <StatsCard
-              title="للتحويل"
-              value={0}
-              description=""
-              icon={Coins}
-              trend={{ value: stats?.userGrowth || 0, isPositive: true }}
-            />
+
+            <div className="flex flex-col">
+              <StatsCard
+                className="rounded-b-none"
+                title="للتحويل"
+                value={totalAmounts.sypTotal}
+                description=" . دولار"
+                icon={Coins}
+                trend={{ value: totalAmounts?.usdTotal || 0, isPositive: false }}
+              />
+              <ExchangeFrom
+                className={'rounded-t-none w-full'}
+                isOpen={isOpenEx}
+                setIsOpen={setIsOpenEx} 
+              ></ExchangeFrom>
+            </div>
           </div>
           }
 
@@ -434,6 +478,25 @@ export default function Balance() {
             columns={PaymentsColumns}
             data={balance?.WifiPayments ? [...balance.WifiPayments].reverse() : []}
           />
+          <div>
+            <DataTable
+              title="دفعات للتحويل"
+              description=""
+              columns={PendingColumns}
+              data={pendingData?.pendingList ? pendingData?.pendingList : []}
+              renderRowActions={(x) => (
+                  <DoneExForm 
+                    isOpen={openRowId === x.id}
+                    setIsOpen={(v) => setOpenRowId(v ? x.id : null)}
+                    className=""
+                    SYPAmount={x.sypAmount}
+                    USDAmount={x.usdAmount}
+                    pendingId={x.id}
+                  />
+                )
+              }
+            />
+          </div>
         </div>
       </div>
     </DashboardLayout>
