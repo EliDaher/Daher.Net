@@ -183,14 +183,16 @@ export default function Dashboard() {
             value={unpaidValue || 0}
             icon={CreditCard}
           />
-          <StatsCard
+          { daherUser.role != 'admin' ? <></> : <>
+            <StatsCard
             onClick={()=>{
               navigate('/PendingTransactions')
             }}
             title="الفواتير الغير مدفوعة"
             value={pendingData ? pendingData.length : 0}
             icon={ReceiptIcon}
-          />
+            />
+          </>}
         </div>
 
         {/* Charts Section */}

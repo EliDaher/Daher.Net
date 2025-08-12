@@ -201,7 +201,7 @@ export function DataTable({
 
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-muted-foreground">Rows per page:</span>
+            <span className="text-sm text-muted-foreground">عدد الاسطر :</span>
             <select
               className="border rounded px-2 py-1 text-sm"
               value={pageSize}
@@ -224,7 +224,7 @@ export function DataTable({
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" />
             </Button>
             <span className="text-sm">
               Page {currentPage} of {totalPages || 1}
@@ -235,7 +235,7 @@ export function DataTable({
               onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages || totalPages === 0}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4" />
             </Button>
           </div>
         </div>

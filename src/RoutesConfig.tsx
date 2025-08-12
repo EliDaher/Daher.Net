@@ -1,5 +1,6 @@
 import React from "react";
 import { PrivateRoute } from "@/components/auth/PrivateRoute";
+import POSUsers from "./pages/POSUsers";
 
 // Lazy Loading للصفحات
 const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
@@ -33,5 +34,6 @@ export const routesConfig = [
   { path: "/DoneTransactions", element: <PrivateRoute allowedRoles={["admin", "employee"]}><DoneTransactions /></PrivateRoute> },
   { path: "/POSPayments", element: <PrivateRoute allowedRoles={["admin", "employee"]}><POSPayments /></PrivateRoute> },
   { path: "/BillBalance", element: <PrivateRoute allowedRoles={["admin", "employee"]}><BillBalance /></PrivateRoute> },
+  { path: "/POSUsers", element: <PrivateRoute allowedRoles={["admin"]}><POSUsers /></PrivateRoute> },
   { path: "*", element: <NotFound /> }
 ];

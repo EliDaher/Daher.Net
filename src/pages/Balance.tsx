@@ -25,7 +25,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useReactToPrint } from "react-to-print";
 import dayjs from "dayjs";
 import { getPendingExchange } from "@/services/exchange";
-import ExchangeFrom from "@/components/balance/exchangeFrom";
+import ExchangeFrom from "@/components/balance/ExchangeFrom";
 import DoneExForm from "@/components/balance/DoneExForm";
 
 export default function Balance() {

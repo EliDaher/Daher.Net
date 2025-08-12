@@ -13,6 +13,7 @@ import {
   CheckIcon,
   ArrowDownCircle,
   Wallet,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ const navigationGroups = [
   {
     title: "POS",
     items: [
+      { name: "Users", href: "/POSUsers", icon: User, allowed: ["admin"] },
       { name: "Pending Transactions", href: "/PendingTransactions", icon: FileText, allowed: ["admin", "employee"] },
       { name: "Done Transactions", href: "/DoneTransactions", icon: CheckIcon, allowed: ["admin", "employee"] },
       { name: "Payments", href: "/POSPayments", icon: ArrowDownCircle, allowed: ["admin", "employee"] },
