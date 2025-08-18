@@ -19,7 +19,7 @@ export default function POSPayments() {
         mutationFn: ({ id, email, amount }: { id: any, email: string; amount: any }) => 
             confirmPayment(id, email, amount),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['done-table'] });
+            queryClient.invalidateQueries({ queryKey: ['payment-table'] });
         },
     });
 
