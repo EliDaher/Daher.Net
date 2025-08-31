@@ -3,7 +3,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import PopupForm from "@/components/ui/custom/PopupForm";
 import { Input } from "@/components/ui/input";
-import getPOSUsers, { addPOSPayment, endPOSDebt, getPOSDebt } from "@/services/pos";
+import getPOSUsers, { addPOSPayment, addPOSUser, endPOSDebt, getPOSDebt } from "@/services/pos";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
@@ -12,6 +12,22 @@ export default function POSUsers() {
     const [amount, setAmount] = useState(0)
     const [openUserId, setOpenUserId] = useState(null);
     const queryClient = useQueryClient();
+    const [formData, setFormData] = useState({
+      username: "",
+      agent: "",
+      owner: "",
+      password: "",
+      number : "",
+      createdAt: new Date().toISOString().split("T")[0],
+    });
+
+    const handleChange = (e) => {
+      setFormData({
+        ...formData,
+        [e.target.name]: e.target.value,
+      });
+    };
+
 
     const { data: posData, isLoading: posLoading } = useQuery({
         queryKey: ['POSUsers-table'],
@@ -52,6 +68,21 @@ export default function POSUsers() {
             alert('حدث خطأ أثناء الإرسال.');
         }
     });
+    
+    const addPoint = useMutation({
+        mutationFn: addPOSUser,
+        onSuccess: () => {
+            alert('تم اضافة نقطة البيع.');
+            queryClient.invalidateQueries({
+                queryKey: ['POSUsers-table'],
+            });
+            setOpenUserId(null)
+            setAmount(0)
+        },
+        onError: () => {
+            alert('حدث خطأ أثناء الإرسال.');
+        }
+    });
 
     const posColumns = [
         { key: '_id', label: 'المعرف', sortable: true, hidden: true },
@@ -71,7 +102,6 @@ export default function POSUsers() {
         { key: 'operator', label: 'المنفذ', sortable: true },
         { key: 'amount', label: 'الكمية', sortable: true },
         { key: 'date', label: 'التاريخ', sortable: true },
-        { key: 'status', label: 'الحالة', sortable: true },
     ];
 
     const totalDebt = useMemo(() => {
@@ -101,10 +131,10 @@ export default function POSUsers() {
                     description={totalBalances}
                     columns={posColumns}
                     data={posData}
-                    renderRowActions={(row) => (
+                    renderRowActions={(row) => (<div className="flex gap-2">
                         <PopupForm
                             title="اضافة دفعة لنقطة البيع"
-                            trigger={<Button>اضافة دفعة</Button>}
+                            trigger={<Button variant="accent">اضافة دفعة</Button>}
                             isOpen={openUserId === row._id}
                             setIsOpen={(open) => setOpenUserId(open ? row._id : null)}
                         >
@@ -127,7 +157,71 @@ export default function POSUsers() {
                                 </form>
                             </div>
                         </PopupForm>
-                    )}
+                        <PopupForm
+                            title="إضافة نقطة بيع"
+                            trigger={<Button>اضافة نقطة بيع فرعية</Button>}
+                            isOpen={openUserId === row._id}
+                            setIsOpen={(open) => setOpenUserId(open ? row._id : null)}
+                        >
+                            <div>
+                                <form 
+
+                                    className="gap-4 flex flex-col"
+                                    onSubmit={(e)=>{
+                                        e.preventDefault()
+                                        addPoint.mutate({formData: formData, email: row.email})
+                                    }}
+                                >
+
+                                    <Input
+                                      type="text"
+                                      name="username"
+                                      placeholder="اسم المستخدم"
+                                      value={formData.username}
+                                      onChange={handleChange}
+                                      className="w-full border px-3 py-2 rounded"
+                                    />
+                                    <Input
+                                      type="text"
+                                      name="password"
+                                      placeholder="كلمة المرور"
+                                      value={formData.password}
+                                      onChange={handleChange}
+                                      className="w-full border px-3 py-2 rounded"
+                                    />
+                                    <Input
+                                      type="text"
+                                      name="number"
+                                      placeholder="رقم الخليوي"
+                                      value={formData.number}
+                                      onChange={handleChange}
+                                      className="w-full border px-3 py-2 rounded"
+                                    />
+                                    <Input
+                                      type="text"
+                                      name="agent"
+                                      placeholder="الوكيل"
+                                      value={row.email}
+                                      readOnly
+                                      onChange={handleChange}
+                                      className="w-full border px-3 py-2 rounded"
+                                    />
+
+                                    <Input
+                                      type="text"
+                                      name="owner"
+                                      placeholder="اسم صاحب النقطة"
+                                      value={formData.owner}
+                                      onChange={handleChange}
+                                      className="w-full border px-3 py-2 rounded"
+                                    />
+
+                                    <Button>{mutation.isPending ? 'جاري التاكيد ...' : 'تأكيد'}</Button>
+
+                                </form>
+                            </div>
+                        </PopupForm>
+                    </div>)}
                 />
 
                 <DataTable
@@ -136,7 +230,7 @@ export default function POSUsers() {
                     columns={debtColumns}
                     data={debtData}
                     renderRowActions={(row) => {
-                        return (
+                        return (<>
                             <Button
                                 disabled={endDebtMutation.isPending}
                                 onClick={()=>{
@@ -149,7 +243,7 @@ export default function POSUsers() {
                                     
                                 }}
                             >{endDebtMutation.isPending ? 'جاري الانهاء...' : 'انهاء الدين'}</Button>
-                        )
+                        </>)
                     }}
                 />
             </div>

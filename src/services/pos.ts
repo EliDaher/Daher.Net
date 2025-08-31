@@ -47,3 +47,16 @@ export async function endPOSDebt({id, email, amount}) {
         return { success: false, error };
     }
 }
+
+export async function addPOSUser({formData, email}) {
+    try {
+        const res = await invoiceClient.post(`/api/point/add-point`,{
+            formData,
+            email,
+        });
+        return res.data;
+    } catch (error) {
+        console.error("Error getting invoices:", error);
+        return { success: false, error };
+    }
+}
