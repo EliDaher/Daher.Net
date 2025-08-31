@@ -145,7 +145,7 @@ export function DataTable({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="overflow-x-auto rounded-md border">
-          <Table>
+          <Table className="">
             <TableHeader>
               <TableRow>
                 {columns.map((column) => (
@@ -171,7 +171,7 @@ export function DataTable({
                 {renderRowActions && <TableHead>Actions</TableHead>}
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="">
               {paginatedData.length > 0 ? (
                 paginatedData.map((row, index) => (
                   <TableRow

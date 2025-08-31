@@ -3,7 +3,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import PopupForm from "@/components/ui/custom/PopupForm";
 import { Input } from "@/components/ui/input";
-import getPOSUsers, { addPOSPayment, getPOSDebt } from "@/services/pos";
+import getPOSUsers, { addPOSPayment, endPOSDebt, getPOSDebt } from "@/services/pos";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
@@ -27,6 +27,21 @@ export default function POSUsers() {
         mutationFn: addPOSPayment,
         onSuccess: () => {
             alert('تمت إضافة الدفعة.');
+            queryClient.invalidateQueries({
+                queryKey: ['POSdebt-table'],
+            });
+            setOpenUserId(null)
+            setAmount(0)
+        },
+        onError: () => {
+            alert('حدث خطأ أثناء الإرسال.');
+        }
+    });
+    
+    const endDebtMutation = useMutation({
+        mutationFn: endPOSDebt,
+        onSuccess: () => {
+            alert('تم انهاء الدين.');
             queryClient.invalidateQueries({
                 queryKey: ['POSdebt-table'],
             });
@@ -79,8 +94,9 @@ export default function POSUsers() {
 
     return (
         <DashboardLayout>
-            <div dir="rtl" className="grid gap-6 lg:grid-cols-2">
+            <div dir="rtl" className="">
                 <DataTable
+                    className="mb-4"
                     title="نقاط البيع"
                     description={totalBalances}
                     columns={posColumns}
@@ -119,6 +135,22 @@ export default function POSUsers() {
                     description={totalDebt}
                     columns={debtColumns}
                     data={debtData}
+                    renderRowActions={(row) => {
+                        return (
+                            <Button
+                                disabled={endDebtMutation.isPending}
+                                onClick={()=>{
+                                    window.confirm('هل انت متأكد من العملية ؟') &&
+                                    endDebtMutation.mutate({
+                                        id: row._id,
+                                        email: row.email,
+                                        amount: row.amount
+                                    })
+                                    
+                                }}
+                            >{endDebtMutation.isPending ? 'جاري الانهاء...' : 'انهاء الدين'}</Button>
+                        )
+                    }}
                 />
             </div>
         </DashboardLayout>
