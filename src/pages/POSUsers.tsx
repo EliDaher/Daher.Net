@@ -11,6 +11,7 @@ export default function POSUsers() {
 
     const [amount, setAmount] = useState(0)
     const [openUserId, setOpenUserId] = useState(null);
+    const [openUserId2, setOpenUserId2] = useState(null);
     const queryClient = useQueryClient();
     const [formData, setFormData] = useState({
       username: "",
@@ -160,8 +161,8 @@ export default function POSUsers() {
                         <PopupForm
                             title="إضافة نقطة بيع"
                             trigger={<Button>اضافة نقطة بيع فرعية</Button>}
-                            isOpen={openUserId === row._id}
-                            setIsOpen={(open) => setOpenUserId(open ? row._id : null)}
+                            isOpen={openUserId2 === row._id}
+                            setIsOpen={(open) => setOpenUserId2(open ? row._id : null)}
                         >
                             <div>
                                 <form 
