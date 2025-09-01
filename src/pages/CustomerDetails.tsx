@@ -90,7 +90,7 @@ export default function CustomerDetails() {
         details: paymentDetails,
         subscriberID: id,
         total: Number(customer.Balance) || 0,
-        dealer: daherUser.role === 'dealer' ? daherUser.name : undefined,
+        dealer: daherUser.role === 'dealer' ? daherUser.username : undefined,
       };
     
       let res;
