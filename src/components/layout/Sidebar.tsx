@@ -31,6 +31,7 @@ const navigationGroups = [
     items: [
       { name: "Customers", href: "/users", icon: Users, allowed: ["admin", "dealer"] },
       { name: "Balance", href: "/balance", icon: WalletIcon, allowed: ["admin"] },
+      { name: "Balance", href: "/dealerBalance", icon: WalletIcon, allowed: ["dealer"] },
     ],
     allowed: ["admin", "dealer"]
   },

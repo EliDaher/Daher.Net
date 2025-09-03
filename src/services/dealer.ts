@@ -1,4 +1,5 @@
 import apiClient from "@/lib/axios";
+import { subscribe } from "diagnostics_channel";
 
 
 export default async function addPaymentDealer(data: {
@@ -10,9 +11,24 @@ export default async function addPaymentDealer(data: {
   dealer?: string;
 }) {
   try {
-    console.log(data)
     const response = await apiClient.post("/api/dealer/addPayment", data);
-    return response.data; // { message, paymentID, newTotal }
+    return response.data;
+  } catch (error) {
+    console.error("Error adding payment:", error);
+    return { success: false, error };
+  }
+}
+
+export async function getPaymentDealer() {
+  try {
+    const response = await apiClient.get("/api/dealer/getPayments");
+    const data: any = Object.values(response.data.Payments)
+    const DataWithNmae = data.map(d => ({
+        ...d,
+        subscriberName: d.subscriber?.Name
+      })
+    ) 
+    return DataWithNmae;
   } catch (error) {
     console.error("Error adding payment:", error);
     return { success: false, error };

@@ -11,6 +11,7 @@ const Login = React.lazy(() => import("@/pages/Login"));
 const SignUp = React.lazy(() => import("@/pages/SignUp"));
 const UnauthorizedPage = React.lazy(() => import("@/pages/Unauthorized"));
 const CustomerDetails = React.lazy(() => import("@/pages/CustomerDetails"));
+const DealerBalance = React.lazy(() => import("@/pages/DealerBalance"));
 const Balance = React.lazy(() => import("@/pages/Balance"));
 const Invoices = React.lazy(() => import("@/pages/Invoices"));
 const MyBalance = React.lazy(() => import("@/pages/MyBalance"));
@@ -24,6 +25,7 @@ export const routesConfig = [
   { path: "/signUp", element: <SignUp /> },
   { path: "/unauthorized", element: <UnauthorizedPage /> },
   { path: "/dashboard", element: <PrivateRoute allowedRoles={["admin", "dealer"]}><Dashboard /></PrivateRoute> },
+  { path: "/dealerBalance", element: <PrivateRoute allowedRoles={["dealer", "admin"]}><DealerBalance /></PrivateRoute> },
   { path: "/balance", element: <PrivateRoute allowedRoles={["admin"]}><Balance /></PrivateRoute> },
   { path: "/users", element: <PrivateRoute allowedRoles={["admin", "dealer"]}><Users /></PrivateRoute> },
   { path: "/CustomerDetails/:id", element: <PrivateRoute allowedRoles={["admin", "dealer"]}><CustomerDetails /></PrivateRoute> },

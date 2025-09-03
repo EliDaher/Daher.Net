@@ -367,15 +367,15 @@ export default function Balance() {
         {/* Stats Cards */}
           {balanceLoading ? 
           <div dir="rtl" className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div className="animate-pulse">
-            <StatsCard
-              title="الرصيد الحالي"
-              value={0}
-              description=" . فرق عن الشهر السابق"
-              icon={TrendingUp}
-              trend={{ value: 0, isPositive: true  }}
+            <div className="animate-pulse">
+              <StatsCard
+                title="الرصيد الحالي"
+                value={0}
+                description=" . فرق عن الشهر السابق"
+                icon={TrendingUp}
+                trend={{ value: 0, isPositive: true  }}
               />
-          </div>
+            </div>
           </div>
           :
           <div dir="rtl" className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -418,9 +418,9 @@ export default function Balance() {
 
 
             <StatsCard
-            onClick={()=>{
-              navigate('/users', {state: 'unpaid'})
-            }}
+              onClick={()=>{
+                navigate('/users', {state: 'unpaid'})
+              }}
               title="الديون"
               value={unpaidValue || 0}
               description=""
