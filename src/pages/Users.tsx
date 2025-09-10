@@ -122,7 +122,7 @@ export default function Users() {
   };
 
   useEffect(()=>{
-    if(daherUser.role != 'admin'){
+    if(daherUser.role == 'dealer'){
       setSelectedDealer(daherUser.username)
     }
   }, [])
@@ -292,7 +292,7 @@ export default function Users() {
               </Select>
             
               {/* السرعة */}
-              <Select disabled={daherUser.role != "admin" ? true : false} value={selectedDealer} onValueChange={setSelectedDealer}>
+              <Select disabled={daherUser.role == "dealer" ? true : false} value={selectedDealer} onValueChange={setSelectedDealer}>
                 <SelectTrigger className="w-36">
                   <SelectValue placeholder="البائع" />
                 </SelectTrigger>
