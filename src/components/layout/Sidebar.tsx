@@ -29,11 +29,11 @@ const navigationGroups = [
   {
     title: "WiFi",
     items: [
-      { name: "Customers", href: "/users", icon: Users, allowed: ["admin", "dealer"] },
+      { name: "Customers", href: "/users", icon: Users, allowed: ["admin", "dealer", "employee"] },
       { name: "Balance", href: "/balance", icon: WalletIcon, allowed: ["admin"] },
       { name: "Balance", href: "/dealerBalance", icon: WalletIcon, allowed: ["dealer"] },
     ],
-    allowed: ["admin", "dealer"]
+    allowed: ["admin", "dealer", "employee"]
   },
   {
     title: "Billing",
