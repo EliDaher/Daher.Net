@@ -62,7 +62,7 @@ export default function Analytics() {
       { sum: number; count: number; days: Set<string> }
     >();
 
-    data.forEach((item) => {
+    data?.forEach((item) => {
       // استخراج السنة والشهر واليوم
       const dateObj = new Date(item.createdAt);
       const year = dateObj.getFullYear();
