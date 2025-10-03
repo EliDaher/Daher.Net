@@ -2,6 +2,7 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { getDoneInvoices } from '@/services/invoices';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
 export default function DoneTransactions() {
 
