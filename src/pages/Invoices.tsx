@@ -6,10 +6,25 @@ import ConfirmInvForm from "@/components/invoices/ConfirmInvForm";
 import AddBalanceForm from "@/components/invoices/AddBalanceForm"; 
 import axios from "axios";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import PopupForm from "@/components/ui/custom/PopupForm";
+import { Button } from "@/components/ui/button";
+import FormInput from "@/components/ui/custom/FormInput";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { addMofadale } from "@/services/balance";
 
 
 function Invoice(){
     
+    const [daherUser, setDaherUser] = useState<any>()
+    
+    useEffect(()=>{
+      const temUser = JSON.parse(localStorage.getItem("DaherUser") || "null");
+      setDaherUser(temUser)
+    },[])
+    const [mofIsOpen, setMofIsOpen] = useState(false)
+    const [mofValue, setMofValue] = useState(0)
+    const [mofNote, setMofNote] = useState('')
+
     const [searchText, setSearchText] = useState({PhNumber: ""});
     const [work, setWork] = useState(false);
     const [internetTotal, setInternetTotal] = useState(0);    
@@ -40,6 +55,24 @@ function Invoice(){
 
     const [loading, setLoading] = useState(false);
     
+    
+    const queryClient = useQueryClient();
+    const mofMutation = useMutation({
+      mutationFn: (mofData: any) => addMofadale(mofData),
+      onSuccess: () => {
+        alert('✅ تمت إضافة الدفعة.');
+        queryClient.invalidateQueries({
+          queryKey: ['balance-table'],
+        });
+        setMofValue(0);
+        setMofNote("");
+        setMofIsOpen(false);
+      },
+      onError: () => {
+        alert('❌ حدث خطأ أثناء الإرسال.');
+      },
+    });
+
 
     const clearAllTables = () => {
         setInternetTotal(0)
@@ -99,6 +132,39 @@ function Invoice(){
                             }}
                             className="p-2 bg-red-500 text-white rounded hover:bg-red-600"
                             >دفع</button>
+                            <PopupForm
+                                isOpen={mofIsOpen}
+                                setIsOpen={setMofIsOpen}
+                                trigger={<Button>اضافة دفعة مفاضلة</Button>}
+                                title="دفع مفاضلة"
+                            >
+                                <form
+                                    className="space-y-4"
+                                    onSubmit={(e)=>{
+                                        e.preventDefault()
+                                        mofMutation.mutate({
+                                          value: mofValue,
+                                          note: mofNote,
+                                          Date: new Date().toISOString().split('T')[0],
+                                          employee: daherUser?.username 
+                                        });
+                                    }}
+                                >
+                                    <FormInput
+                                        id="mofValue"
+                                        value={mofValue.toString()}
+                                        onChange={e => {setMofValue(Number(e.target.value))}}
+                                        label="قيمة الدفعة"
+                                    />
+                                    <FormInput
+                                        id="mofNote"
+                                        value={mofNote}
+                                        onChange={e => {setMofNote(e.target.value)}}
+                                        label="ملاحظات"
+                                    />
+                                    <Button className="w-full" type="submit" disabled={mofMutation.isPending}>تأكيد</Button>
+                                </form>
+                            </PopupForm>
                         </div>
                         <div className="flex shadow-[0px_0px_4px] shadow-accent-400 mr-5 rounded-lg text-text-950">
                             <button 

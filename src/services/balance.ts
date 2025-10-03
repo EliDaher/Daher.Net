@@ -46,3 +46,14 @@ export async function getDailyBalance() {
     console.error("خطأ في جلب الرصيد اليومي:", err);
   }
 }
+
+export async function addMofadale(mofData) {
+  try {
+    const response = await apiClient.post("/api/balance/addMofadale", mofData);
+
+    console.log(response)
+    return response.data;
+  } catch (err) {
+    console.error("خطأ في جلب الرصيد اليومي:", err);
+  }
+}
