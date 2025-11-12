@@ -101,12 +101,12 @@ export default function Dashboard() {
 
   const getCustomers = async () => {
     const res = await getWifiCustomers();
-
-    if (res?.success) {
+    console.log(res)
+    if (res) {
       if(daherUser.role == "dealer"){
-        setCustomers(res.customers.filter(customer => customer.dealer === "habeb"));
+        setCustomers(res.filter(customer => customer.dealer === "habeb"));
       }else{
-        setCustomers(res.customers);
+        setCustomers(res);
       }
 
     } else {
