@@ -19,6 +19,9 @@ const PendingTransactions = React.lazy(() => import("@/pages/PendingTransactions
 const DoneTransactions = React.lazy(() => import("@/pages/DoneTransactions"));
 const POSPayments = React.lazy(() => import("@/pages/POSPayments"));
 const BillBalance = React.lazy(() => import("@/pages/BillBalance"));
+const FinancialStatement = React.lazy(
+  () => import("@/pages/FinancialStatement"),
+);
 
 export const routesConfig = [
   { path: "/login", element: <Login /> },
@@ -37,5 +40,6 @@ export const routesConfig = [
   { path: "/POSPayments", element: <PrivateRoute allowedRoles={["admin", "employee"]}><POSPayments /></PrivateRoute> },
   { path: "/BillBalance", element: <PrivateRoute allowedRoles={["admin", "employee"]}><BillBalance /></PrivateRoute> },
   { path: "/POSUsers", element: <PrivateRoute allowedRoles={["admin"]}><POSUsers /></PrivateRoute> },
+  { path: "/FinancialStatement", element: <PrivateRoute allowedRoles={["admin"]}><FinancialStatement /></PrivateRoute> },
   { path: "*", element: <NotFound /> }
 ];

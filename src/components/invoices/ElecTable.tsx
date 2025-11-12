@@ -100,14 +100,14 @@ export default function ElecTable({ loading, elecMatchingRows, elecOriginalRows,
                                     <tr
                                         key={index}
                                         className={`transition-all duration-200 
-                                        ${invoiceValues[1].includes("ارضي") ? `bg-orange-200` : ``}
-                                        ${invoiceValues[1].includes("كهربا") ? `bg-yellow-200` : ``}
-                                        ${invoiceValues[1].includes("ميا") ? `bg-blue-200` : ``}
+                                        ${invoiceValues[1].includes("ارضي") ? `bg-orange-200/80` : ``}
+                                        ${invoiceValues[1].includes("كهربا") ? `bg-yellow-200/80` : ``}
+                                        ${invoiceValues[1].includes("ميا") ? `bg-blue-200/80` : ``}
                                         [&>*:nth-child(6n-1)>*:nth-child(1)>*]:w-1 [&>*:nth-child(1)>*>*]:w-12
                                         [&>*:nth-child(6n-1)>*>*]:w-20 [&>*:nth-child(6n-1)]:bg-primary-700 
                                         hover:bg-primary-100 [&>*:nth-child(6n)>*:nth-child(1)>*]:w-14
                                         [&>*:nth-child(-n+4)]:sticky [&>*:nth-child(-n+4)]:z-10
-                                        [&>*:nth-child(-n+4)]:bg-white
+                                        [&>*:nth-child(-n+4)]:bg-background
                                         [&>*:nth-child(-n+4)]:font-bold
 
                                         [&>*:nth-child(1)]:right-0

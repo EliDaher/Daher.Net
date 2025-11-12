@@ -128,7 +128,6 @@ export default function Dashboard() {
   useEffect(() => {
     getCustomers();
     getBalance();
-    getMonthTable();
   }, []);
 
 
@@ -270,7 +269,7 @@ export default function Dashboard() {
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger onClick={getMonthTable} value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
           </TabsList>
 

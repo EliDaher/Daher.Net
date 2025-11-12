@@ -120,7 +120,7 @@ export default function MyBalance() {
   // ----------------------------------
   return (
     <DashboardLayout>
-      <div dir='rtl' className="space-y-6">
+      <div dir="rtl" className="space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <h1 className="text-2xl font-bold text-foreground">البيان المالي</h1>
@@ -151,52 +151,59 @@ export default function MyBalance() {
             </Popover.Root>
 
             {/* Select Employee (ديناميكي) */}
-            { daherUser.role == 'admin' &&
-            <Select.Root
-              value={username}
-              onValueChange={(value) => setUsername(value)}
-              disabled={loadingEmployees}
-            >
-              <Select.Trigger
-                className="border border-gray-300 rounded-lg px-4 py-2 flex items-center justify-between gap-2 w-40 disabled:opacity-50 hover:bg-foreground/30"
-                aria-label="اختر الموظف"
+            {daherUser.role == "admin" && (
+              <Select.Root
+                value={username}
+                onValueChange={(value) => setUsername(value)}
+                disabled={loadingEmployees}
               >
-                <Select.Value placeholder={loadingEmployees ? '...' : 'اختر الموظف'} />
-                <Select.Icon>
-                  <ChevronDownIcon className="w-4 h-4" />
-                </Select.Icon>
-              </Select.Trigger>
-               <Select.Content className="bg-background border border-gray-200 rounded-lg shadow-md max-h-56 overflow-y-auto">
-                <Select.Viewport>
-                  {employees.map((emp) => (
-                    <Select.Item
-                      key={emp}
-                      value={emp}
-                      className="px-4 py-2 hover:bg-foreground/30 cursor-pointer"
-                    >
-                      <Select.ItemText>
-                        {emp === 'all' ? 'جميع الموظفين' : emp}
-                      </Select.ItemText>
-                    </Select.Item>
-                  ))}
-                </Select.Viewport>
-              </Select.Content>
-            </Select.Root>}
+                <Select.Trigger
+                  className="border border-gray-300 rounded-lg px-4 py-2 flex items-center justify-between gap-2 w-40 disabled:opacity-50 hover:bg-foreground/30"
+                  aria-label="اختر الموظف"
+                >
+                  <Select.Value
+                    placeholder={loadingEmployees ? "..." : "اختر الموظف"}
+                  />
+                  <Select.Icon>
+                    <ChevronDownIcon className="w-4 h-4" />
+                  </Select.Icon>
+                </Select.Trigger>
+                <Select.Content className="bg-background border border-gray-200 rounded-lg shadow-md max-h-56 overflow-y-auto">
+                  <Select.Viewport>
+                    {employees.map((emp) => (
+                      <Select.Item
+                        key={emp}
+                        value={emp}
+                        className="px-4 py-2 hover:bg-foreground/30 cursor-pointer"
+                      >
+                        <Select.ItemText>
+                          {emp === "all" ? "جميع الموظفين" : emp}
+                        </Select.ItemText>
+                      </Select.Item>
+                    ))}
+                  </Select.Viewport>
+                </Select.Content>
+              </Select.Root>
+            )}
           </div>
         </div>
 
         {/* Data Table */}
         <div className="bg-background rounded-xl shadow-md overflow-x-auto">
           {loading ? (
-            <div className="p-6 text-center text-foreground">جاري التحميل...</div>
+            <div className="p-6 text-center text-foreground">
+              جاري التحميل...
+            </div>
           ) : data.length === 0 ? (
-            <div className="p-6 text-center text-foreground">لا توجد بيانات</div>
+            <div className="p-6 text-center text-foreground">
+              لا توجد بيانات
+            </div>
           ) : (
             <table className="min-w-full text-sm text-foreground">
               <thead>
                 <tr className="bg-foreground/20 text-foreground text-right">
                   <th className="py-3 px-4">#</th>
-                  {username === 'all' && <th className="py-3 px-4">الموظف</th>}
+                  {username === "all" && <th className="py-3 px-4">الموظف</th>}
                   <th className="py-3 px-4">التفاصيل</th>
                   <th className="py-3 px-4">المبلغ</th>
                   <th className="py-3 px-4">التاريخ</th>
@@ -209,16 +216,23 @@ export default function MyBalance() {
                     className="border-b hover:bg-foreground/20 transition"
                   >
                     <td className="py-3 px-4">{index + 1}</td>
-                    {username === 'all' && <th className="py-3 px-4">{item.employee}</th>}
+                    {username === "all" && (
+                      <th className="py-3 px-4">{item.employee}</th>
+                    )}
                     <td className="py-3 px-4">
-                      {Array.isArray(item.details) && item.details.length > 0 ? (
+                      {Array.isArray(item.details) &&
+                      item.details.length > 0 ? (
                         <Popover.Root>
                           <Popover.Trigger asChild>
-                            <button className="text-foreground hover:underline">{
-                                item.details.map((d: any)=>{
-                                    return <p>{d.customerName + " // " + d.customerNumber }</p>
-                                })    
-                            }</button>
+                            <button className="text-foreground hover:underline">
+                              {item.details.map((d: any) => {
+                                return (
+                                  <p>
+                                    {d.customerName + " // " + d.customerNumber}
+                                  </p>
+                                );
+                              })}
+                            </button>
                           </Popover.Trigger>
                           <Popover.Content
                             side="bottom"
@@ -230,7 +244,9 @@ export default function MyBalance() {
                                 <tr className="bg-foreground/30 text-foreground">
                                   <th className="border px-2 py-1">العميل</th>
                                   <th className="border px-2 py-1">الهاتف</th>
-                                  <th className="border px-2 py-1">رقم الفاتورة</th>
+                                  <th className="border px-2 py-1">
+                                    رقم الفاتورة
+                                  </th>
                                   <th className="border px-2 py-1">القيمة</th>
                                   <th className="border px-2 py-1">ملاحظات</th>
                                 </tr>
@@ -238,11 +254,21 @@ export default function MyBalance() {
                               <tbody>
                                 {item.details.map((d: any, idx) => (
                                   <tr key={idx}>
-                                    <td className="border px-2 py-1">{d.customerName}</td>
-                                    <td className="border px-2 py-1">{d.customerNumber}</td>
-                                    <td className="border px-2 py-1">{d.invoiceNumber}</td>
-                                    <td className="border px-2 py-1">{d.invoiceValue}</td>
-                                    <td className="border px-2 py-1">{d.customerDetails}</td>
+                                    <td className="border px-2 py-1">
+                                      {d.customerName}
+                                    </td>
+                                    <td className="border px-2 py-1">
+                                      {d.customerNumber}
+                                    </td>
+                                    <td className="border px-2 py-1">
+                                      {d.invoiceNumber}
+                                    </td>
+                                    <td className="border px-2 py-1">
+                                      {d.invoiceValue}
+                                    </td>
+                                    <td className="border px-2 py-1">
+                                      {d.customerDetails}
+                                    </td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -254,10 +280,13 @@ export default function MyBalance() {
                       )}
                     </td>
 
-                    <td className="py-3 px-4 text-blue-600 dark:text-primary-300 font-semibold">{item.amount}</td>
+                    <td className="py-3 px-4 text-blue-600 dark:text-primary-300 font-semibold">
+                      {item.amount.toLocaleString("en-EG", {
+                        minimumFractionDigits: 0,
+                      })}
+                    </td>
                     <td className="py-3 px-4">{item.timestamp}</td>
                   </tr>
-                  
                 ))}
               </tbody>
             </table>
@@ -268,7 +297,10 @@ export default function MyBalance() {
         {!loading && data.length > 0 && (
           <div className="flex justify-end">
             <div className="bg-foreground/10 px-6 py-3 rounded-lg text-blue-700 dark:text-primary-300 font-bold shadow dark:shadow-lg dark:shadow-white/15">
-              الإجمالي: {totalAmount}
+              الإجمالي:{" "}
+              {totalAmount.toLocaleString("en-EG", {
+                minimumFractionDigits: 0,
+              })}
             </div>
           </div>
         )}

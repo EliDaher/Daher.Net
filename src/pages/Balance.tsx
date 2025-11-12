@@ -13,7 +13,10 @@ import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ChartContainer } from "@/components/dashboard/ChartContainer";
 import { DataTable } from "@/components/dashboard/DataTable";
 import { apiService, User, Post } from "@/services/api";
-import getWifiCustomers, { addWifiExpenses, getWifiBalance } from "@/services/wifi";
+import getWifiCustomers, {
+  addWifiExpenses,
+  getWifiBalance,
+} from "@/services/wifi";
 import { useNavigate } from "react-router-dom";
 import monthlyRevenue from "@/services/reports";
 import { Button } from "@/components/ui/button";
@@ -29,37 +32,35 @@ import ExchangeFrom from "@/components/balance/ExchangeFrom";
 import DoneExForm from "@/components/balance/DoneExForm";
 
 export default function Balance() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
-  const [totalBalance, setTotalBalance] = useState(0)
-  const [customers, setCustomers] = useState([])
-  const [todayTotal, setTodayTotal] = useState(0)
-  const [monthTotal, setMonthTotal] = useState(0)
-  
+  const [totalBalance, setTotalBalance] = useState(0);
+  const [customers, setCustomers] = useState([]);
+  const [todayTotal, setTodayTotal] = useState(0);
+  const [monthTotal, setMonthTotal] = useState(0);
+
   const [openRowId, setOpenRowId] = useState<string | null>(null);
   const [isOpenEx, setIsOpenEx] = useState(false);
 
   const [isOpen, setIsOpen] = useState(false);
   const [formTitle, setFormTitle] = useState("");
-  const [printOnly, setPrintOnly] = useState(false)
-  
+  const [printOnly, setPrintOnly] = useState(false);
+
   const [paymentDate, setPaymentDate] = useState();
   const [paymentValue, setPaymentValue] = useState(0);
   const [paymentDetails, setPaymentDetails] = useState("");
-  
-  const [loading, setLoading] = useState(false)
+
+  const [loading, setLoading] = useState(false);
 
   const getCustomers = async () => {
     const res = await getWifiCustomers();
 
     if (res?.success) {
       setCustomers(res.customers);
-
     } else {
       alert(res?.error || "فشل جلب البيانات");
     }
   };
-  
 
   useEffect(() => {
     getCustomers();
@@ -67,12 +68,11 @@ export default function Balance() {
 
   const unpaidValue = useMemo(() => {
     const totalDebt = customers
-      .filter(c => c.Balance < 0)
+      .filter((c) => c.Balance < 0)
       .reduce((sum, c) => sum + Number(c.Balance), 0);
 
     return Math.abs(totalDebt);
   }, [customers]);
-
 
   // Fetch dashboard data using React Query
   const { data: balance, isLoading: balanceLoading } = useQuery({
@@ -80,32 +80,32 @@ export default function Balance() {
     queryFn: getWifiBalance,
   });
 
-  useEffect(()=>{
-    let temBalance = 0 
-    balance?.WifiBalance?.map(ele => {
-      temBalance += Number(ele.amount)
-    })
-    balance?.WifiPayments?.map(ele => {
-      temBalance += Number(ele.Amount)
-    })
-    console.log(balance)
-    setTotalBalance(temBalance)
+  useEffect(() => {
+    let temBalance = 0;
+    balance?.WifiBalance?.map((ele) => {
+      temBalance += Number(ele.amount);
+    });
+    balance?.WifiPayments?.map((ele) => {
+      temBalance += Number(ele.Amount);
+    });
+    console.log(balance);
+    setTotalBalance(temBalance);
 
     // احصل على التاريخ الحالي
     const today = new Date();
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth(); // صفر-based (0=يناير)
     const currentDay = today.getDate();
-      
+
     // فلترة البيانات
     const paymentsThisMonth = balance?.WifiPayments?.filter((payment) => {
       const paymentDate = new Date(payment.Date);
       return (
         paymentDate.getFullYear() === currentYear &&
-        paymentDate.getMonth() === currentMonth 
+        paymentDate.getMonth() === currentMonth
       );
     });
-    
+
     const paymentsThisDay = balance?.WifiPayments?.filter((payment) => {
       const paymentDate = new Date(payment.Date);
       return (
@@ -115,19 +115,18 @@ export default function Balance() {
       );
     });
 
-    let temMonth = 0
-    paymentsThisMonth?.map(ele => {
-      temMonth += Number(ele.Amount)
-    })
-    setMonthTotal(temMonth)
-    
-    let temDay = 0
-    paymentsThisDay?.map(ele => {
-      temDay += Number(ele.Amount)
-    })
-    setTodayTotal(temDay)
+    let temMonth = 0;
+    paymentsThisMonth?.map((ele) => {
+      temMonth += Number(ele.Amount);
+    });
+    setMonthTotal(temMonth);
 
-  }, [balance])
+    let temDay = 0;
+    paymentsThisDay?.map((ele) => {
+      temDay += Number(ele.Amount);
+    });
+    setTodayTotal(temDay);
+  }, [balance]);
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["dashboard-stats"],
@@ -135,11 +134,11 @@ export default function Balance() {
   });
 
   const { data: pendingData, isLoading: pendingLoading } = useQuery({
-    queryKey: ['pendingEx'],
+    queryKey: ["pendingEx"],
     queryFn: getPendingExchange,
-  })
+  });
 
-    const totalAmounts = useMemo(() => {
+  const totalAmounts = useMemo(() => {
     let sypTotal = 0;
     let usdTotal = 0;
 
@@ -152,8 +151,7 @@ export default function Balance() {
       sypTotal,
       usdTotal,
     };
-  }, [pendingData]); 
-
+  }, [pendingData]);
 
   const { data: monthly, isLoading: monthlyLoading } = useQuery({
     queryKey: ["monthlyRevenue"],
@@ -179,26 +177,25 @@ export default function Balance() {
   ];
   const tableRef = useRef();
 
-
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: addWifiExpenses,
     onSuccess: () => {
-      alert('✅ تمت إضافة الدفعة.');
+      alert("✅ تمت إضافة الدفعة.");
       queryClient.invalidateQueries({
-        queryKey: ['balance-table'],
+        queryKey: ["balance-table"],
       });
       setPaymentDate(null);
       setPaymentValue(0);
       setPaymentDetails("");
-      setIsOpen(false)
+      setIsOpen(false);
     },
     onError: () => {
-      alert('❌ حدث خطأ أثناء الإرسال.');
-    }
+      alert("❌ حدث خطأ أثناء الإرسال.");
+    },
   });
-  
+
   const handlePrint = useReactToPrint({
     contentRef: tableRef, // استخدام contentRef بشكل صحيح
     pageStyle: `
@@ -243,8 +240,7 @@ export default function Balance() {
       .no-print {
         display: none !important;
       }
-    `
-    ,
+    `,
     onAfterPrint: () => {
       console.log("تمت الطباعة بنجاح!");
       setIsOpen(false); // إغلاق النافذة بعد الطباعة
@@ -253,8 +249,16 @@ export default function Balance() {
 
   const getCurrentDateTime = () => {
     const now = new Date();
-    const options = { year: 'numeric', month: 'numeric', day: 'numeric', weekday: 'long', hour: 'numeric', minute: 'numeric', second: 'numeric' };
-    return now.toLocaleDateString('en-GB', options as any);
+    const options = {
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      weekday: "long",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+    };
+    return now.toLocaleDateString("en-GB", options as any);
   };
 
   if (statsLoading) {
@@ -270,13 +274,16 @@ export default function Balance() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (window.confirm('هل تريد طباعة ايصال ؟')) {
+    if (window.confirm("هل تريد طباعة ايصال ؟")) {
       handlePrint();
     }
 
     const payload = {
-      amount: formTitle === "اضافة دفعة الى الصندوق" ? Number(paymentValue) : Number(-paymentValue),
-      date: paymentDate ? dayjs(paymentDate).format("YYYY-MM-DD") : '',
+      amount:
+        formTitle === "اضافة دفعة الى الصندوق"
+          ? Number(paymentValue)
+          : Number(-paymentValue),
+      date: paymentDate ? dayjs(paymentDate).format("YYYY-MM-DD") : "",
       details: paymentDetails,
     };
 
@@ -284,44 +291,46 @@ export default function Balance() {
   };
   return (
     <DashboardLayout>
-      
-
-      <PopupForm isOpen={isOpen} setIsOpen={setIsOpen} title={formTitle} trigger={<></>}>
+      <PopupForm
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+        title={formTitle}
+        trigger={<></>}
+      >
         <div className="flex flex-row-reverse gap-2">
           {/* تاكيد العمليه */}
-            <form onSubmit={handleSubmit} className="space-y-4 w-2/3">
-              <Input
-                value={paymentValue}
-                onChange={(e) => setPaymentValue(Number(e.target.value))}
-                type="number"
-                placeholder="القيمة بالدولار"
-                required
+          <form onSubmit={handleSubmit} className="space-y-4 w-2/3">
+            <Input
+              value={paymentValue}
+              onChange={(e) => setPaymentValue(Number(e.target.value))}
+              type="number"
+              placeholder="القيمة بالدولار"
+              required
+            />
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                className="w-full"
+                label="اختر التاريخ"
+                value={paymentDate}
+                onChange={(newValue) => setPaymentDate(newValue as any)}
+                format="DD/MM/YYYY" // ✅ هنا التنسيق الجديد
               />
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  className="w-full"
-                  label="اختر التاريخ"
-                  value={paymentDate}
-                  onChange={(newValue) => setPaymentDate(newValue as any)}
-                  format="DD/MM/YYYY" // ✅ هنا التنسيق الجديد
-                />
-              </LocalizationProvider>
-              <Input
-                value={paymentDetails}
-                onChange={(e) => setPaymentDetails(e.target.value)}
-                type="text"
-                placeholder="تفاصيل (اختياري)"
-              />
-              <button
-                type="submit"
-                className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
-                disabled={mutation.isPending}
-              >
-                {mutation.isPending  ? 'جارٍ الإرسال...' : 'حفظ'}
-              </button>
+            </LocalizationProvider>
+            <Input
+              value={paymentDetails}
+              onChange={(e) => setPaymentDetails(e.target.value)}
+              type="text"
+              placeholder="تفاصيل (اختياري)"
+            />
+            <button
+              type="submit"
+              className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
+              disabled={mutation.isPending}
+            >
+              {mutation.isPending ? "جارٍ الإرسال..." : "حفظ"}
+            </button>
+          </form>
 
-            </form>
-          
           {/* البيانات المطبوعة */}
           <div ref={tableRef} className="p-4 text-sm" dir="rtl">
             {/* رأس الفاتورة */}
@@ -329,34 +338,38 @@ export default function Balance() {
               <h1>Daher.Net</h1>
               <span>{getCurrentDateTime()}</span>
             </div>
-            
+
             {/* معلومات المشترك 
             <div className="text-right font-bold mb-2">
               <div>اسم المشترك: {customer?.Name || "غير معروف"}</div>
               <div>الرقم: {customer?.Contact}</div>
             </div>*/}
-            
+
             {/* تفاصيل الدفع */}
             <div className="text-right mb-2">
               <div className="font-semibold">التفاصيل:</div>
-              <div className="border p-1 rounded">{paymentDetails || "بدون ملاحظات"}</div>
+              <div className="border p-1 rounded">
+                {paymentDetails || "بدون ملاحظات"}
+              </div>
             </div>
-            
+
             {/* المبلغ */}
             <div className="text-right totalValue mt-4">
               <div className="text-lg font-extrabold border-t pt-2">
-                {formTitle == "اضافة دفعة" ? 'المبلغ المدفوع' : 'المبلغ المطلوب'}: {paymentValue} دولار
+                {formTitle == "اضافة دفعة"
+                  ? "المبلغ المدفوع"
+                  : "المبلغ المطلوب"}
+                : {paymentValue} دولار
               </div>
             </div>
-            
-            {/* خط فاصل للطباعة */}
-            <div className="cut mt-4 border-t pt-2 text-center text-xs">-- شكراً لثقتكم بخدماتنا --</div>
-          </div>
 
+            {/* خط فاصل للطباعة */}
+            <div className="cut mt-4 border-t pt-2 text-center text-xs">
+              -- شكراً لثقتكم بخدماتنا --
+            </div>
+          </div>
         </div>
       </PopupForm>
-
-
 
       <div className="space-y-6">
         {/* Header */}
@@ -365,7 +378,7 @@ export default function Balance() {
         </div>
 
         {/* Stats Cards */}
-          {balanceLoading ? 
+        {balanceLoading ? (
           <div dir="rtl" className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="animate-pulse">
               <StatsCard
@@ -373,11 +386,11 @@ export default function Balance() {
                 value={0}
                 description=" . فرق عن الشهر السابق"
                 icon={TrendingUp}
-                trend={{ value: 0, isPositive: true  }}
+                trend={{ value: 0, isPositive: true }}
               />
             </div>
           </div>
-          :
+        ) : (
           <div dir="rtl" className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div>
               <StatsCard
@@ -386,26 +399,33 @@ export default function Balance() {
                 value={totalBalance || 0}
                 description=" . فرق عن الشهر السابق"
                 icon={TrendingUp}
-                trend={{ value: totalBalance - monthTotal || 0, isPositive: (totalBalance - monthTotal) > 0 ? true : false }}
+                trend={{
+                  value: totalBalance - monthTotal || 0,
+                  isPositive: totalBalance - monthTotal > 0 ? true : false,
+                }}
               />
               <div className="">
-                <Button 
+                <Button
                   onClick={() => {
                     setFormTitle("اضافة دفعة الى الصندوق");
-                    setPrintOnly(false)
+                    setPrintOnly(false);
                     setIsOpen(true);
                   }}
                   className="w-1/2 rounded-l-none rounded-tr-none"
-                >اضف دفعة</Button>
-                <Button 
-                  variant="destructive" 
+                >
+                  اضف دفعة
+                </Button>
+                <Button
+                  variant="destructive"
                   onClick={() => {
                     setFormTitle("دفع من الصندوق");
-                    setPrintOnly(false)
+                    setPrintOnly(false);
                     setIsOpen(true);
                   }}
                   className="w-1/2 rounded-r-none rounded-tl-none"
-                >دفع من الصندوق</Button>
+                >
+                  دفع من الصندوق
+                </Button>
               </div>
             </div>
             <StatsCard
@@ -416,10 +436,9 @@ export default function Balance() {
               trend={{ value: todayTotal || 0, isPositive: true }}
             />
 
-
             <StatsCard
-              onClick={()=>{
-                navigate('/users', {state: 'unpaid'})
+              onClick={() => {
+                navigate("/users", { state: "unpaid" });
               }}
               title="الديون"
               value={unpaidValue || 0}
@@ -435,16 +454,19 @@ export default function Balance() {
                 value={totalAmounts.sypTotal}
                 description=" . دولار"
                 icon={Coins}
-                trend={{ value: totalAmounts?.usdTotal || 0, isPositive: false }}
+                trend={{
+                  value: totalAmounts?.usdTotal || 0,
+                  isPositive: false,
+                }}
               />
               <ExchangeFrom
-                className={'rounded-t-none w-full'}
+                className={"rounded-t-none w-full"}
                 isOpen={isOpenEx}
-                setIsOpen={setIsOpenEx} 
+                setIsOpen={setIsOpenEx}
               ></ExchangeFrom>
             </div>
           </div>
-          }
+        )}
 
         {/* Charts Section */}
         <div className="grid gap-6 text-center">
@@ -452,11 +474,13 @@ export default function Balance() {
             className="mdL:col-span-2"
             title=" الحركة المالية "
             data={
-              monthly ? Object.entries(monthly?.data).map(([month, values] : any) => ({
-                name: month,
-                "الفواتير": values.invoices,
-                "المدفوعات": values.payments,
-              })) : []
+              monthly
+                ? Object.entries(monthly?.data).map(([month, values]: any) => ({
+                    name: month,
+                    الفواتير: values.invoices,
+                    المدفوعات: values.payments,
+                  }))
+                : []
             }
             type="area"
             dataKey2="المدفوعات"
@@ -470,13 +494,17 @@ export default function Balance() {
             title="الصندوق"
             description=""
             columns={BalanceColumns}
-            data={balance?.WifiBalance ? [...balance.WifiBalance].reverse() : []}
+            data={
+              balance?.WifiBalance ? [...balance.WifiBalance].reverse() : []
+            }
           />
           <DataTable
             title="الدفعات"
             description="دفعات المشتركين"
             columns={PaymentsColumns}
-            data={balance?.WifiPayments ? [...balance.WifiPayments].reverse() : []}
+            data={
+              balance?.WifiPayments ? [...balance.WifiPayments].reverse() : []
+            }
           />
           <div>
             <DataTable
@@ -485,16 +513,15 @@ export default function Balance() {
               columns={PendingColumns}
               data={pendingData?.pendingList ? pendingData?.pendingList : []}
               renderRowActions={(x) => (
-                  <DoneExForm 
-                    isOpen={openRowId === x.id}
-                    setIsOpen={(v) => setOpenRowId(v ? x.id : null)}
-                    className=""
-                    SYPAmount={x.sypAmount}
-                    USDAmount={x.usdAmount}
-                    pendingId={x.id}
-                  />
-                )
-              }
+                <DoneExForm
+                  isOpen={openRowId === x.id}
+                  setIsOpen={(v) => setOpenRowId(v ? x.id : null)}
+                  className=""
+                  SYPAmount={x.sypAmount}
+                  USDAmount={x.usdAmount}
+                  pendingId={x.id}
+                />
+              )}
             />
           </div>
         </div>

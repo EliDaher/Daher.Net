@@ -114,6 +114,13 @@ export function DataTable({
     if (key === "amount" && amountBold) {
       return <span className="text-primary font-extrabold text-xl">{value}</span>;
     }
+    if (key === "total") {
+      return (
+        <span className="">
+          {value.toLocaleString("en-EG", { minimumFractionDigits: 0 })}
+        </span>
+      );
+    }
     if (key === "avgAmount") {
       return <span>{value.toFixed(0)}</span>;
     }

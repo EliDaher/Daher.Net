@@ -117,7 +117,7 @@ export default function InternetInvoiceTable({ loading, internetMatchingRows, in
                                         [&>*:nth-child(4)]:right-[248px]
                                         [&>*:nth-child(7)]:right-[297px]
                                         [&>*:nth-child(8)]:right-[410px]
-                                        [&>*:nth-child(-n+4)]:bg-white
+                                        [&>*:nth-child(-n+4)]:bg-background
                                         "
                                         data-key={index}
                                     >

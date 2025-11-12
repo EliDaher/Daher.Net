@@ -239,8 +239,8 @@ const Threads: React.FC<ThreadsProps> = ({
   }, [selectedQuality, color, amplitude, distance, enableMouseInteraction]);
 
   // **الخلفية البيضاء إذا لم تكن الجودة High**
-  if (selectedQuality !== "high") {
-    return <div className="w-full h-full relative bg-white" {...rest} />;
+  if (selectedQuality == "high") {
+    return <div className="w-full h-full relative bg-background" {...rest} />;
   }
 
   return <div ref={containerRef} className="w-full h-full relative" {...rest} />;

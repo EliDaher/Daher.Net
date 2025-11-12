@@ -195,6 +195,11 @@ export default function PendingTransactions() {
                       } else if (number.startsWith('33')) {
                         textToCopy = number.slice(2);
                       }
+                      if (number.startsWith('013')) {
+                        textToCopy = number.slice(3); 
+                      } else if (number.startsWith('13')) {
+                        textToCopy = number.slice(2);
+                      }
 
                       navigator.clipboard.writeText(textToCopy)
 

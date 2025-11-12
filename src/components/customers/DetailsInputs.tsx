@@ -1,9 +1,11 @@
 import { updateCustomer } from "@/services/wifi";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 export default function DetailsInputs({ customer, setCustomer }) {
   const [originalCustomer, setOriginalCustomer] = useState(customer);
   const [isChanged, setIsChanged] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleChange = (key, newValue) => {
     setCustomer((prev) => {
@@ -17,6 +19,7 @@ export default function DetailsInputs({ customer, setCustomer }) {
     try {
       const res = await updateCustomer(customer.id, customer);
       setOriginalCustomer(customer);
+      queryClient.invalidateQueries({ queryKey: ["customers-table"] });
       setIsChanged(false);
       alert("تم حفظ التعديلات!");
     } catch (error) {

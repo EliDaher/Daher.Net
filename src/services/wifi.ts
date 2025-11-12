@@ -1,23 +1,19 @@
 import apiClient from "@/lib/axios";
 
 export default async function getWifiCustomers() {
+  try {
+    const response = await apiClient.get("/api/wifi/getCustomers");
 
-    try {
-      const response = await apiClient.get("/api/wifi/getCustomers");
-
-      return response.data
-      
-    } catch (err) {
-      console.error("خطأ في تسجيل الدخول:", err);
-   
-    }
-
+    return response.data.customers;
+  } catch (err) {
+    console.error("خطأ في تسجيل الدخول:", err);
+  }
 }
 
 export async function getCustomerById(id: string) {
   try {
     const response = await apiClient.get(`/api/wifi/getCustomerById/${id}`);
-    const data = await response.data
+    const data = await response.data;
     return data;
   } catch (error) {
     console.error("Error fetching customer:", error);
@@ -28,7 +24,7 @@ export async function getCustomerById(id: string) {
 export async function getWifiBalance() {
   try {
     const response = await apiClient.get(`/api/wifi/getWifiBalance`);
-    const data = await response.data
+    const data = await response.data;
     return data;
   } catch (error) {
     console.error("Error fetching customer:", error);
@@ -38,14 +34,15 @@ export async function getWifiBalance() {
 
 export async function getTransactionsForCustomer(id: string) {
   try {
-    const response = await apiClient.get(`/api/wifi/getTransactionsForCustomer/${id}`);
-    return response.data;  // يفترض أن يعيد { success: true, data: [...] }
+    const response = await apiClient.get(
+      `/api/wifi/getTransactionsForCustomer/${id}`,
+    );
+    return response.data; 
   } catch (error) {
     console.error("Error fetching transactions:", error);
     return { success: false, error };
   }
 }
-
 
 export async function addPayment(data: {
   amount: number;
@@ -56,7 +53,7 @@ export async function addPayment(data: {
   dealer?: string;
 }) {
   try {
-    console.log(data)
+    console.log(data);
     const response = await apiClient.post("/api/wifi/addPayment/", data);
     return response.data; // { message, paymentID, newTotal }
   } catch (error) {
@@ -80,23 +77,34 @@ export async function addInvoice(data: {
   }
 }
 
-
-
 export async function updateCustomer(id: string, newData: any) {
   try {
-    const response = await apiClient.put(`/api/wifi/updateCustomer/${id}`, {...newData, Balance: Number(newData.Balance), MonthlyFee: Number(newData.MonthlyFee)});
-    return response.data;  // يفترض أن يعيد { success: true, data: [...] }
+    const response = await apiClient.put(`/api/wifi/updateCustomer/${id}`, {
+      ...newData,
+      Balance: Number(newData.Balance),
+      MonthlyFee: Number(newData.MonthlyFee),
+    });
+    return response.data; 
   } catch (error) {
     console.error("Error fetching transactions:", error);
     return { success: false, error };
   }
 }
 
+export async function deleteCustomer(id: string) {
+  try {
+    const response = await apiClient.delete(`/api/wifi/${id}`);
+    return response.data; 
+  } catch (error) {
+    console.error("Error fetching transactions:", error);
+    return { success: false, error };
+  }
+}
 
 export async function addCustomer(formData: any) {
   try {
     const response = await apiClient.post("/api/wifi/addCustomer", formData);
-    console.log('test')
+    console.log("test");
     return {
       success: true,
       data: response.data,
@@ -125,7 +133,7 @@ export async function addWifiExpenses(data: {
 }) {
   try {
     const response = await apiClient.post("/api/wifi/addWifiExpenses", data);
-    return response.data; 
+    return response.data;
   } catch (error) {
     console.error("Error adding invoice:", error);
     return { success: false, error };
