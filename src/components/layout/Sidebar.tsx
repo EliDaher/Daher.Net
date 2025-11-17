@@ -31,38 +31,99 @@ const navigationGroups = [
   {
     title: "WiFi",
     items: [
-      { name: "Customers", href: "/users", icon: Users, allowed: ["admin", "dealer", "employee"] },
-      { name: "Balance", href: "/balance", icon: WalletIcon, allowed: ["admin"] },
-      { name: "Balance", href: "/dealerBalance", icon: WalletIcon, allowed: ["dealer"] },
+      {
+        name: "Customers",
+        href: "/users",
+        icon: Users,
+        allowed: ["admin", "dealer", "employee"],
+      },
+      {
+        name: "Balance",
+        href: "/balance",
+        icon: WalletIcon,
+        allowed: ["admin"],
+      },
+      {
+        name: "Balance",
+        href: "/dealerBalance",
+        icon: WalletIcon,
+        allowed: ["dealer"],
+      },
     ],
-    allowed: ["admin", "dealer", "employee"]
+    allowed: ["admin", "dealer", "employee"],
   },
   {
     title: "Billing",
     items: [
-      { name: "Invoices", href: "/invoices", icon: ReceiptText, allowed: ["admin", "employee"] },
-      { name: "My Balance", href: "/myBalance", icon: HandCoins, allowed: ["admin", "employee"] },
-      { name: "Balance", href: "/BillBalance", icon: Wallet, allowed: ["admin"] },
-      { name: "Financial Statement", href: "/FinancialStatement", icon: Table2Icon, allowed: ["admin", "employee"] },
+      {
+        name: "Invoices",
+        href: "/invoices",
+        icon: ReceiptText,
+        allowed: ["admin", "employee"],
+      },
+      {
+        name: "My Balance",
+        href: "/myBalance",
+        icon: HandCoins,
+        allowed: ["admin", "employee"],
+      },
+      {
+        name: "Balance",
+        href: "/BillBalance",
+        icon: Wallet,
+        allowed: ["admin"],
+      },
+      {
+        name: "Financial Statement",
+        href: "/FinancialStatement",
+        icon: Table2Icon,
+        allowed: ["admin", "employee"],
+      },
     ],
-    allowed: ["admin", "employee"]
+    allowed: ["admin", "employee"],
   },
   {
     title: "POS",
     items: [
       { name: "Users", href: "/POSUsers", icon: User, allowed: ["admin"] },
-      { name: "Pending Transactions", href: "/PendingTransactions", icon: FileText, allowed: ["admin", "employee"] },
-      { name: "Done Transactions", href: "/DoneTransactions", icon: CheckIcon, allowed: ["admin", "employee"] },
-      { name: "Payments", href: "/POSPayments", icon: ArrowDownCircle, allowed: ["admin", "employee"] },
+      {
+        name: "Pending Transactions",
+        href: "/PendingTransactions",
+        icon: FileText,
+        allowed: ["admin", "employee"],
+      },
+      {
+        name: "Done Transactions",
+        href: "/DoneTransactions",
+        icon: CheckIcon,
+        allowed: ["admin", "employee"],
+      },
+      {
+        name: "Payments",
+        href: "/POSPayments",
+        icon: ArrowDownCircle,
+        allowed: ["admin", "employee"],
+      },
     ],
-    allowed: ["admin", "employee"]
+    allowed: ["admin", "employee"],
   },
   {
     title: "Analytics",
     items: [
-      { name: "Analytics", href: "/analytics", icon: BarChart3, allowed: ["admin"] },
+      {
+        name: "Analytics",
+        href: "/analytics",
+        icon: BarChart3,
+        allowed: ["admin"],
+      },
+      {
+        name: "Inquiry Logs",
+        href: "/InquiryLogs",
+        icon: Table,
+        allowed: ["admin"],
+      },
     ],
-    allowed: ["admin"]
+    allowed: ["admin"],
   },
 ];
 
