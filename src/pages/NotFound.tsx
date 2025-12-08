@@ -23,9 +23,9 @@ const NotFound = () => {
 
           <div className="space-y-3">
             <Button asChild className="w-full">
-              <Link to={['admin', 'dealer'].includes(daherUser.role) ? `/dashboard` : '/invoices'}>
+              <Link to={['admin', 'dealer'].includes(daherUser?.role) ? `/dashboard` : '/invoices'}>
                 <Home className="mr-2 h-4 w-4" />
-                {['admin', 'dealer'].includes(daherUser.role) ? 'Go to Dashboard' : 'Go to Invoices'}
+                {['admin', 'dealer'].includes(daherUser?.role) ? 'Go to Dashboard' : 'Go to Invoices'}
               </Link>
             </Button>
             <Button variant="outline" onClick={() => window.history.back()}>

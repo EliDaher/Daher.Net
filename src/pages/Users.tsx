@@ -1,8 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import getWifiCustomers, { deleteCustomer } from "@/services/wifi";
-import { Users as UsersIcon, Table, LayoutGrid, Plus } from "lucide-react";
+import { Users as UsersIcon, Table, LayoutGrid, Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -22,7 +28,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import PopupForm from "@/components/ui/custom/PopupForm";
 import AddCustomerForm from "@/components/customers/AddCustomerForm";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { set } from "date-fns";
+import { socket } from "@/contexts/socket";
+import UsersPopForm from "@/components/customers/UsersPopForm";
 
 export default function Users() {
   const navigate = useNavigate();
@@ -46,6 +53,25 @@ export default function Users() {
   const [customerToDelete, setCustomerToDelete] = useState(null);
   const queryClient = useQueryClient();
 
+  const [activeData, setActiveData] = useState([]);
+
+  useEffect(() => {
+    
+    socket.emit("getActive");
+
+    const handleReturnActive = (data) => {
+      const parsedData = JSON.parse(data.ActivePPP.data);
+      setActiveData(parsedData);
+    };
+    socket.on("returnActivePPP", handleReturnActive);
+
+    return () => {
+      // فقط نفصل الحدث، لا نقطع الاتصال
+      socket.off("returnActivePPP", handleReturnActive);
+    };
+  }, []);
+
+
   const { data: customers, isLoading: customersLoading } = useQuery<any[]>({
     queryKey: ["customers-table"],
     queryFn: getWifiCustomers,
@@ -61,7 +87,7 @@ export default function Users() {
     onError: () => {
       alert("حدث خطأ أثناء الحذف");
     },
-  }); 
+  });
 
   useEffect(() => {
     if (location.state == "unpaid") {
@@ -122,71 +148,6 @@ export default function Users() {
       setSelectedDealer(daherUser.username);
     }
   }, []);
-
-  const exportToExcel = () => {
-    const exportData = filteredCustomers.map((c) => ({
-      الاسم: c.Name,
-      اسم_المستخدم: c.UserName,
-      كلمة_السر: c.Password,
-      الرصيد: c.Balance,
-      الاشتراك: c.MonthlyFee,
-      السرعة: c.SubscriptionSpeed,
-      الهاتف: c.Contact,
-      المرسل: c.sender,
-      الموقع: c.location,
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "المشتركين");
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array",
-    });
-    const data = new Blob([excelBuffer], {
-      type: "application/octet-stream",
-    });
-    saveAs(data, "المشتركين.xlsx");
-  };
-
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-
-    doc.text("قائمة المشتركين", 14, 10);
-
-    const tableData = filteredCustomers.map((c) => [
-      c.Name,
-      c.UserName,
-      c.Password,
-      `${c.Balance} $`,
-      `${c.MonthlyFee} $`,
-      `${c.SubscriptionSpeed} Mbps`,
-      c.Contact,
-      c.sender,
-      c.location,
-    ]);
-
-    autoTable(doc, {
-      head: [
-        [
-          "الاسم",
-          "اسم المستخدم",
-          "كلمة السر",
-          "الرصيد",
-          "الاشتراك",
-          "السرعة",
-          "الهاتف",
-          "المرسل",
-          "الموقع",
-        ],
-      ],
-      body: tableData,
-      styles: { fontSize: 8 },
-      startY: 20,
-    });
-
-    doc.save("المشتركين.pdf");
-  };
 
   return (
     <DashboardLayout>
@@ -254,6 +215,21 @@ export default function Users() {
                 <Table className="w-4 h-4 mr-2" />
                 عرض كجدول
               </Button>
+
+              {(daherUser?.role as string).includes("admin") && (
+                <UsersPopForm
+                  userList={activeData?.filter((p) => {
+                    const pUser = (p.name as string)
+                      .split("@")[0]
+                      .trim()
+                      .toLowerCase();
+
+                    return !customers.some(
+                      (c) => c.UserName.trim().toLowerCase() === pUser,
+                    );
+                  })}
+                />
+              )}
             </div>
           </div>
 
@@ -262,6 +238,7 @@ export default function Users() {
             <CardHeader className="flex items-center justify-between">
               <div className="flex items-center space-x-2 rtl:space-x-reverse">
                 <UsersIcon className="h-6 w-6 text-muted-foreground" />
+                {activeData?.length == 0 || activeData == null ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
                 <CardTitle>
                   قائمة المشتركين ({filteredCustomers?.length})
                 </CardTitle>
@@ -381,7 +358,7 @@ export default function Users() {
                 </div>
               ) : error ? (
                 <p className="text-red-600 text-center">{error}</p>
-              ) : currentItems.length === 0 ? (
+              ) : currentItems?.length === 0 ? (
                 <p className="text-muted-foreground text-center">
                   لا يوجد مشتركين.
                 </p>
@@ -390,12 +367,30 @@ export default function Users() {
                   dir="rtl"
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
                 >
-                  {currentItems.map((customer) => (
+                  {currentItems?.map((customer) => (
                     <Card key={customer.id} className="shadow-sm">
                       <CardContent
-                        className="p-4 space-y-1"
+                        className={`p-4 space-y-1 ${
+                          activeData?.some((ppp) =>
+                            (ppp.name as string).includes(customer.UserName),
+                          )
+                            ? "bg-accent-950 dark:bg-accent-50"
+                            : ""
+                        }`}
                         onClick={() => {
-                          navigate(`/CustomerDetails/${customer.id}`);
+                          navigate(`/CustomerDetails/${customer.id}`, {
+                            state:
+                              activeData?.find((ppp) => {
+                                const pUser = (ppp.name as string)
+                                  .split("@")[0]
+                                  .trim()
+                                  .toLowerCase();
+                                return (
+                                  pUser ===
+                                  customer.UserName.trim().toLowerCase()
+                                );
+                              }) || null,
+                          });
                         }}
                       >
                         <p>

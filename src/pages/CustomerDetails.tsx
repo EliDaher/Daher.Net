@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,14 @@ import { DataTable } from "@/components/dashboard/DataTable";
 import addPaymentDealer from "@/services/dealer";
 
 export default function CustomerDetails() {
+
+  const location = useLocation()
+  const pppData = location.state
+
+  useEffect(()=>{
+    console.log(pppData)
+  }, [pppData])
+
   const { id } = useParams();
   const navigate = useNavigate();
   const daherUser = JSON.parse(localStorage.getItem("DaherUser"));
@@ -329,7 +337,7 @@ export default function CustomerDetails() {
             <CardTitle>المعلومات الأساسية</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <DetailsInputs customer={customer} setCustomer={setCustomer} />
+            <DetailsInputs customer={{...customer, address: pppData.address}} setCustomer={setCustomer} />
           </CardContent>
         </Card>
 

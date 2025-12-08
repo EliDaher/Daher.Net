@@ -39,6 +39,7 @@ export default function DetailsInputs({ customer, setCustomer }) {
       Contact: "الهاتف",
       sender: "المرسل",
       location: "الموقع",
+      address: "IP الراوتر",
     };
     return labels[key] || key;
   };

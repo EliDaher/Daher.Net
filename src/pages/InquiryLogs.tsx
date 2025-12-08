@@ -32,10 +32,6 @@ export default function InquiryLogs() {
       });
     });
 
-    return () => {
-      socketRef.current?.off("createLog");
-      socketRef.current?.disconnect(); // مهم جدًا
-    };
   }, [queryClient]);
 
   const sortedLogs =
