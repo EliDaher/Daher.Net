@@ -167,7 +167,7 @@ export default function Users() {
             </>
           }
         >
-          <AddCustomerForm></AddCustomerForm>
+          <AddCustomerForm/>
         </PopupForm>
         <PopupForm
           title="تأكيد الحذف"
@@ -408,6 +408,18 @@ export default function Users() {
                         <p>
                           <strong>المرسل:</strong> {customer.sender}
                         </p>
+                        
+                        {
+                          activeData?.some((ppp) =>
+                            (ppp.name as string).includes(customer.UserName),
+                          ) ?
+                          <p>
+                            <strong>حالة الاتصال:</strong> online
+                          </p> :
+                          <p>
+                            <strong>حالة الاتصال:</strong> offline
+                          </p>
+                        }
                       </CardContent>
                       {daherUser.username == "elidaher" && (
                         <Button

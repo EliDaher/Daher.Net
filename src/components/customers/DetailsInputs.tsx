@@ -39,6 +39,7 @@ export default function DetailsInputs({ customer, setCustomer }) {
       Contact: "الهاتف",
       sender: "المرسل",
       location: "الموقع",
+      createdAt: 'تاريخ الانشاء',
       address: "IP الراوتر",
     };
     return labels[key] || key;
@@ -50,33 +51,34 @@ export default function DetailsInputs({ customer, setCustomer }) {
   }, [customer]);
 
   return (
-    <div>
-      {Object.entries(customer).map(([key, value]) => (
-        key == 'id' ? <></> : key == 'createdAt' ?
-        
-        <p key={key} className="flex gap-2 relative group mb-4 items-end">
-          <label className="block font-bold w-36">{convertLabel(key)}:</label>
-          <input
-            type="text"
-            value={new Date(value as any).toLocaleString("en-GB")}
-            className="bg-transparent border-b-2 border-transparent focus:border-primary-500 outline-none transition-all w-full"
-          />
-          <span className="absolute bottom-0 right-0 w-full h-[2px] bg-primary-500 scale-x-0 group-hover:scale-x-100 origin-right transition-transform duration-300"></span>
-        </p>
-        
-        :
-
-        <p key={key} className="flex gap-2 relative group mb-4 items-end">
-          <label className="block font-bold w-36">{convertLabel(key)}:</label>
-          <input
-            type="text"
-            value={value as any}
-            onChange={(e) => handleChange(key, e.target.value)}
-            className="bg-transparent border-b-2 border-transparent focus:border-primary-500 outline-none transition-all w-full"
-          />
-          <span className="absolute bottom-0 right-0 w-full h-[2px] bg-primary-500 scale-x-0 group-hover:scale-x-100 origin-right transition-transform duration-300"></span>
-        </p>
-      ))}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-1 w-full">
+      {Object.entries(customer).map(([key, value]) =>
+        key == "id" ? (
+          <></>
+        ) : key == "createdAt" ? (
+          <div key={key} className="flex gap-2 relative group mb-4 items-end">
+            <label className="block font-bold w-36">{convertLabel(key)}:</label>
+            <input
+              type="text"
+              value={new Date(value as any).toLocaleString("en-GB")}
+              className="bg-transparent border-b-2 border-transparent focus:border-primary-500 outline-none transition-all w-full"
+            />
+            <span className="absolute bottom-0 right-0 w-full h-[2px] bg-primary-500 scale-x-0 group-hover:scale-x-100 origin-right transition-transform duration-300"></span>
+          </div>
+        ) : (
+          <div key={key} className="flex gap-2 relative group mb-4 items-end">
+            <label className="block font-bold w-36">{convertLabel(key)}:</label>
+            <input
+              disabled={['address'].includes(key)}
+              type="text"
+              value={value as any}
+              onChange={(e) => handleChange(key, e.target.value)}
+              className="bg-transparent border-b-2 border-transparent focus:border-primary-500 outline-none transition-all w-full"
+            />
+            <span className="absolute bottom-0 right-0 w-full h-[2px] bg-primary-500 scale-x-0 group-hover:scale-x-100 origin-right transition-transform duration-300"></span>
+          </div>
+        ),
+      )}
 
       {isChanged && (
         <button

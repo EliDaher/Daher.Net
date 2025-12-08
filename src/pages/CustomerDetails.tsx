@@ -40,13 +40,6 @@ export default function CustomerDetails() {
   const [loadingCustomer, setLoadingCustomer] = useState(true);
   const [loadingTransactions, setLoadingTransactions] = useState(true);
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
-  const totalPages = Math.ceil(transactions.length / itemsPerPage);
-  const currentItems = transactions.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  );
 
   const [isOpen, setIsOpen] = useState(false);
   const [formTitle, setFormTitle] = useState("");
@@ -336,8 +329,11 @@ export default function CustomerDetails() {
           <CardHeader>
             <CardTitle>المعلومات الأساسية</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <DetailsInputs customer={{...customer, address: pppData.address}} setCustomer={setCustomer} />
+          <CardContent className="">
+            <DetailsInputs
+              customer={{ ...customer, address: (pppData?.address || '') }}
+              setCustomer={setCustomer}
+            />
           </CardContent>
         </Card>
 
@@ -372,7 +368,7 @@ export default function CustomerDetails() {
         <Card className="overflow-x-auto">
           {loadingTransactions ? (
             <Skeleton className="h-48 w-full" />
-          ) : currentItems.length === 0 ? (
+          ) : transactions?.length === 0 ? (
             <p className="text-muted-foreground text-center">
               لا توجد معاملات حالياً.
             </p>
@@ -381,7 +377,8 @@ export default function CustomerDetails() {
               <DataTable
                 title="البيان المالي"
                 columns={PaymentsColumns}
-                data={currentItems}
+                data={transactions || []}
+                defaultPageSize={5}
                 getRowClassName={(row) =>
                   row.type !== "payment" ? "text-red-500" : "text-green-500"
                 }
