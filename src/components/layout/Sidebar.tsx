@@ -85,7 +85,7 @@ const navigationGroups = [
   {
     title: "POS",
     items: [
-      { name: "Users", href: "/POSUsers", icon: User, allowed: ["admin"] },
+      { name: "Users", href: "/POSUsers", icon: User, allowed: ["admin", "employee"] },
       {
         name: "Pending Transactions",
         href: "/PendingTransactions",

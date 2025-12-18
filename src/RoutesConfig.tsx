@@ -135,7 +135,7 @@ export const routesConfig = [
   {
     path: "/FinancialStatement",
     element: (
-      <PrivateRoute allowedRoles={["admin"]}>
+      <PrivateRoute allowedRoles={["admin", "employee"]}>
         <FinancialStatement />
       </PrivateRoute>
     ),

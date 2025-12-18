@@ -8,7 +8,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import getWifiCustomers, { deleteCustomer } from "@/services/wifi";
-import { Users as UsersIcon, Table, LayoutGrid, Plus, Loader2 } from "lucide-react";
+import {
+  Users as UsersIcon,
+  Table,
+  LayoutGrid,
+  Plus,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -44,6 +50,7 @@ export default function Users() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSender, setSelectedSender] = useState("all");
+  const [selectedState, setSelectedState] = useState("all");
   const [selectedSpeed, setSelectedSpeed] = useState("all");
   const [selectedDealer, setSelectedDealer] = useState("all");
   const [selectedBalance, setSelectedBalance] = useState("all");
@@ -56,7 +63,6 @@ export default function Users() {
   const [activeData, setActiveData] = useState([]);
 
   useEffect(() => {
-    
     socket.emit("getActive");
 
     const handleReturnActive = (data) => {
@@ -70,7 +76,6 @@ export default function Users() {
       socket.off("returnActivePPP", handleReturnActive);
     };
   }, []);
-
 
   const { data: customers, isLoading: customersLoading } = useQuery<any[]>({
     queryKey: ["customers-table"],
@@ -108,6 +113,17 @@ export default function Users() {
     const matchSender =
       selectedSender !== "all" ? customer.sender === selectedSender : true;
 
+    const isActive = activeData?.some((ppp) =>
+      (ppp.name as string).includes(customer.UserName),
+    );
+
+    const matchState =
+      selectedState === "all"
+        ? true
+        : selectedState === "online"
+          ? isActive
+          : !isActive;
+
     const matchSpeed =
       selectedSpeed !== "all"
         ? customer.SubscriptionSpeed === selectedSpeed
@@ -126,7 +142,12 @@ export default function Users() {
             : true;
 
     return (
-      matchSearch && matchSender && matchSpeed && matchBalance && matchDealer
+      matchSearch &&
+      matchSender &&
+      matchSpeed &&
+      matchBalance &&
+      matchDealer &&
+      matchState
     );
   });
 
@@ -167,7 +188,7 @@ export default function Users() {
             </>
           }
         >
-          <AddCustomerForm/>
+          <AddCustomerForm />
         </PopupForm>
         <PopupForm
           title="تأكيد الحذف"
@@ -238,7 +259,9 @@ export default function Users() {
             <CardHeader className="flex items-center justify-between">
               <div className="flex items-center space-x-2 rtl:space-x-reverse">
                 <UsersIcon className="h-6 w-6 text-muted-foreground" />
-                {activeData?.length == 0 || activeData == null ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                {activeData?.length == 0 || activeData == null ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : null}
                 <CardTitle>
                   قائمة المشتركين ({filteredCustomers?.length})
                 </CardTitle>
@@ -264,83 +287,112 @@ export default function Users() {
 
               {/* الفلاتر */}
               <div className="flex gap-4 flex-wrap">
-                {/* المرسل */}
-                <Select
-                  value={selectedSender}
-                  onValueChange={setSelectedSender}
-                >
-                  <SelectTrigger className="w-36">
-                    <SelectValue placeholder="المرسل" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">الكل</SelectItem>
-                    {[...new Set(customers?.map((c) => c.sender?.trim()))]
-                      .filter((sender) => sender && sender !== "")
-                      .map((sender) => (
-                        <SelectItem key={sender} value={sender}>
-                          {sender}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-
-                {/* السرعة */}
-                <Select value={selectedSpeed} onValueChange={setSelectedSpeed}>
-                  <SelectTrigger className="w-36">
-                    <SelectValue placeholder="السرعة" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">الكل</SelectItem>
-                    {[
-                      ...new Set(
-                        customers?.map((c) => c.SubscriptionSpeed?.trim()),
-                      ),
-                    ]
-                      .filter((speed) => speed && speed !== "")
-                      .map((speed) => (
-                        <SelectItem key={speed} value={speed}>
-                          {speed} Mbps
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-
-                {/* السرعة */}
-                <Select
-                  disabled={daherUser.role == "dealer" ? true : false}
-                  value={selectedDealer}
-                  onValueChange={setSelectedDealer}
-                >
-                  <SelectTrigger className="w-36">
-                    <SelectValue placeholder="البائع" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">الكل</SelectItem>
-                    {[...new Set(customers?.map((c) => c.dealer))]
-                      .filter(Boolean)
-                      .map((dealer) => (
-                        <SelectItem key={dealer} value={dealer}>
-                          {dealer}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-
-                {/* الرصيد */}
-                <Select
-                  value={selectedBalance}
-                  onValueChange={setSelectedBalance}
-                >
-                  <SelectTrigger className="w-36">
-                    <SelectValue placeholder="الرصيد" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">الكل</SelectItem>
-                    <SelectItem value="BalanceZero">0 رصيد</SelectItem>
-                    <SelectItem value="noBalance">بدون رصيد</SelectItem>
-                    <SelectItem value="hasBalance">مع رصيد</SelectItem>
-                  </SelectContent>
-                </Select>
+                {/* حالة الاتصال */}
+                <div>
+                  <label htmlFor="">حالة الاتصال</label>
+                  <Select
+                    value={selectedState}
+                    onValueChange={setSelectedState}
+                  >
+                    <SelectTrigger className="w-36">
+                      <SelectValue placeholder="المرسل" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">الكل</SelectItem>
+                      <SelectItem value="online">متصل</SelectItem>
+                      <SelectItem value="offline">غير متصل</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label htmlFor="">المرسل</label>
+                  {/* المرسل */}
+                  <Select
+                    value={selectedSender}
+                    onValueChange={setSelectedSender}
+                  >
+                    <SelectTrigger className="w-36">
+                      <SelectValue placeholder="المرسل" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">الكل</SelectItem>
+                      {[...new Set(customers?.map((c) => c.sender?.trim()))]
+                        .filter((sender) => sender && sender !== "")
+                        .map((sender) => (
+                          <SelectItem key={sender} value={sender}>
+                            {sender}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label htmlFor="">السرعة</label>
+                  {/* السرعة */}
+                  <Select
+                    value={selectedSpeed}
+                    onValueChange={setSelectedSpeed}
+                  >
+                    <SelectTrigger className="w-36">
+                      <SelectValue placeholder="السرعة" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">الكل</SelectItem>
+                      {[
+                        ...new Set(
+                          customers?.map((c) => c.SubscriptionSpeed?.trim()),
+                        ),
+                      ]
+                        .filter((speed) => speed && speed !== "")
+                        .map((speed) => (
+                          <SelectItem key={speed} value={speed}>
+                            {speed} Mbps
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label htmlFor="">البائع</label>
+                  {/* السرعة */}
+                  <Select
+                    disabled={daherUser.role == "dealer" ? true : false}
+                    value={selectedDealer}
+                    onValueChange={setSelectedDealer}
+                  >
+                    <SelectTrigger className="w-36">
+                      <SelectValue placeholder="البائع" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">الكل</SelectItem>
+                      {[...new Set(customers?.map((c) => c.dealer))]
+                        .filter(Boolean)
+                        .map((dealer) => (
+                          <SelectItem key={dealer} value={dealer}>
+                            {dealer}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label htmlFor="">الرصيد</label>
+                  {/* الرصيد */}
+                  <Select
+                    value={selectedBalance}
+                    onValueChange={setSelectedBalance}
+                  >
+                    <SelectTrigger className="w-36">
+                      <SelectValue placeholder="الرصيد" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">الكل</SelectItem>
+                      <SelectItem value="BalanceZero">0 رصيد</SelectItem>
+                      <SelectItem value="noBalance">بدون رصيد</SelectItem>
+                      <SelectItem value="hasBalance">مع رصيد</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {/* زر إعادة الضبط */}
@@ -408,18 +460,18 @@ export default function Users() {
                         <p>
                           <strong>المرسل:</strong> {customer.sender}
                         </p>
-                        
-                        {
-                          activeData?.some((ppp) =>
-                            (ppp.name as string).includes(customer.UserName),
-                          ) ?
+
+                        {activeData?.some((ppp) =>
+                          (ppp.name as string).includes(customer.UserName),
+                        ) ? (
                           <p>
                             <strong>حالة الاتصال:</strong> online
-                          </p> :
+                          </p>
+                        ) : (
                           <p>
                             <strong>حالة الاتصال:</strong> offline
                           </p>
-                        }
+                        )}
                       </CardContent>
                       {daherUser.username == "elidaher" && (
                         <Button
