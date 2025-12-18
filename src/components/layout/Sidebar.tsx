@@ -211,7 +211,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                   const isActive = location.pathname === item.href;
                   if (
                     item.name == "Users" &&
-                    ["sara", "fadi", "fade"].includes(user.username) &&
+                    !["sara", "fadi", "fade"].includes(user.username) &&
                     user.role == "employee"
                   ) {
                     return null;
