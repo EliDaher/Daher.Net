@@ -26,6 +26,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
+import { useEffect } from "react";
 
 const navigationGroups = [
   {
@@ -208,23 +209,30 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
               >
                 {group.items.map((item) => {
                   const isActive = location.pathname === item.href;
-                  return (
-                    item.allowed.includes(user.role) && (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        className={cn(
-                          "group flex items-center rounded-md px-2 py-2 text-sm font-medium transition-colors",
-                          isActive
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-inner"
-                            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                        )}
-                      >
-                        <item.icon className="h-5 w-5 flex-shrink-0 mr-3" />
-                        {!isCollapsed && item.name}
-                      </Link>
-                    )
-                  );
+                  if (
+                    item.name == "Users" &&
+                    ["sara", "fadi", "fade"].includes(user.username) &&
+                    user.role == "employee"
+                  ) {
+                    return null;
+                  } else
+                    return (
+                      item.allowed.includes(user.role) && (
+                        <Link
+                          key={item.name}
+                          to={item.href}
+                          className={cn(
+                            "group flex items-center rounded-md px-2 py-2 text-sm font-medium transition-colors",
+                            isActive
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-inner"
+                              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                          )}
+                        >
+                          <item.icon className="h-5 w-5 flex-shrink-0 mr-3" />
+                          {!isCollapsed && item.name}
+                        </Link>
+                      )
+                    );
                 })}
               </AccordionContent>
             </AccordionItem>
