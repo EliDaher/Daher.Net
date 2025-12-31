@@ -3,12 +3,21 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import PopupForm from '@/components/ui/custom/PopupForm';
 import { Input } from '@/components/ui/input';
+import { useCompaniesContext } from '@/contexts/CompaniesProvider';
+import decreaseBalance from '@/services/companies';
 import getPendingInvoices, { confirmInvoice, rejectInvoice, startPayment } from '@/services/invoices';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useRef } from 'react';
 import { io, Socket } from "socket.io-client";
 
 export default function PendingTransactions() {
+  const { data: companies, isLoading } = useCompaniesContext();
+  const daherUser = JSON.parse(localStorage.getItem("DaherUser"));
+
+  useEffect(()=>{
+    console.log(companies);
+  }, [])
+
   const [isOpen, setIsOpen] = useState(false);
   const [formTitle] = useState('سبب الغاء العملية');
   const [reason, setReason] = useState('');
@@ -39,6 +48,20 @@ export default function PendingTransactions() {
     mutationFn: (invoiceId: string) => confirmInvoice(invoiceId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pending-table'] });
+    },
+  });
+  
+  const decreaseBalanceMutation = useMutation({
+    mutationFn: (dataToSend: {
+      amount;
+      reason;
+      company;
+      number;
+      companyId;
+      port;
+    }) => decreaseBalance(dataToSend),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pending-table"] });
     },
   });
 
@@ -162,7 +185,19 @@ export default function PendingTransactions() {
               <Button
                 variant="default"
                 size="sm"
-                onClick={() => { window.confirm('هل انت متأكد من انهاء العملية') ? confirmMutation.mutate(row._id) : null }}
+                onClick={() => { 
+                  if(window.confirm('هل انت متأكد من انهاء العملية')) {
+                    confirmMutation.mutate(row._id)
+                    decreaseBalanceMutation.mutate({
+                      amount: row.amount,
+                      reason: "",
+                      company: row.company,
+                      number: row.number,
+                      companyId: companies.find(c => c.name === row.company)?.id,
+                      port: daherUser.username,
+                    });
+                  }}
+                }
                 disabled={confirmMutation.isPending}
               >
                 {confirmMutation.isPending ? '...' : 'تأكيد'}

@@ -16,6 +16,7 @@ import {
   User,
   Table,
   Table2Icon,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -86,7 +87,12 @@ const navigationGroups = [
   {
     title: "POS",
     items: [
-      { name: "Users", href: "/POSUsers", icon: User, allowed: ["admin", "employee"] },
+      {
+        name: "Users",
+        href: "/POSUsers",
+        icon: User,
+        allowed: ["admin", "employee"],
+      },
       {
         name: "Pending Transactions",
         href: "/PendingTransactions",
@@ -121,6 +127,18 @@ const navigationGroups = [
         name: "Inquiry Logs",
         href: "/InquiryLogs",
         icon: Table,
+        allowed: ["admin"],
+      },
+    ],
+    allowed: ["admin"],
+  },
+  {
+    title: "Companies",
+    items: [
+      {
+        name: "Companies",
+        href: "/companies",
+        icon: Building2,
         allowed: ["admin"],
       },
     ],

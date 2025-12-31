@@ -1,6 +1,7 @@
 import React from "react";
 import { PrivateRoute } from "@/components/auth/PrivateRoute";
 import POSUsers from "./pages/POSUsers";
+import Companies from "./pages/Companies";
 
 // Lazy Loading للصفحات
 const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
@@ -147,6 +148,10 @@ export const routesConfig = [
         <InquiryLogs />
       </PrivateRoute>
     ),
+  },
+  {
+    path: "/companies",
+    element: <Companies />,
   },
   { path: "*", element: <NotFound /> },
 ];

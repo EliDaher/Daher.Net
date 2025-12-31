@@ -1,4 +1,5 @@
 import apiClient, { invoiceClient } from "@/lib/axios";
+import decreaseBalance from "./companies";
 
 export default async function getPendingInvoices() {
   try {

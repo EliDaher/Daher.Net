@@ -18,7 +18,7 @@ interface HeaderProps {
   onToggleSidebar: () => void;
 }
 
-interface daherUser {
+export interface daherUser {
   id: string,
   password: string,
   role: string,

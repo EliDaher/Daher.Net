@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import React, { Suspense } from "react";
 import { routesConfig } from "./RoutesConfig";
+import { CompaniesProvider } from "./contexts/CompaniesProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,6 +19,7 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <CompaniesProvider>
     <ThemeProvider defaultTheme="system" storageKey="dashboard-theme">
       <TooltipProvider>
         <Toaster />
@@ -33,6 +35,7 @@ const App = () => (
         </HashRouter>
       </TooltipProvider>
     </ThemeProvider>
+    </CompaniesProvider>
   </QueryClientProvider>
 );
 

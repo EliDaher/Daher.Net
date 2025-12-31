@@ -34,18 +34,20 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
       <Card className="p-8 rounded-xl shadow-xl w-full max-w-md space-y-6">
         <h2 className="text-2xl font-bold text-center">Login</h2>
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
           <Input
             type="text"
             placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            autoComplete="new-username"
           />
           <Input
             type="password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
           />
           <Button type="submit" className="w-full">
             Login

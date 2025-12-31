@@ -108,7 +108,7 @@ export function DataTable({
     if (key === "email") {
       return <span className="text-muted-foreground">{value}</span>;
     }
-    if (key === "createdAt" || key === "date" || key === 'timestamp') {
+    if (key === "createdAt" || key === "date" || key === 'timestamp' || key === 'lastUpdate') {
       return <span className="text-muted-foreground">{new Date(value).toLocaleString("en-GB")}</span>;
     }
     if (key === "amount" && amountBold) {
@@ -118,6 +118,13 @@ export function DataTable({
       return (
         <span className="">
           {value.toLocaleString("en-EG", { minimumFractionDigits: 0 })}
+        </span>
+      );
+    }
+    if (key === "balance") {
+      return (
+        <span className="">
+          {value.toFixed(0)}
         </span>
       );
     }
