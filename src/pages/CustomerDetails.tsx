@@ -78,9 +78,10 @@ export default function CustomerDetails() {
       alert("لا يوجد رقم هاتف للمشترك");
       return;
     }
-    if(customer.Balance >=0)  return;
-     
-    
+    if(customer.Balance >=0){
+      alert('لا يوجد عليه فواتير')
+      return;
+    }
         const phone = customer.Contact.replace(/\D/g, "");
         const message = `قيمة فاتورتك الحالية هي: ${customer.Balance * -1} دولار. شكراً لاستخدامك خدماتنا.`;
         const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
