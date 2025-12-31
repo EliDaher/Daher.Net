@@ -72,6 +72,24 @@ export default function CustomerDetails() {
     setLoadingTransactions(false);
   };
 
+
+    const handleWhatsApp =()=>{
+    if(!customer?.Contact){
+      alert("لا يوجد رقم هاتف للمشترك");
+      return;
+    }
+    if(customer.Balance >=0){
+      alert('لا يوجد عليه فواتير')
+      return;
+    }
+        const phone = customer.Contact.replace(/\D/g, "");
+        const message = `قيمة فاتورتك الحالية هي: ${customer.Balance * -1} دولار. شكراً لاستخدامك خدماتنا.`;
+        const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+        window.open(url, '_blank');
+      
+  };
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -360,6 +378,10 @@ export default function CustomerDetails() {
           >
             <Plus className="w-4 h-4 ml-2" /> إضافة دفعة
           </Button>
+           <Button variant="outline" onClick={handleWhatsApp}>
+            واتساب
+          </Button>
+
           <Button variant="outline" onClick={reloadTransactions}>
             <RefreshCwIcon />
           </Button>

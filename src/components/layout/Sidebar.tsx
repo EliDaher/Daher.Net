@@ -15,6 +15,8 @@ import {
   Wallet,
   User,
   Table,
+  PackagePlus,  
+  Boxes,
   Table2Icon,
   Building2,
 } from "lucide-react";
@@ -111,7 +113,19 @@ const navigationGroups = [
         icon: ArrowDownCircle,
         allowed: ["admin", "employee"],
       },
-    ],
+            {
+        name: "Add Products",
+        href: "/AddProducts",
+        icon: PackagePlus,
+        allowed: ["admin", "employee"],
+      },
+      {
+        name: "View Products",
+        href: "/ViewProducts",
+        icon: Boxes,
+        allowed: ["admin", "employee"],
+      },
+   ],
     allowed: ["admin", "employee"],
   },
   {

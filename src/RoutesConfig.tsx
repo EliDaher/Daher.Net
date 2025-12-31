@@ -20,6 +20,9 @@ const PendingTransactions = React.lazy(() => import("@/pages/PendingTransactions
 const DoneTransactions = React.lazy(() => import("@/pages/DoneTransactions"));
 const POSPayments = React.lazy(() => import("@/pages/POSPayments"));
 const BillBalance = React.lazy(() => import("@/pages/BillBalance"));
+const AddProduct = React.lazy(()=>import('@/pages/AddProduct'))
+const ViewProduct = React.lazy(()=>import('@/pages/ViewProduct'))
+
 const InquiryLogs = React.lazy(() => import("@/pages/InquiryLogs"));
 const FinancialStatement = React.lazy(
   () => import("@/pages/FinancialStatement"),
@@ -50,6 +53,21 @@ export const routesConfig = [
     element: (
       <PrivateRoute allowedRoles={["admin"]}>
         <Balance />
+      </PrivateRoute>
+    ),
+  },
+  {   path : "/AddProducts",
+    element: (
+      <PrivateRoute allowedRoles={["admin", "employee"]}>
+        <AddProduct />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path : "/ViewProducts",
+    element: (
+      <PrivateRoute allowedRoles={["admin", "employee"]}>
+        <ViewProduct />
       </PrivateRoute>
     ),
   },
