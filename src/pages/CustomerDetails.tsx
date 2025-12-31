@@ -1,0 +1,426 @@
+import { useEffect, useRef, useState } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowLeft, Plus, Printer, RefreshCwIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  addInvoice,
+  addPayment,
+  getCustomerById,
+  getTransactionsForCustomer,
+} from "../services/wifi";
+import DetailsInputs from "@/components/customers/DetailsInputs";
+import PopupForm from "@/components/ui/custom/PopupForm";
+import { useReactToPrint } from "react-to-print";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
+import { DataTable } from "@/components/dashboard/DataTable";
+import addPaymentDealer from "@/services/dealer";
+
+export default function CustomerDetails() {
+
+  const location = useLocation()
+  const pppData = location.state
+
+  useEffect(()=>{
+    console.log(pppData)
+  }, [pppData])
+
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const daherUser = JSON.parse(localStorage.getItem("DaherUser"));
+
+  const [customer, setCustomer] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [loadingCustomer, setLoadingCustomer] = useState(true);
+  const [loadingTransactions, setLoadingTransactions] = useState(true);
+
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [formTitle, setFormTitle] = useState("");
+  const [printOnly, setPrintOnly] = useState(false);
+
+  const [paymentDate, setPaymentDate] = useState();
+  const [paymentValue, setPaymentValue] = useState(0);
+  const [paymentDetails, setPaymentDetails] = useState("");
+
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchCustomer = async () => {
+      setLoadingCustomer(true);
+      const userRes = await getCustomerById(id);
+      if (userRes.success) setCustomer(userRes.data);
+      setLoadingCustomer(false);
+    };
+    fetchCustomer();
+  }, [id]);
+
+  useEffect(() => {
+    reloadTransactions();
+  }, [id]);
+
+  const reloadTransactions = async () => {
+    setLoadingTransactions(true);
+    const transRes = await getTransactionsForCustomer(id);
+    if (transRes.success) setTransactions(transRes.data);
+    setLoadingTransactions(false);
+  };
+
+
+    const handleWhatsApp =()=>{
+    if(!customer?.Contact){
+      alert("لا يوجد رقم هاتف للمشترك");
+      return;
+    }
+        const phone = customer.Contact.replace(/\D/g, "");
+        const message = `قيمة فاتورتك الحالية هي: ${customer.Balance * -1} دولار. شكراً لاستخدامك خدماتنا.`;
+        const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+        window.open(url, '_blank');
+      
+  };
+
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      // تحقق من صحة البيانات قبل الإرسال
+      if (!paymentValue || !paymentDate || !paymentDetails || !id) {
+        alert("يرجى ملء جميع الحقول المطلوبة");
+        setLoading(false);
+        return;
+      }
+
+      const payload = {
+        amount: paymentValue,
+        date: paymentDate ? dayjs(paymentDate).format("YYYY-MM-DD") : "",
+        details: paymentDetails,
+        subscriberID: id,
+        total: Number(customer.Balance) || 0,
+        dealer: daherUser.role === "dealer" ? daherUser.username : undefined,
+      };
+
+      let res;
+
+      if (formTitle === "اضافة فاتورة") {
+        res = await addInvoice(payload);
+      } else {
+        res =
+          daherUser.role === "dealer"
+            ? await addPaymentDealer(payload)
+            : await addPayment(payload);
+      }
+
+      if (res?.message && res.message.includes("success")) {
+        if (window.confirm("هل تريد طباعة إيصال؟")) {
+          handlePrint();
+        }
+
+        alert("تمت الإضافة بنجاح");
+
+        // تنظيف الحقول
+        setIsOpen(false);
+        reloadTransactions();
+        setPaymentDate(null);
+        setPaymentValue(0);
+        setPaymentDetails("");
+      } else {
+        console.error("API Error Response:", res);
+        alert(res?.error || "حدث خطأ أثناء الإرسال، يرجى المحاولة لاحقًا.");
+      }
+      if (formTitle === "اضافة فاتورة") {
+        setCustomer({
+          ...customer,
+          Balance: customer.Balance - paymentValue,
+        });
+      } else {
+        setCustomer({
+          ...customer,
+          Balance: customer.Balance + paymentValue,
+        });
+      }
+    } catch (error) {
+      console.error("Exception in handleSubmit:", error);
+      if (error?.response?.data?.error) {
+        alert("خطأ: " + error.response.data.error);
+      } else {
+        alert("حدث خطأ غير متوقع. يرجى التحقق من الاتصال أو المحاولة لاحقًا.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const tableRef = useRef();
+
+  const handlePrint = useReactToPrint({
+    contentRef: tableRef, // استخدام contentRef بشكل صحيح
+    pageStyle: `
+      @page {
+        size: 80mm auto;
+        margin: 0;
+      }
+
+      body {
+        font-family: 'Arial', sans-serif;
+        font-size: 12px;
+        padding: 10px;
+        color: black;
+        direction: rtl;
+      }
+
+      .header {
+        text-align: center;
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+
+      .totalValue {
+        font-size: 18px;
+        font-weight: bold;
+        text-align: right;
+        margin-top: 10px;
+      }
+
+      .cut {
+        page-break-before: always;
+        margin-top: 20px;
+        text-align: center;
+        font-style: italic;
+      }
+
+      div, span, p {
+        break-inside: avoid;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+    `,
+    onAfterPrint: () => {
+      console.log("تمت الطباعة بنجاح!");
+      setIsOpen(false); // إغلاق النافذة بعد الطباعة
+    },
+  });
+
+  const getCurrentDateTime = () => {
+    const now = new Date();
+    const options = {
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      weekday: "long",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+    };
+    return now.toLocaleDateString("en-GB", options as any);
+  };
+
+  useEffect(() => {
+    if (isOpen && printOnly) {
+      handlePrint();
+    }
+  }, [printOnly, isOpen]);
+
+  if (loadingCustomer || !customer) {
+    return (
+      <DashboardLayout>
+        <Skeleton className="h-64 w-full" />
+      </DashboardLayout>
+    );
+  }
+
+  const PaymentsColumns = [
+    { key: "amount", label: "الكمية", sortable: true },
+    { key: "Details", label: "التفاصيل", sortable: true },
+    { key: "date", label: "الوقت", sortable: true },
+  ];
+
+  return (
+    <DashboardLayout>
+      <PopupForm
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+        title={formTitle}
+        trigger={<></>}
+      >
+        <div className="flex flex-row-reverse gap-2">
+          {/* تاكيد العمليه */}
+          {printOnly ? (
+            <></>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4 w-2/3">
+              <Input
+                value={paymentValue}
+                onChange={(e) => setPaymentValue(Number(e.target.value))}
+                type="number"
+                placeholder="القيمة بالدولار"
+                required
+              />
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  className="w-full"
+                  label="اختر التاريخ"
+                  value={paymentDate}
+                  onChange={(newValue) => setPaymentDate(newValue as any)}
+                  format="DD/MM/YYYY" // ✅ هنا التنسيق الجديد
+                />
+              </LocalizationProvider>
+              <Input
+                value={paymentDetails}
+                onChange={(e) => setPaymentDetails(e.target.value)}
+                type="text"
+                placeholder="تفاصيل (اختياري)"
+              />
+              <button
+                disabled={loading ? true : false}
+                type="submit"
+                className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
+              >
+                {!loading ? "إرسال" : "جاري حفظ التعديلات ..."}
+              </button>
+            </form>
+          )}
+
+          {/* البيانات المطبوعة */}
+          <div ref={tableRef} className="p-4 text-sm" dir="rtl">
+            {/* رأس الفاتورة */}
+            <div className="header">
+              <h1>Daher.Net</h1>
+              <span>{getCurrentDateTime()}</span>
+            </div>
+
+            {/* معلومات المشترك */}
+            <div className="text-right font-bold mb-2">
+              <div>اسم المشترك: {customer?.Name || "غير معروف"}</div>
+              <div>الرقم: {customer?.Contact}</div>
+            </div>
+
+            {/* تفاصيل الدفع */}
+            <div className="text-right mb-2">
+              <div className="font-semibold">التفاصيل:</div>
+              <div className="border p-1 rounded">
+                {paymentDetails || "بدون ملاحظات"}
+              </div>
+            </div>
+
+            {/* المبلغ */}
+            <div className="text-right totalValue mt-4">
+              <div className="text-lg font-extrabold border-t pt-2">
+                {formTitle == "اضافة دفعة"
+                  ? "المبلغ المدفوع"
+                  : "المبلغ المطلوب"}
+                : {paymentValue} دولار
+              </div>
+            </div>
+
+            {/* خط فاصل للطباعة */}
+            <div className="cut mt-4 border-t pt-2 text-center text-xs">
+              -- شكراً لثقتكم بخدماتنا --
+            </div>
+          </div>
+        </div>
+      </PopupForm>
+
+      <div className="space-y-6" dir="rtl">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">بيانات المشترك</h1>
+          <Button onClick={() => navigate("/users")} variant="outline">
+            <ArrowLeft className="ml-2 w-4 h-4" /> رجوع
+          </Button>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>المعلومات الأساسية</CardTitle>
+          </CardHeader>
+          <CardContent className="">
+            <DetailsInputs
+              customer={{ ...customer, address: (pppData?.address || '') }}
+              setCustomer={setCustomer}
+            />
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-start gap-2">
+          {daherUser.role == "admin" && (
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setFormTitle("اضافة فاتورة");
+                setPrintOnly(false);
+                setIsOpen(true);
+              }}
+            >
+              <Plus className="w-4 h-4 ml-2" /> إضافة فاتورة
+            </Button>
+          )}
+          <Button
+            variant="default"
+            onClick={() => {
+              setFormTitle("اضافة دفعة");
+              setPrintOnly(false);
+              setIsOpen(true);
+            }}
+          >
+            <Plus className="w-4 h-4 ml-2" /> إضافة دفعة
+          </Button>
+           <Button variant="outline" onClick={handleWhatsApp}>
+            واتساب
+          </Button>
+          <Button variant="outline" onClick={reloadTransactions}>
+            <RefreshCwIcon />
+          </Button>
+        </div>
+
+        <Card className="overflow-x-auto">
+          {loadingTransactions ? (
+            <Skeleton className="h-48 w-full" />
+          ) : transactions?.length === 0 ? (
+            <p className="text-muted-foreground text-center">
+              لا توجد معاملات حالياً.
+            </p>
+          ) : (
+            <>
+              <DataTable
+                title="البيان المالي"
+                columns={PaymentsColumns}
+                data={transactions || []}
+                defaultPageSize={5}
+                getRowClassName={(row) =>
+                  row.type !== "payment" ? "text-red-500" : "text-green-500"
+                }
+                renderRowActions={(tx) => (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setFormTitle(
+                        tx.type === "payment" ? "اضافة دفعة" : "اضافة فاتورة",
+                      );
+                      setPaymentValue(tx.amount);
+                      setPaymentDetails(tx.Details);
+                      setPaymentDate(tx.date);
+                      setPrintOnly(true);
+                      setIsOpen(true);
+                    }}
+                  >
+                    <Printer />
+                  </Button>
+                )}
+              />
+            </>
+          )}
+        </Card>
+      </div>
+    </DashboardLayout>
+  );
+}
