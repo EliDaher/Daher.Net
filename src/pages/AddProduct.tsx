@@ -22,7 +22,6 @@ export default function AddProduct() {
             return;
         }
 
-        // JSON data
         const productData = {
             name,
             price,
