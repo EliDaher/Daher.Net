@@ -377,6 +377,7 @@ export default function CustomerDetails() {
            <Button variant="outline" onClick={handleWhatsApp}>
             واتساب
           </Button>
+
           <Button variant="outline" onClick={reloadTransactions}>
             <RefreshCwIcon />
           </Button>

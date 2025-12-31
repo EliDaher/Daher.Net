@@ -21,6 +21,7 @@ const POSPayments = React.lazy(() => import("@/pages/POSPayments"));
 const BillBalance = React.lazy(() => import("@/pages/BillBalance"));
 const AddProduct = React.lazy(()=>import('@/pages/AddProduct'))
 const ViewProduct = React.lazy(()=>import('@/pages/ViewProduct'))
+
 const InquiryLogs = React.lazy(() => import("@/pages/InquiryLogs"));
 const FinancialStatement = React.lazy(
   () => import("@/pages/FinancialStatement"),

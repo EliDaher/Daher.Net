@@ -119,7 +119,7 @@ const navigationGroups = [
         icon: Boxes,
         allowed: ["admin", "employee"],
       },
-    ],
+   ],
     allowed: ["admin", "employee"],
   },
   {
