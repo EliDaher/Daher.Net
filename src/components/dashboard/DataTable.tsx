@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -32,6 +32,7 @@ interface TableData {
 
 interface DataTableProps {
   title: string;
+  totalPend: boolean;
   description?: string;
   columns: TableColumn[];
   data: TableData[];
@@ -46,6 +47,7 @@ interface DataTableProps {
 
 export function DataTable({
   title,
+  totalPend,
   description,
   columns,
   data,
@@ -134,13 +136,24 @@ export function DataTable({
     return value;
   };
 
+  const totalPendValue = useMemo(() => {
+    return filteredData.reduce((sum, c) => sum + Number(c.amount), 0);
+  }, [filteredData]);
+
   return (
     <Card className={className}>
       <CardHeader>
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <CardTitle>{title}</CardTitle>
-            {description && <CardDescription className="mt-2">{description}</CardDescription>}
+            {description && (
+              <CardDescription className="mt-2">{description}</CardDescription>
+            )}
+            {totalPend && (
+              <CardDescription className="mt-2">
+                {totalPendValue}
+              </CardDescription>
+            )}
           </div>
           {searchable && (
             <div className="flex w-full max-w-sm items-center space-x-2">
@@ -166,11 +179,17 @@ export function DataTable({
             <TableHeader>
               <TableRow>
                 {columns.map((column) => (
-                  <TableHead className={column.hidden ? 'hidden' : 'text-center'} key={column.key}>
+                  <TableHead
+                    className={column.hidden ? "hidden" : "text-center"}
+                    key={column.key}
+                  >
                     {column.sortable ? (
                       <Button
                         variant="ghost"
-                        onClick={() => {handleSort(column.key); console.log(column.hidden)}}
+                        onClick={() => {
+                          handleSort(column.key);
+                          console.log(column.hidden);
+                        }}
                         className={`h-auto p-0 font-medium`}
                       >
                         {column.label}
@@ -196,7 +215,10 @@ export function DataTable({
                     className={getRowClassName ? getRowClassName(row) : ""}
                   >
                     {columns.map((column) => (
-                      <TableCell className={column.hidden ? 'hidden' : ''} key={column.key}>
+                      <TableCell
+                        className={column.hidden ? "hidden" : ""}
+                        key={column.key}
+                      >
                         {renderCellContent(row[column.key], column.key)}
                       </TableCell>
                     ))}
@@ -207,7 +229,10 @@ export function DataTable({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={columns.length + (renderRowActions ? 1 : 0)} className="text-center">
+                  <TableCell
+                    colSpan={columns.length + (renderRowActions ? 1 : 0)}
+                    className="text-center"
+                  >
                     No data found.
                   </TableCell>
                 </TableRow>
@@ -249,7 +274,9 @@ export function DataTable({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
               disabled={currentPage === totalPages || totalPages === 0}
             >
               <ChevronLeft className="h-4 w-4" />

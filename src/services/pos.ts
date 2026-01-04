@@ -60,3 +60,38 @@ export async function addPOSUser({formData, email}) {
         return { success: false, error };
     }
 }
+export async function sendInvoice({ formData, email }) {
+  try {
+    const {
+      landline,
+      selectedCompany,
+      selectedSpeed,
+      amountToPay,
+      paymentType,
+    } = formData;
+
+    const res = await invoiceClient.post(
+      "https://paynet-1.onrender.com/api/payment/internet-full",
+      {
+        landline,
+        company: selectedCompany,
+        speed: selectedSpeed,
+        amount: Number(amountToPay),
+        email,
+        paymentType,
+      },
+    );
+
+    return res.data;
+  } catch (error) {
+    console.error("Error sending invoice:", error);
+
+    return {
+      success: false,
+      message:
+        error?.response?.data?.message ||
+        "Failed to send invoice, please try again",
+      status: error?.response?.status,
+    };
+  }
+}

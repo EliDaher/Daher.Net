@@ -7,7 +7,7 @@ import { useCompaniesContext } from '@/contexts/CompaniesProvider';
 import decreaseBalance from '@/services/companies';
 import getPendingInvoices, { confirmInvoice, rejectInvoice, startPayment } from '@/services/invoices';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { io, Socket } from "socket.io-client";
 
 export default function PendingTransactions() {
@@ -125,7 +125,7 @@ export default function PendingTransactions() {
     }
   }, [pendingData]);
 
-    if (pendingLoading) {
+  if (pendingLoading) {
     return (
       <DashboardLayout>
         <div dir="rtl" className="space-y-6 text-center text-lg font-semibold">
@@ -138,7 +138,12 @@ export default function PendingTransactions() {
   return (
     <DashboardLayout>
       {/* نافذة إدخال سبب الرفض */}
-      <PopupForm isOpen={isOpen} setIsOpen={setIsOpen} title={formTitle} trigger={<></>}>
+      <PopupForm
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+        title={formTitle}
+        trigger={<></>}
+      >
         <div className="flex flex-row-reverse gap-2">
           <form
             onSubmit={(e) => {
@@ -153,7 +158,7 @@ export default function PendingTransactions() {
                   reason: reason,
                 });
                 setIsOpen(false);
-                setReason('');
+                setReason("");
               }
             }}
             className="space-y-4 w-full"
@@ -176,77 +181,79 @@ export default function PendingTransactions() {
         <DataTable
           amountBold={true}
           title="تسديدات معلقة"
-          description=""
+          description=''
+          totalPend={true}
           columns={invoicesColumns}
           data={pendingData || []}
-          renderRowActions={(row) => (
-            row.status != 'جاري التسديد' ? (
-            <div className="flex gap-2">
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => { 
-                  if(window.confirm('هل انت متأكد من انهاء العملية')) {
-                    confirmMutation.mutate(row._id)
-                    decreaseBalanceMutation.mutate({
-                      amount: row.amount,
-                      reason: "",
-                      company: row.company,
-                      number: row.number,
-                      companyId: companies.find(c => c.name === row.company)?.id,
-                      port: daherUser.username,
-                    });
+          renderRowActions={(row) =>
+            row.status != "جاري التسديد" ? (
+              <div className="flex gap-2">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => {
+                    if (window.confirm("هل انت متأكد من انهاء العملية")) {
+                      confirmMutation.mutate(row._id);
+                      decreaseBalanceMutation.mutate({
+                        amount: row.amount,
+                        reason: "",
+                        company: row.company,
+                        number: row.number,
+                        companyId: companies.find((c) => c.name === row.company)
+                          ?.id,
+                        port: daherUser.username,
+                      });
+                    }
                   }}
-                }
-                disabled={confirmMutation.isPending}
-              >
-                {confirmMutation.isPending ? '...' : 'تأكيد'}
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => {
-                  setSelectedRow(row);
-                  setIsOpen(true);
-                }}
-                disabled={deleteMutation.isPending}
-              >
-                {deleteMutation.isPending ? '...' : 'رفض'}
-              </Button>
-            </div>
+                  disabled={confirmMutation.isPending}
+                >
+                  {confirmMutation.isPending ? "..." : "تأكيد"}
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedRow(row);
+                    setIsOpen(true);
+                  }}
+                  disabled={deleteMutation.isPending}
+                >
+                  {deleteMutation.isPending ? "..." : "رفض"}
+                </Button>
+              </div>
             ) : (
               <>
                 <div>
                   <Button
-                    variant='default'
+                    variant="default"
                     disabled={startMutation.isPending}
-                    onClick={()=>{
+                    onClick={() => {
                       const number = row.landline as string;
 
                       let textToCopy = number;
 
-                      if (number.startsWith('033')) {
-                        textToCopy = number.slice(3); 
-                      } else if (number.startsWith('33')) {
+                      if (number.startsWith("033")) {
+                        textToCopy = number.slice(3);
+                      } else if (number.startsWith("33")) {
                         textToCopy = number.slice(2);
                       }
-                      if (number.startsWith('013')) {
-                        textToCopy = number.slice(3); 
-                      } else if (number.startsWith('13')) {
+                      if (number.startsWith("013")) {
+                        textToCopy = number.slice(3);
+                      } else if (number.startsWith("13")) {
                         textToCopy = number.slice(2);
                       }
 
-                      navigator.clipboard.writeText(textToCopy)
+                      navigator.clipboard.writeText(textToCopy);
 
-                      startMutation.mutate(row._id)
+                      startMutation.mutate(row._id);
                     }}
                   >
-                    {startMutation.isPending ? '...' : 'بدء التنفيذ'}
+                    {startMutation.isPending ? "..." : "بدء التنفيذ"}
                   </Button>
                 </div>
               </>
             )
-          )}
+          }
         />
       </div>
     </DashboardLayout>
