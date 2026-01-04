@@ -83,7 +83,9 @@ export default function CustomerDetails() {
       return;
     }
         const phone = customer.Contact.replace(/\D/g, "");
-        const message = `قيمة فاتورتك الحالية هي: ${customer.Balance * -1} دولار. شكراً لاستخدامك خدماتنا.`;
+const message = `قيمة فاتورتك الحالية هي: ${customer.Balance * -1} دولار.
+يرجى التسديد قبل تاريخ 5-1-2026 لضمان استمرار الخدمة دون انقطاع.
+شكرًا لثقتك بخدماتنا.`;
         const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
         window.open(url, '_blank');
       
