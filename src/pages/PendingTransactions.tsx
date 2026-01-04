@@ -199,8 +199,9 @@ export default function PendingTransactions() {
                         reason: "",
                         company: row.company,
                         number: row.number,
-                        companyId: companies.find((c) => c.name === row.company)
-                          ?.id,
+                        companyId: companies ? companies.find(
+                          (c) => c.name === row.company,
+                        )?.id : '',
                         port: daherUser.username,
                       });
                     }
