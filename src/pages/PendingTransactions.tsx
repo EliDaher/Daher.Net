@@ -1,3 +1,4 @@
+import SendToPay from '@/components/companies/SendToPay';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,8 @@ export default function PendingTransactions() {
 
   const queryClient = useQueryClient();
   const [socket, setSocket] = useState<Socket | null>(null);
+
+  const [sendToPayOpen, setSendToPayOpen] = useState(false);
 
   useEffect(() => {
     const newSocket = io("https://paynet-1.onrender.com");
@@ -137,6 +140,11 @@ export default function PendingTransactions() {
 
   return (
     <DashboardLayout>
+      <SendToPay 
+        isOpen={sendToPayOpen} 
+        setIsOpen={setSendToPayOpen}
+      />
+
       {/* نافذة إدخال سبب الرفض */}
       <PopupForm
         isOpen={isOpen}
@@ -181,7 +189,7 @@ export default function PendingTransactions() {
         <DataTable
           amountBold={true}
           title="تسديدات معلقة"
-          description=''
+          description=""
           totalPend={true}
           columns={invoicesColumns}
           data={pendingData || []}
@@ -199,9 +207,9 @@ export default function PendingTransactions() {
                         reason: "",
                         company: row.company,
                         number: row.number,
-                        companyId: companies ? companies.find(
-                          (c) => c.name === row.company,
-                        )?.id : '',
+                        companyId: companies
+                          ? companies.find((c) => c.name === row.company)?.id
+                          : "",
                         port: daherUser.username,
                       });
                     }

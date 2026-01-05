@@ -32,7 +32,7 @@ interface TableData {
 
 interface DataTableProps {
   title: string;
-  totalPend: boolean;
+  totalPend?: boolean;
   description?: string;
   columns: TableColumn[];
   data: TableData[];

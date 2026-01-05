@@ -1,66 +1,70 @@
 import { invoiceClient } from "@/lib/axios";
 
-
 export default async function getPOSUsers() {
-    try {
-        const res = await invoiceClient.get("/api/admin/all-user");
-        return res.data;
-    } catch (error) {
-        console.error("Error getting invoices:", error);
-        return { success: false, error };
-    }
+  try {
+    const res = await invoiceClient.get("/api/admin/all-user", {
+      headers: {
+        "x-internal-request": "true",
+      },
+    });
+
+    return res.data;
+  } catch (error) {
+    console.error("Error getting invoices:", error);
+    throw new Error("Error getting invoices");
+  }
 }
 
 export async function getPOSDebt() {
-    try {
-        const res = await invoiceClient.get("/api/admin/daen");
-        console.log(res.data)
-        return res.data;
-    } catch (error) {
-        console.error("Error getting invoices:", error);
-        return { success: false, error };
-    }
+  try {
+    const res = await invoiceClient.get("/api/admin/daen");
+    console.log(res.data);
+    return res.data;
+  } catch (error) {
+    console.error("Error getting invoices:", error);
+    return { success: false, error };
+  }
 }
 
-export async function addPOSPayment({id, amount}) {
-    try {
-        const res = await invoiceClient.put(`/api/admin/addbatch/${id}`,{
-            amount
-        });
-        return res.data;
-    } catch (error) {
-        console.error("Error getting invoices:", error);
-        return { success: false, error };
-    }
+export async function addPOSPayment({ id, amount }) {
+  try {
+    const res = await invoiceClient.put(`/api/admin/addbatch/${id}`, {
+      amount,
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error getting invoices:", error);
+    return { success: false, error };
+  }
 }
 
-export async function endPOSDebt({id, email, amount}) {
-    try {
-        const res = await invoiceClient.post(`/api/admin/confirm-daen`,{
-            id,
-            email,
-            amount,
-        });
-        return res.data;
-    } catch (error) {
-        console.error("Error getting invoices:", error);
-        return { success: false, error };
-    }
+export async function endPOSDebt({ id, email, amount }) {
+  try {
+    const res = await invoiceClient.post(`/api/admin/confirm-daen`, {
+      id,
+      email,
+      amount,
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error getting invoices:", error);
+    return { success: false, error };
+  }
 }
 
-export async function addPOSUser({formData, email}) {
-    try {
-        const res = await invoiceClient.post(`/api/point/add-point`,{
-            formData,
-            email,
-        });
-        return res.data;
-    } catch (error) {
-        console.error("Error getting invoices:", error);
-        return { success: false, error };
-    }
+export async function addPOSUser({ formData, email }) {
+  try {
+    const res = await invoiceClient.post(`/api/point/add-point`, {
+      formData,
+      email,
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error getting invoices:", error);
+    return { success: false, error };
+  }
 }
-export async function sendInvoice({ formData, email }) {
+export async function sendInvoice({ formData }) {
   try {
     const {
       landline,
@@ -68,6 +72,7 @@ export async function sendInvoice({ formData, email }) {
       selectedSpeed,
       amountToPay,
       paymentType,
+      email,
     } = formData;
 
     const res = await invoiceClient.post(
@@ -77,7 +82,7 @@ export async function sendInvoice({ formData, email }) {
         company: selectedCompany,
         speed: selectedSpeed,
         amount: Number(amountToPay),
-        email,
+        email: email,
         paymentType,
       },
     );
@@ -85,13 +90,7 @@ export async function sendInvoice({ formData, email }) {
     return res.data;
   } catch (error) {
     console.error("Error sending invoice:", error);
+    throw new Error("Error sending invoice");
 
-    return {
-      success: false,
-      message:
-        error?.response?.data?.message ||
-        "Failed to send invoice, please try again",
-      status: error?.response?.status,
-    };
   }
 }
