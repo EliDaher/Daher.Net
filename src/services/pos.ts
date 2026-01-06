@@ -75,8 +75,18 @@ export async function sendInvoice({ formData }) {
       email,
     } = formData;
 
+    console.log({
+        landline,
+        company: selectedCompany,
+        speed: selectedSpeed,
+        amount: Number(amountToPay),
+        email: email,
+        paymentType,
+        
+    })
+
     const res = await invoiceClient.post(
-      "https://paynet-1.onrender.com/api/payment/internet-full",
+      "https://paynet-1.onrender.com/api/payment/adminPayInternet",
       {
         landline,
         company: selectedCompany,

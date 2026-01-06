@@ -82,7 +82,7 @@ export default function SendToPay({ isOpen, setIsOpen }: Props) {
       selectedSpeed: "",
       amountToPay: 0,
       paymentType: "cash",
-      email: daherUser.username + "daheradmin",
+      email: daherUser.username + "Ddaheradmin",
     },
   });
 
