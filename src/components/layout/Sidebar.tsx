@@ -153,10 +153,10 @@ const navigationGroups = [
         name: "Companies",
         href: "/companies",
         icon: Building2,
-        allowed: ["admin"],
+        allowed: ["admin", "employee"],
       },
     ],
-    allowed: ["admin"],
+    allowed: ["admin", "employee"],
   },
 ];
 
