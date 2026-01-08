@@ -100,6 +100,7 @@ export default function Companies() {
             ))
           ) : (
             <DataTable
+              className="col-span-3"
               title=""
               data={companies ? companies : []}
               columns={companiesColumns}

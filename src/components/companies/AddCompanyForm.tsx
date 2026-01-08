@@ -48,7 +48,7 @@ export default function AddCompanyForm({ isOpen, setIsOpen }) {
   return (
     <PopupForm
       trigger={<Button
-        className="absolute right-5 bottom-5"
+        className="absolute right-5 bottom-5 z-50"
       >
         اضافة شركة جديدة
       </Button>}
