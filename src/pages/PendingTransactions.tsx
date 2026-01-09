@@ -9,15 +9,14 @@ import decreaseBalance from '@/services/companies';
 import getPendingInvoices, { confirmInvoice, rejectInvoice, startPayment } from '@/services/invoices';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { io, Socket } from "socket.io-client";
 
 export default function PendingTransactions() {
   const { data: companies, isLoading } = useCompaniesContext();
   const daherUser = JSON.parse(localStorage.getItem("DaherUser"));
 
-  useEffect(()=>{
-    console.log(companies);
-  }, [])
+  const navigate = useNavigate();
 
   const [isOpen, setIsOpen] = useState(false);
   const [formTitle] = useState('سبب الغاء العملية');
@@ -42,10 +41,18 @@ export default function PendingTransactions() {
     };
   }, [queryClient]);
 
-  const { data: pendingData, isLoading: pendingLoading } = useQuery({
-    queryKey: ['pending-table'],
+  const { data: pendingData, isLoading: pendingLoading, isError, error } = useQuery({
+    queryKey: ["pending-table"],
     queryFn: getPendingInvoices,
   });
+  
+  useEffect(() => {
+    if (isError) {
+      if (error?.message === "No token found") {
+        navigate("/login");
+      }
+    }
+  }, [isError, error, navigate]);
 
   const confirmMutation = useMutation({
     mutationFn: (invoiceId: string) => confirmInvoice(invoiceId),
