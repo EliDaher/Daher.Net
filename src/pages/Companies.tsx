@@ -1,5 +1,6 @@
 import AddCompanyForm from "@/components/companies/AddCompanyForm";
 import CompanyIncreaseForm from "@/components/companies/CompanyIncreasForm";
+import TransfareBalanceForm from "@/components/companies/TransfareBalanceForm";
 import { DataTable } from "@/components/dashboard/DataTable";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { useEffect, useState } from "react";
 export default function Companies() {
   const { data: companies, isLoading } = useCompaniesContext();
 
+  const [openTransferId, setOpenTransferId] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"table" | "cards">("cards");
 
@@ -27,7 +29,6 @@ export default function Companies() {
     <DashboardLayout>
       <div dir="rtl">
         <AddCompanyForm isOpen={isOpen} setIsOpen={setIsOpen} />
-
         {/* Header */}
         <div className="mb-10 flex flex-col items-center md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -57,47 +58,67 @@ export default function Companies() {
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
         >
           {!isLoading && viewMode === "cards" ? (
-            !companies ? [] : companies?.map((company) => (
-              <Card
-                dir="rtl"
-                key={company.id}
-                className={`
+            !companies ? (
+              []
+            ) : (
+              companies?.map((company) => (
+                <Card
+                  dir="rtl"
+                  key={company.id}
+                  className={`
                   hover:shadow-lg
                   transition-shadow
                   duration-300
                   ${company.balance < company.balanceLimit ? "border-destructive border-2" : "border-accent-500 border-2"}  
                 `}
-              >
-                <CardHeader>
-                  <CardTitle>
-                    <h3 className="text-xl font-bold mb-2">{company.name}</h3>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p>الرصيد: {company.balance}</p>
-                  <p>الحد الادنى للرصيد: {company.balanceLimit}</p>
-                  <p>
-                    اخر عملية:{" "}
-                    {new Date(company.lastUpdate).toLocaleString("en-GB")}
-                  </p>
-                </CardContent>
+                >
+                  <CardHeader>
+                    <CardTitle>
+                      <h3 className="text-xl font-bold mb-2">{company.name}</h3>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p>الرصيد: {company.balance}</p>
+                    <p>الحد الادنى للرصيد: {company.balanceLimit}</p>
+                    <p>
+                      اخر عملية:{" "}
+                      {new Date(company.lastUpdate).toLocaleString("en-GB")}
+                    </p>
+                  </CardContent>
 
-                <CardFooter>
-                  <CompanyIncreaseForm
-                    companyId={company.id}
-                    companyName={company.name}
-                    isOpen={openId === company.id}
-                    setIsOpen={(value) => {
-                      if (value) {
-                        setOpenId(company.id); // فتح
-                      } else {
-                        setOpenId(null); // إغلاق
-                      }
-                    }}
-                  />
-                </CardFooter>
-              </Card>
-            ))
+                  <CardFooter className="grid gap-2">
+                    <CompanyIncreaseForm
+                      companyId={company.id}
+                      companyName={company.name}
+                      isOpen={openId === company.id}
+                      setIsOpen={(value) => {
+                        if (value) {
+                          setOpenId(company.id); // فتح
+                        } else {
+                          setOpenId(null); // إغلاق
+                        }
+                      }}
+                    />
+                    {["برونت", "هاي فاي"].includes(company.name) && (
+                      <>
+                        <TransfareBalanceForm
+                          companyId={company.id}
+                          companyName={company.name}
+                          isOpen={openTransferId === company.id}
+                          setIsOpen={(value) => {
+                            if (value) {
+                              setOpenTransferId(company.id); // فتح هذا الكرت فقط
+                            } else {
+                              setOpenTransferId(null); // إغلاق الكل
+                            }
+                          }}
+                        />
+                      </>
+                    )}
+                  </CardFooter>
+                </Card>
+              ))
+            )
           ) : (
             <DataTable
               className="col-span-3"
