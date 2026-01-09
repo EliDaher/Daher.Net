@@ -9,11 +9,7 @@ export default async function getPendingInvoices() {
       throw new Error("No token found");
     }
 
-    const res = await invoiceClient.get("/api/admin/pending", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const res = await invoiceClient.get("/api/admin/pending");
 
     return res.data;
   } catch (error) {

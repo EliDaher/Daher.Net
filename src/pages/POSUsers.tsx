@@ -129,7 +129,7 @@ export default function POSUsers() {
                 <DataTable
                     className="mb-4"
                     title="نقاط البيع"
-                    description={totalBalances}
+                    description={totalBalances.toFixed(0) + ' ل.س مجموع أرصدة نقاط البيع'}
                     columns={posColumns}
                     data={posData}
                     renderRowActions={(row) => (<div className="flex gap-2">
