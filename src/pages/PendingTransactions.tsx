@@ -206,7 +206,7 @@ export default function PendingTransactions() {
                         amount: row.amount,
                         reason: "",
                         company: row.company,
-                        number: row.number,
+                        number: row.landline || row.number,
                         companyId: companies
                           ? companies.find((c) => c.name === row.company)?.id
                           : "",
