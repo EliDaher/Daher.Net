@@ -38,12 +38,12 @@ export default function Invoice({ items, setItems }) {
   const invoice = async () => {
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/invoice/create-invoice", {
+      const res = await axios.post("https://paynet-1.onrender.com/api/invoice/create-invoice", {
         items: items,
         total: total
       });
       alert("تم إنشاء الفاتورة بنجاح!");
-      
+
     } catch (err) {
       console.log(err);
       alert(err?.response?.data?.message || "حدث خطأ أثناء إنشاء الفاتورة");
