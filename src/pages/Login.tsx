@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import userLogin from "@/services/auth";
+import axios from "axios";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -14,20 +15,35 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault(); // هذا يمنع إعادة تحميل الصفحة
 
-    const res = await userLogin({ username, password });
-
-    if (res?.message.includes('successful')) {
-      localStorage.setItem("DaherUser", JSON.stringify(res.user));
-      if(res.user.role == 'employee'){
-        navigate('/invoices')
-      }else {
-        navigate("/dashboard");
+    try {
+      const res = await axios.post("https://paynet-1.onrender.com/api/login", {
+        email: 'andrehdaher',
+        password: 'Aa123123',
+      });
+      
+      const res2 = await userLogin({ username, password });
+  
+      if (res2?.message.includes('successful')) {
+        localStorage.setItem("DaherUser", JSON.stringify(res2.user));
+        if(res2.user.role == 'employee'){
+          navigate('/invoices')
+        }else {
+          navigate("/dashboard");
+        }
+  
+      } else {
+        console.log(res2)
+        alert(res2?.error || "فشل تسجيل الدخول");
       }
 
-    } else {
-      console.log(res)
-      alert(res?.error || "فشل تسجيل الدخول");
+      const token = res.data.token;
+      localStorage.setItem("token", token);
+    } catch (err: any) {
+      console.log(err.response?.data?.message || "حدث خطأ ما. حاول مرة أخرى.");
+      alert("حدث خطأ ما. حاول مرة أخرى.");
+      return
     }
+
   };
 
   return (

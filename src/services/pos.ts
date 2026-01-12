@@ -2,11 +2,7 @@ import { invoiceClient } from "@/lib/axios";
 
 export default async function getPOSUsers() {
   try {
-    const res = await invoiceClient.get("/api/admin/all-user", {
-      headers: {
-        "x-internal-request": "true",
-      },
-    });
+    const res = await invoiceClient.get("/api/admin/all-user");
 
     return res.data;
   } catch (error) {
@@ -18,7 +14,6 @@ export default async function getPOSUsers() {
 export async function getPOSDebt() {
   try {
     const res = await invoiceClient.get("/api/admin/daen");
-    console.log(res.data);
     return res.data;
   } catch (error) {
     console.error("Error getting invoices:", error);

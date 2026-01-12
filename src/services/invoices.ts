@@ -3,13 +3,21 @@ import decreaseBalance from "./companies";
 
 export default async function getPendingInvoices() {
   try {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      throw new Error("No token found");
+    }
+
     const res = await invoiceClient.get("/api/admin/pending");
+
     return res.data;
   } catch (error) {
     console.error("Error getting invoices:", error);
-    return { success: false, error };
+    return { success: false, error: error.message };
   }
 }
+
 
 export async function getDoneInvoices() {
   try {
