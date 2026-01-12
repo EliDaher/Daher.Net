@@ -1,8 +1,11 @@
-import React from "react";
+import React ,{useState} from "react";
 import { Button } from "@/components/ui/button";
 import { Trash } from "lucide-react";
-
+import axios from "axios";
+import { a } from "node_modules/framer-motion/dist/types.d-B50aGbjN";
 export default function Invoice({ items, setItems }) {
+  const [loading, setLoading] = useState(false);
+
 
   const updateQuantity = (id, quantity) => {
     setItems(prev =>
@@ -32,7 +35,23 @@ export default function Invoice({ items, setItems }) {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-
+  const invoice = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.post("http://localhost:5000/api/invoice/create-invoice", {
+        items: items,
+        total: total
+      });
+      alert("تم إنشاء الفاتورة بنجاح!");
+      
+    } catch (err) {
+      console.log(err);
+      alert(err?.response?.data?.message || "حدث خطأ أثناء إنشاء الفاتورة");
+    }finally {
+      setLoading(false);  
+    };
+  };
+    
   return (
     <div className="border rounded-xl p-4 bg-white shadow-md space-y-4">
       <h2 className="text-xl font-bold">🧾 الفاتورة</h2>
@@ -77,6 +96,18 @@ export default function Invoice({ items, setItems }) {
         <span>الإجمالي:</span>
         <span className="text-green-600">{total.toFixed(2)} $</span>
       </div>
+<button
+  onClick={invoice}
+  disabled={loading}
+  className={`
+    w-full font-bold px-4 py-2 rounded mt-4 text-white
+    ${loading
+      ? 'bg-gray-400 cursor-not-allowed'
+      : 'bg-blue-500 hover:bg-blue-600'}
+  `}
+>
+  {loading ? 'جاري إنشاء الفاتورة...' : 'إنشاء فاتورة'}
+</button>
     </div>
   );
 }
