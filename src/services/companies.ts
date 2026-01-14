@@ -80,3 +80,16 @@ export async function getAllCompanies() {
     throw new Error(err);
   }
 }
+
+export async function getCompaniesLogs({fromDate, toDate}) {
+  try {
+    const response = await apiClient.get("/api/company/logs", {
+      params: { fromDate, toDate },
+    });
+    console.log(response.data);
+    return Object.values(response.data.logs);
+  } catch (err) {
+    console.error("خطأ في جلب العمليات:", err);
+    throw new Error(err);
+  }
+}

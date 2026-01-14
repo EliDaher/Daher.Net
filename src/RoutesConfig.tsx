@@ -2,6 +2,7 @@ import React from "react";
 import { PrivateRoute } from "@/components/auth/PrivateRoute";
 import POSUsers from "./pages/POSUsers";
 import Companies from "./pages/Companies";
+import CompaniesLogs from "./pages/CompaniesLogs";
 
 // Lazy Loading للصفحات
 const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
@@ -56,15 +57,8 @@ export const routesConfig = [
       </PrivateRoute>
     ),
   },
-  {   path : "/AddProducts",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "employee"]}>
-        <AddProduct />
-      </PrivateRoute>
-    ),
-  },
   {
-    path : "/ViewProducts",
+    path: "/ViewProducts",
     element: (
       <PrivateRoute allowedRoles={["admin", "employee"]}>
         <ViewProduct />
@@ -168,8 +162,20 @@ export const routesConfig = [
     ),
   },
   {
+    path: "/companies/logs",
+    element: (
+      <PrivateRoute allowedRoles={["admin", "employee"]}>
+        <CompaniesLogs />
+      </PrivateRoute>
+    ),
+  },
+  {
     path: "/companies",
-    element: <Companies />,
+    element: (
+      <PrivateRoute allowedRoles={["admin", "employee"]}>
+        <Companies />
+      </PrivateRoute>
+    ),
   },
   { path: "*", element: <NotFound /> },
 ];

@@ -155,6 +155,12 @@ const navigationGroups = [
         icon: Building2,
         allowed: ["admin", "employee"],
       },
+      {
+        name: "Logs",
+        href: "/companies/logs",
+        icon: Table2Icon,
+        allowed: ["admin", "employee"],
+      },
     ],
     allowed: ["admin", "employee"],
   },
