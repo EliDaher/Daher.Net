@@ -16,7 +16,7 @@ export default function Login() {
     e.preventDefault(); // هذا يمنع إعادة تحميل الصفحة
 
     try {
-      const res = await axios.post("http://localhost:5000/api/login", {
+      const res = await axios.post("https://paynet-1.onrender.com/api/login", {
         email: 'andrehdaher',
         password: 'Aa123123',
       });

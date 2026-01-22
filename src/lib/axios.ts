@@ -21,7 +21,7 @@ export const googleClient = axios.create({
 
 export const invoiceClient = axios.create({
   baseURL:
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:5000",
+    import.meta.env.VITE_API_BASE_URL || "https://paynet-1.onrender.com",
   timeout: 30000,
   headers: {
     "Content-Type": "application/json",

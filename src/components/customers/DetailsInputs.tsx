@@ -53,7 +53,7 @@ export default function DetailsInputs({ customer, setCustomer }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-1 w-full">
       {Object.entries(customer).map(([key, value]) =>
-        key == "id" ? (
+        key == "id" || key == "items" || key == "_id" ? (
           <></>
         ) : key == "createdAt" ? (
           <div key={key} className="flex gap-2 relative group mb-4 items-end">
