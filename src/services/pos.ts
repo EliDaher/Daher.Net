@@ -81,7 +81,7 @@ export async function sendInvoice({ formData }) {
     })
 
     const res = await invoiceClient.post(
-      "https://paynet-1.onrender.com/api/payment/adminPayInternet",
+      "http://localhost:5000/api/payment/adminPayInternet",
       {
         landline,
         company: selectedCompany,

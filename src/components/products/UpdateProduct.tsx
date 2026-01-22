@@ -14,7 +14,7 @@ export default function UpdateProduct({ product, onClose, onUpdated }) {
   });
 
   const [loading, setLoading] = useState(false);
-  const apiBase = "https://paynet-1.onrender.com";
+  const apiBase = "http://localhost:5000";
 
   const handleChange = (e) => {
     setFormData({

@@ -29,7 +29,7 @@ export default function PendingTransactions() {
   const [sendToPayOpen, setSendToPayOpen] = useState(false);
 
   useEffect(() => {
-    const newSocket = io("https://paynet-1.onrender.com");
+    const newSocket = io("http://localhost:5000");
     setSocket(newSocket);
 
     newSocket.on("pendingPaymentsUpdate", (updatedPayments) => {

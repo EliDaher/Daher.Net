@@ -3,6 +3,7 @@ import { PrivateRoute } from "@/components/auth/PrivateRoute";
 import POSUsers from "./pages/POSUsers";
 import Companies from "./pages/Companies";
 import CompaniesLogs from "./pages/CompaniesLogs";
+import path from "path";
 
 // Lazy Loading للصفحات
 const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
@@ -23,8 +24,9 @@ const POSPayments = React.lazy(() => import("@/pages/POSPayments"));
 const BillBalance = React.lazy(() => import("@/pages/BillBalance"));
 const AddProduct = React.lazy(()=>import('@/pages/AddProduct'))
 const ViewProduct = React.lazy(()=>import('@/pages/ViewProduct'))
-
 const InquiryLogs = React.lazy(() => import("@/pages/InquiryLogs"));
+const ViewBills = React.lazy(() => import("@/pages/ViewBills"));
+const ViewBillsDetails = React.lazy(() => import("@/pages/ViewBillsDetails"));
 const FinancialStatement = React.lazy(
   () => import("@/pages/FinancialStatement"),
 );
@@ -62,6 +64,22 @@ export const routesConfig = [
     element: (
       <PrivateRoute allowedRoles={["admin", "employee"]}>
         <ViewProduct />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/viewBills",
+    element: (
+      <PrivateRoute allowedRoles={["admin", "employee"]}>
+        <ViewBills />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/viewBills/:id",
+    element: (
+      <PrivateRoute allowedRoles={["admin", "employee"]}>
+        <ViewBillsDetails />
       </PrivateRoute>
     ),
   },

@@ -113,7 +113,13 @@ const navigationGroups = [
         icon: ArrowDownCircle,
         allowed: ["admin", "employee"],
       },
-            {
+   ],
+    allowed: ["admin", "employee"],
+  },
+  {
+    title: "Warehouse",
+    items: [
+      {
         name: "Add Products",
         href: "/AddProducts",
         icon: PackagePlus,
@@ -125,7 +131,13 @@ const navigationGroups = [
         icon: Boxes,
         allowed: ["admin", "employee"],
       },
-   ],
+      {
+        name: 'View Bills',
+        href: '/viewBills',
+        icon: FileText,
+        allowed: ["admin", "employee"],
+      }
+],
     allowed: ["admin", "employee"],
   },
   {

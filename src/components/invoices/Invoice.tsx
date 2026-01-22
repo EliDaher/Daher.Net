@@ -5,6 +5,9 @@ import axios from "axios";
 import { a } from "node_modules/framer-motion/dist/types.d-B50aGbjN";
 export default function Invoice({ items, setItems }) {
   const [loading, setLoading] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  
 
 
   const updateQuantity = (id, quantity) => {
@@ -37,10 +40,13 @@ export default function Invoice({ items, setItems }) {
   );
   const invoice = async () => {
     setLoading(true);
+    console.log({items , total , customerName , customerPhone});
     try {
-      const res = await axios.post("https://paynet-1.onrender.com/api/invoice/create-invoice", {
+      const res = await axios.post("http://localhost:5000/api/invoice/create-invoice", {
         items: items,
-        total: total
+        total: total,
+        customerName: customerName,
+        customerPhone: customerPhone
       });
       alert("تم إنشاء الفاتورة بنجاح!");
 
@@ -59,6 +65,22 @@ export default function Invoice({ items, setItems }) {
       {items.length === 0 && (
         <p className="text-gray-500 text-sm">لا يوجد منتجات في الفاتورة</p>
       )}
+      <div>
+        <input
+         className="border rounded px-2 py-1 text-sm w-full"
+         value={customerName}
+         onChange={e => setCustomerName(e.target.value)}
+
+         type="text"
+         placeholder=" . . . اسم الزبون" />
+        <input
+         className="border rounded px-2 py-1 text-sm w-full my-2"
+         value={customerPhone}
+         onChange={e => setCustomerPhone(e.target.value)}
+
+         type="number"
+         placeholder=" . . . رقم الزبون" />
+      </div>
 
       {items.map(item => (
         <div
