@@ -25,7 +25,7 @@ export default function ViewProduct() {
         { key: "imageUrl", label: "ImageUrl" },
 
     ];
-    const apiBase = "http://localhost:5000";
+    const apiBase = "https://paynet-1.onrender.com";
 
     const fetchProduct = async () => {
         try {

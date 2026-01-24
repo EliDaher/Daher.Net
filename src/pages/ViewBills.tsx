@@ -18,7 +18,7 @@ export default function ViewBills() {
 
   const getBills = async ()=>{
     try{
-      const res = await axios.get('http://localhost:5000/api/invoice/viewBills');
+      const res = await axios.get('https://paynet-1.onrender.com/api/invoice/viewBills');
       console.log(res.data);
       setBills(res.data);
 
@@ -30,7 +30,7 @@ export default function ViewBills() {
     try {
       const isConfirm = window.confirm('هل انت متاكد من حذف الفاتورة؟');
       if (!isConfirm) return;
-      await axios.delete(`http://localhost:5000/api/invoice/delete-bill/${id}`);
+      await axios.delete(`https://paynet-1.onrender.com/api/invoice/delete-bill/${id}`);
       alert('تم حذف الفاتورة بنجاح');
       setBills(prev => prev.filter(bill => bill._id !== id));
     } catch (err) {
