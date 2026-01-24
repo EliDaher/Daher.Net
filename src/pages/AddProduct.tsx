@@ -6,7 +6,7 @@ import { useState } from "react";
 import FormInput from "@/components/ui/custom/FormInput";
 import { Button } from "@/components/ui/button";
 
-export default function AddProduct({isOpen, setIsOpen}) {
+export default function AddProduct() {
   const [name, setName] = useState("");
   const [price, setPrice] = useState(0);
   const [category, setCategory] = useState("");

@@ -68,6 +68,14 @@ export const routesConfig = [
     ),
   },
   {
+    path: "/AddProducts",
+    element: (
+      <PrivateRoute allowedRoles={["admin", "employee"]}>
+        <AddProduct />
+      </PrivateRoute>
+    ),
+  },
+  {
     path: "/viewBills",
     element: (
       <PrivateRoute allowedRoles={["admin", "employee"]}>

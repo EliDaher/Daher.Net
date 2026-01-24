@@ -72,6 +72,7 @@ export default function Invoice({ items, setItems }) {
          onChange={e => setCustomerName(e.target.value)}
 
          type="text"
+         required
          placeholder=" . . . اسم الزبون" />
         <input
          className="border rounded px-2 py-1 text-sm w-full my-2"
