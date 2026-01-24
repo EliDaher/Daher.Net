@@ -16,7 +16,7 @@ export default function InquiryLogs() {
 
   useEffect(() => {
     // أنشئ socket مرة واحدة فقط طوال عمر الصفحة
-    socketRef.current = io("https://paynet-1.onrender.com", {
+    socketRef.current = io("http://localhost:5000", {
       transports: ["websocket"],
     });
 

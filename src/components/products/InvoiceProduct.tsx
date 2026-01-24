@@ -35,11 +35,11 @@ export default function InvoiceForm({ initialItems = [], products = []}) {
     { key: "description", label: "Description" },
 
   ];
-  const apiBase = "https://paynet-1.onrender.com";
+  const apiBase = "http://localhost:5000";
   const saveProductsToBill = async () => {
     try {
       
-      await axios.put(`https://paynet-1.onrender.com/api/invoice/add-bill-items/${id}`, { items, initialItems  });
+      await axios.put(`http://localhost:5000/api/invoice/add-bill-items/${id}`, { items, initialItems  });
       alert('تم حفظ العناصر بنجاح');
       setAddProduct(false); // إغلاق الفورم بعد الإرسال
 
