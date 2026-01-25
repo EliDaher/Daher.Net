@@ -106,7 +106,7 @@ export default function Invoice({ items, setItems }) {
       {items.map(item => (
         <div
           key={item._id}
-          className="grid grid-cols-5 gap-3 items-center"
+          className="grid grid-cols-7 gap-3 items-center"
         >
           <span className="col-span-2 font-medium">{item.name}</span>
 
