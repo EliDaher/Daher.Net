@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 export default function AddProduct() {
   const [name, setName] = useState("");
   const [price, setPrice] = useState(0);
+  const [priceCost, setPriceCost] = useState(0);
+  const [priceWolesale, setPriceWolesale] = useState(0);
   const [category, setCategory] = useState("");
   const [stock, setStock] = useState(0);
   const [description, setDescription] = useState("");
@@ -19,7 +21,7 @@ export default function AddProduct() {
     e.preventDefault();
     setMessage(null);
 
-    if (!name || !price || !imageUrl) {
+    if (!name || !price || !imageUrl || !category || !stock || !priceCost || !priceWolesale) {
       setMessage({
         type: "error",
         text: "الرجاء تعبئة الاسم والسعر وإضافة رابط الصورة.",
@@ -34,6 +36,8 @@ export default function AddProduct() {
       description,
       imageUrl,
       stock,
+      priceCost,
+      priceWolesale,
     };
 
     try {
@@ -52,6 +56,8 @@ export default function AddProduct() {
       setDescription("");
       setImageUrl("");
       setStock(0);
+      setPriceCost(0);
+      setPriceWolesale(0);
     } catch (err) {
       console.error(err);
       const errMsg =
@@ -78,6 +84,20 @@ export default function AddProduct() {
             type="text"
             value={price}
             onChange={(e) => setPrice(Number(e.target.value))}
+            className="mt-2 mb-4"
+          />
+          <FormInput 
+            label="سعر التكلفة" 
+            type="text"
+            value={priceCost}
+            onChange={(e) => setPriceCost(Number(e.target.value))}
+            className="mt-2 mb-4"
+          />
+          <FormInput 
+            label="سعر الجملة" 
+            type="text"
+            value={priceWolesale}
+            onChange={(e) => setPriceWolesale(Number(e.target.value))}
             className="mt-2 mb-4"
           />
           <FormInput 

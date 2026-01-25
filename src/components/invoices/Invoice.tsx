@@ -30,6 +30,26 @@ export default function Invoice({ items, setItems }) {
     );
   };
 
+  const updatePriceCost = (id, priceCost) => {
+    setItems(prev =>
+      prev.map(item =>
+        item._id === id
+          ? { ...item, priceCost: Math.max(0, priceCost) }
+          : item
+      )
+    );
+  };
+
+  const updatePriceWolesale = (id, priceWolesale) => {
+    setItems(prev =>
+      prev.map(item =>
+        item._id === id
+          ? { ...item, priceWolesale: Math.max(0, priceWolesale) }
+          : item
+      )
+    );
+  };
+
   const removeItem = (id) => {
     setItems(prev => prev.filter(item => item._id !== id));
   };
@@ -94,6 +114,19 @@ export default function Invoice({ items, setItems }) {
             type="number"
             value={item.price}
             onChange={e => updatePrice(item._id, Number(e.target.value))}
+            className="border rounded px-2 py-1 text-sm"
+          />
+
+          <input
+            type="number"
+            value={item.priceCost}
+            onChange={e => updatePriceCost(item._id, Number(e.target.value))}
+            className="border rounded px-2 py-1 text-sm"
+          />
+          <input
+            type="number"
+            value={item.priceWolesale}
+            onChange={e => updatePriceWolesale(item._id, Number(e.target.value))}
             className="border rounded px-2 py-1 text-sm"
           />
 

@@ -12,7 +12,6 @@ export default function InvoiceForm({ initialItems = [], products = []}) {
   }, [initialItems])
   
   const id = useParams().id;
-  console.log(id);
 
   const handleItemChange = (index, field, value) => {
     const newItems = [...items];

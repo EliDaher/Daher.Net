@@ -19,6 +19,8 @@ export default function ViewProduct() {
     const columns = [
         { key: "name", label: "Name", sortable: true },
         { key: "price", label: "Price", sortable: true },
+        { key: "priceCost", label: "Price Cost", sortable: true },
+        { key: "priceWolesale", label: "Price Wholesale", sortable: true },
         { key: "category", label: "Category" },
         { key: "stock", label: "Stock" },
         { key: "description", label: "Description" },
@@ -94,6 +96,8 @@ const addToInvoice = (product) => {
         _id: product._id,
         name: product.name,
         price: product.price,
+        priceCost: product.priceCost,
+        priceWolesale: product.priceWolesale,
         quantity: 1
       }
     ];
