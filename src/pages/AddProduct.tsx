@@ -81,23 +81,23 @@ export default function AddProduct() {
           />
           <FormInput 
             label="سعر المنتج" 
-            type="text"
+            type="number"
             value={price}
-            onChange={(e) => setPrice(Number(e.target.value))}
+            onChange={(e) => setPrice(e.target.value)}
             className="mt-2 mb-4"
           />
           <FormInput 
             label="سعر التكلفة" 
-            type="text"
+            type="number"
             value={priceCost}
-            onChange={(e) => setPriceCost(Number(e.target.value))}
+            onChange={(e) => setPriceCost(e.target.value)}
             className="mt-2 mb-4"
           />
           <FormInput 
             label="سعر الجملة" 
-            type="text"
+            type="number"
             value={priceWolesale}
-            onChange={(e) => setPriceWolesale(Number(e.target.value))}
+            onChange={(e) => setPriceWolesale(e.target.value)}
             className="mt-2 mb-4"
           />
           <FormInput 

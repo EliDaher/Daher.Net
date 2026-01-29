@@ -7,6 +7,8 @@ export default function UpdateProduct({ product, onClose, onUpdated }) {
   const [formData, setFormData] = useState({
     name: product.name || "",
     price: product.price || "",
+    priceCost: product.priceCost || "",
+    priceWolesale: product.priceWolesale || "",
     category: product.category || "",
     stock: product.stock || "",
     description: product.description || "",
@@ -67,6 +69,20 @@ export default function UpdateProduct({ product, onClose, onUpdated }) {
             value={formData.price}
             onChange={handleChange}
             placeholder="Price"
+            className="w-full border p-2 rounded"
+          />
+          <input
+            name="priceCost"
+            value={formData.priceCost}
+            onChange={handleChange}
+            placeholder="Price Cost"
+            className="w-full border p-2 rounded"
+          />
+          <input
+            name="priceWolesale"
+            value={formData.priceWolesale}
+            onChange={handleChange}
+            placeholder="Price Wholesale"
             className="w-full border p-2 rounded"
           />
 
