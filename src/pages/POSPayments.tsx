@@ -2,7 +2,7 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Button } from '@/components/ui/button';
 import PopupForm from '@/components/ui/custom/PopupForm';
-import { confirmPayment, getPayments } from '@/services/invoices';
+import { confirmPayment, getPayments, deletePayment } from '@/services/invoices';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -22,6 +22,19 @@ export default function POSPayments() {
             queryClient.invalidateQueries({ queryKey: ['payment-table'] });
         },
     });
+
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => deletePayment(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['payment-table'] });
+            alert("تم حذف الدفعة بنجاح.");
+        },
+        onError: () => {
+            alert("حدث خطأ أثناء حذف الدفعة.");
+        },
+    });
+
+
 
     // جلب الفواتير المعلقة
     const { data: paymentData, isLoading: paymentLoading } = useQuery({
@@ -87,9 +100,10 @@ export default function POSPayments() {
                     columns={invoicesColumns}
                     data={paymentData ? paymentData : []}
                     renderRowActions={(row: any) => (
+                        <>
                         <Button
                             disabled={confirmMutation.isPending ? true : false}
-                            variant={row.isConfirmed ? "default" : "destructive"}
+                            variant={row.isConfirmed ? "default" : "secondary"}
                             className="capitalize"
                             onClick={()=>{
                                 setSelectedRow(row)
@@ -98,8 +112,22 @@ export default function POSPayments() {
                           >
                           {confirmMutation.isPending ? '...' : row.isConfirmed ? "تم التأكيد" : 'بحاجة الى تأكيد'}
                         </Button>
+                    <Button 
+                    className="capitalize"
+                    variant='destructive'
+                    disabled={deleteMutation.isPending}
+                    onClick={()=>{
+                        if (window.confirm("هل أنت متأكد من حذف هذه الدفعة؟")) {
+                            deleteMutation.mutate(row._id);
+                        }
+                    }}
+                     >
+                        {deleteMutation.isPending ? "جاري الحذف..." : "حذف الدفعة"}
+                        
+                        </Button>
+                    </>
                     )}
-                />
+                    />
 
             </div>
 

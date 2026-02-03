@@ -11,6 +11,22 @@ export default async function getPOSUsers() {
   }
 }
 
+export  async function deleteUser({id}) {
+  try{
+    console.log(id)
+    const confirmed = window.confirm("هل انت متاكد من حذف المستخدم");
+    if (!confirmed) return;
+    const res = await invoiceClient.delete(`/api/admin/deleteuser/${id}`)
+    return res.data
+    alert("تم حذف المستخدم")
+
+  }catch(err){
+    console.error("خطأ في الحذف", err);
+
+  }
+  
+}
+
 export async function getPOSBalanceReport() {
   try {
     const res = await invoiceClient.get(
@@ -113,3 +129,14 @@ export async function sendInvoice({ formData }) {
 
   }
 }
+
+export async function AddNewUser(formData) {
+  try {
+    const res = await invoiceClient.post('/api/user', formData);
+    return res.data;
+  } catch (err) {
+    console.error(err);
+    throw new Error("Error adding user");
+  }
+}
+  

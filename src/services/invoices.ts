@@ -115,3 +115,14 @@ export async function searchInvoice(searchTerm: string) {
     return { success: false, error };
   }
 }
+
+
+export async function deletePayment(id: string) {
+  try {
+    const res = await invoiceClient.delete(`/api/admin/delete/${id}`);
+    return res.data;
+  } catch (error) {
+    console.error("Error deleting payment:", error);
+    return { success: false, error };
+  }
+}
