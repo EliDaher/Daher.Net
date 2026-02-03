@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -18,12 +18,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { daherUser } from "../layout/Header";
+import { Skeleton } from "../ui/skeleton";
 
 interface TableColumn {
   key: string;
   label: string;
   sortable?: boolean;
   hidden?: boolean;
+  onlyAdmin?: boolean;
 }
 
 interface TableData {
@@ -42,7 +45,8 @@ interface DataTableProps {
   defaultPageSize?: number;
   getRowClassName?: (row: TableData) => string;
   renderRowActions?: (row: TableData) => React.ReactNode;
-  amountBold?: boolean
+  amountBold?: boolean;
+  isLoading?: boolean;
 }
 
 export function DataTable({
@@ -58,7 +62,20 @@ export function DataTable({
   getRowClassName,
   renderRowActions,
   amountBold = false,
+  isLoading = false
 }: DataTableProps) {
+
+
+  const [daherUser, setDaherUser] = useState<daherUser>();
+
+  useEffect(() => {
+    const temUser = JSON.parse(localStorage.getItem("DaherUser") || "null");
+    setDaherUser(temUser);
+  }, []);
+
+
+
+
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{
     key: string;
@@ -133,12 +150,51 @@ export function DataTable({
     if (key === "avgAmount") {
       return <span>{value.toFixed(0)}</span>;
     }
+    if (key === "description") {
+      return <span className="line-clamp-3 w-64">{value}</span>;
+    }
+    if (key === "imageUrl") {
+      return (
+        <a
+          href={value}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={value}
+          className="
+            inline-flex items-center gap-2
+            max-w-[150px]
+            px-2 py-1
+            text-sm font-medium
+            text-blue-600 hover:text-blue-800
+            hover:underline
+            truncate
+          "
+        >
+          <span className="truncate">View Image</span>
+      
+          <svg
+            className="w-4 h-4 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M14 3h7v7M10 14L21 3M21 14v7h-7" />
+          </svg>
+        </a>
+      );
+    }
+
+
     return value;
   };
 
   const totalPendValue = useMemo(() => {
     return filteredData.reduce((sum, c) => sum + Number(c.amount), 0);
   }, [filteredData]);
+
+  const SKELETON_ROWS = Array.from({ length: pageSize });
+
 
   return (
     <Card className={className}>
@@ -180,7 +236,12 @@ export function DataTable({
               <TableRow>
                 {columns.map((column) => (
                   <TableHead
-                    className={column.hidden ? "hidden" : "text-center"}
+                    className={
+                      column.hidden ||
+                      (column.onlyAdmin && daherUser?.role !== "admin")
+                        ? "hidden"
+                        : "text-center"
+                    }
                     key={column.key}
                   >
                     {column.sortable ? (
@@ -208,7 +269,30 @@ export function DataTable({
               </TableRow>
             </TableHeader>
             <TableBody className="">
-              {paginatedData.length > 0 ? (
+              {isLoading ? (
+                SKELETON_ROWS.map((_, rowIndex) => (
+                  <TableRow key={`skeleton-${rowIndex}`}>
+                    {columns.map((column) => (
+                      <TableCell
+                        key={column.key}
+                        className={
+                          column.hidden ||
+                          (column.onlyAdmin && daherUser?.role !== "admin")
+                            ? "hidden"
+                            : ""
+                        }
+                      >
+                        <Skeleton className="h-4 w-full rounded-md" />
+                      </TableCell>
+                    ))}
+                    {renderRowActions && (
+                      <TableCell>
+                        <Skeleton className="h-4 w-16 rounded-md" />
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))
+              ) : paginatedData.length > 0 ? (
                 paginatedData.map((row, index) => (
                   <TableRow
                     key={index}
@@ -216,7 +300,12 @@ export function DataTable({
                   >
                     {columns.map((column) => (
                       <TableCell
-                        className={column.hidden ? "hidden" : ""}
+                        className={
+                          column.hidden ||
+                          (column.onlyAdmin && daherUser?.role !== "admin")
+                            ? "hidden"
+                            : "text-center"
+                        }
                         key={column.key}
                       >
                         {renderCellContent(row[column.key], column.key)}
@@ -242,8 +331,9 @@ export function DataTable({
         </div>
 
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <span className="text-sm text-muted-foreground">عدد الاسطر : {(filteredData.length || 0)}</span>
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-muted-foreground">عدد الاسطر :</span>
+            <span className="text-sm text-muted-foreground">عدد الاسطر في الصفحة :</span>
             <select
               className="border rounded px-2 py-1 text-sm"
               value={pageSize}

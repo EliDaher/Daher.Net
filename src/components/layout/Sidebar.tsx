@@ -5,7 +5,6 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   WalletIcon,
   ReceiptText,
   HandCoins,
@@ -15,7 +14,6 @@ import {
   Wallet,
   User,
   Table,
-  PackagePlus,  
   Boxes,
   Table2Icon,
   Building2,
@@ -29,7 +27,6 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import { useEffect } from "react";
 
 const navigationGroups = [
   {
@@ -113,18 +110,6 @@ const navigationGroups = [
         icon: ArrowDownCircle,
         allowed: ["admin", "employee"],
       },
-   ],
-    allowed: ["admin", "employee"],
-  },
-  {
-    title: "Warehouse",
-    items: [
-      {
-        name: "Add Products",
-        href: "/AddProducts",
-        icon: PackagePlus,
-        allowed: ["admin", "employee"],
-      },
       {
         name: "View Products",
         href: "/ViewProducts",
@@ -132,14 +117,26 @@ const navigationGroups = [
         allowed: ["admin", "employee"],
       },
       {
-        name: 'View Bills',
-        href: '/viewBills',
+        name: "View Bills",
+        href: "/viewBills",
         icon: FileText,
         allowed: ["admin", "employee"],
-      }
-],
+      },
+    ],
     allowed: ["admin", "employee"],
   },
+  // {
+  //   title: "Warehouse",
+  //   items: [
+  //     {
+  //       name: "Add Products",
+  //       href: "/AddProducts",
+  //       icon: PackagePlus,
+  //       allowed: ["admin", "employee"],
+  //     },
+  //   ],
+  //   allowed: ["admin", "employee"],
+  // },
   {
     title: "Analytics",
     items: [

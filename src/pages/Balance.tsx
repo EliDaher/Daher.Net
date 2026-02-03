@@ -1,18 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  TrendingUp,
-  CreditCard,
-  HandCoins,
-  DollarSign,
-  BadgeDollarSign,
-  Coins,
-} from "lucide-react";
+import { TrendingUp, CreditCard, HandCoins, Coins } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ChartContainer } from "@/components/dashboard/ChartContainer";
 import { DataTable } from "@/components/dashboard/DataTable";
-import { apiService, User, Post } from "@/services/api";
+import { apiService } from "@/services/api";
 import getWifiCustomers, {
   addWifiExpenses,
   getWifiBalance,
@@ -35,7 +28,6 @@ export default function Balance() {
   const navigate = useNavigate();
 
   const [totalBalance, setTotalBalance] = useState(0);
-  const [customers, setCustomers] = useState([]);
   const [todayTotal, setTodayTotal] = useState(0);
   const [monthTotal, setMonthTotal] = useState(0);
 
@@ -50,26 +42,15 @@ export default function Balance() {
   const [paymentValue, setPaymentValue] = useState(0);
   const [paymentDetails, setPaymentDetails] = useState("");
 
-  const [loading, setLoading] = useState(false);
-
-  const getCustomers = async () => {
-    const res = await getWifiCustomers();
-
-    if (res?.success) {
-      setCustomers(res.customers);
-    } else {
-      alert(res?.error || "فشل جلب البيانات");
-    }
-  };
-
-  useEffect(() => {
-    getCustomers();
-  }, []);
+  const { data: customers, isLoading: customersLoading } = useQuery({
+    queryKey: ["customers-table"],
+    queryFn: getWifiCustomers,
+  });
 
   const unpaidValue = useMemo(() => {
     const totalDebt = customers
-      .filter((c) => c.Balance < 0)
-      .reduce((sum, c) => sum + Number(c.Balance), 0);
+      ?.filter((c) => c?.Balance < 0)
+      ?.reduce((sum, c) => sum + Number(c?.Balance), 0);
 
     return Math.abs(totalDebt);
   }, [customers]);
@@ -88,7 +69,6 @@ export default function Balance() {
     balance?.WifiPayments?.map((ele) => {
       temBalance += Number(ele.Amount);
     });
-    console.log(balance);
     setTotalBalance(temBalance);
 
     // احصل على التاريخ الحالي
@@ -126,6 +106,7 @@ export default function Balance() {
       temDay += Number(ele.Amount);
     });
     setTodayTotal(temDay);
+
   }, [balance]);
 
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -172,6 +153,7 @@ export default function Balance() {
   ];
   const PaymentsColumns = [
     { key: "Amount", label: "الكمية", sortable: true },
+    { key: "customerName", label: "اسم الزبون", sortable: true },
     { key: "Details", label: "التفاصيل", sortable: true },
     { key: "Date", label: "الوقت", sortable: true },
   ];
@@ -445,6 +427,7 @@ export default function Balance() {
               description=""
               icon={HandCoins}
               trend={{ value: stats?.userGrowth || 0, isPositive: true }}
+              loading={customersLoading}
             />
 
             <div className="flex flex-col">
@@ -463,7 +446,7 @@ export default function Balance() {
                 className={"rounded-t-none w-full"}
                 isOpen={isOpenEx}
                 setIsOpen={setIsOpenEx}
-              ></ExchangeFrom>
+              />
             </div>
           </div>
         )}
@@ -489,7 +472,7 @@ export default function Balance() {
         </div>
 
         {/* Data Tables */}
-        <div dir="rtl" className="grid gap-6 lg:grid-cols-2">
+        <div dir="rtl" className="flex flex-col md:flex-row gap-4">
           <DataTable
             title="الصندوق"
             description=""
@@ -503,9 +486,16 @@ export default function Balance() {
             description="دفعات المشتركين"
             columns={PaymentsColumns}
             data={
-              balance?.WifiPayments ? [...balance.WifiPayments].reverse() : []
+              balance?.WifiPayments
+                ? balance.WifiPayments.map((payment) => ({
+                    ...payment,
+                    customerName:
+                      customers?.[payment.SubscriberID]?.Name || "غير معروف",
+                  })).reverse()
+                : []
             }
           />
+
           <div>
             <DataTable
               title="دفعات للتحويل"

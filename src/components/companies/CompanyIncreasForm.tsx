@@ -124,7 +124,7 @@ export default function CompanyIncreaseForm({
             {...register("paidAmount", { valueAsNumber: true })}
           />
 
-          <FormInput label="ملاحظة الدفع" {...register("paymentNote")} />
+          <FormInput label="ملاحظة الدفع" {...register("reason")} />
 
           <Button type="submit" disabled={increaseBalanceMutation.isPending}>
             {increaseBalanceMutation.isPending ? "جاري الحفظ..." : "حفظ"}
