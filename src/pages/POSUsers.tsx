@@ -6,17 +6,21 @@ import { Input } from "@/components/ui/input";
 import getPOSUsers, {
   addPOSPayment,
   addPOSUser,
+  AddNewUser,
+  deleteUser,
   endPOSDebt,
   getPOSBalanceReport,
   getPOSDebt,
 } from "@/services/pos";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
+import AddUser from '@/components/invoices/AddUser'
 
 export default function POSUsers() {
   const [amount, setAmount] = useState(0);
   const [openUserId, setOpenUserId] = useState(null);
   const [openUserId2, setOpenUserId2] = useState(null);
+  const [openAdd, setOpenAdd] = useState(false);
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     username: "",
@@ -98,6 +102,38 @@ export default function POSUsers() {
     },
   });
 
+
+  const deleteUsers = useMutation({
+    mutationFn: deleteUser,
+    onSuccess: () => {
+      alert("تم حذف المستخدم بنجاح.");
+      queryClient.invalidateQueries({
+        queryKey: ["POSUsers-table"],
+      });
+      setOpenUserId(null);
+      setAmount(0);
+    },
+    onError: () => {
+      alert("حدث خطأ أثناء الإرسال.");
+    },
+  });
+
+  const addUserMutation = useMutation({
+    mutationFn: AddNewUser,
+    onSuccess: () => {
+      alert("تم إضافة المستخدم بنجاح.");
+      queryClient.invalidateQueries({
+        queryKey: ["POSUsers-table"],
+      });
+      setOpenAdd(false);
+    },
+    onError: () => {
+      alert("حدث خطأ أثناء إضافة المستخدم.");
+    },
+  });
+
+
+
     const posReportColumns = [
       { key: "_id", label: "المعرف", sortable: true, hidden: true },
       { key: "name", label: "الاسم", sortable: true },
@@ -157,6 +193,20 @@ export default function POSUsers() {
   return (
     <DashboardLayout>
       <div dir="rtl" className="grid gap-4 grid-cols-1">
+        <PopupForm
+        title="اضافة مستخدم جديد"
+        trigger= {<Button>اضافة مستخدم جديد</Button>}
+        isOpen={openAdd}
+        setIsOpen={setOpenAdd}
+        
+        >
+          <AddUser onSubmit={(userData) => addUserMutation.mutate(userData)} />
+        </PopupForm>
+        
+      
+
+
+        
         <DataTable
           title="نقاط البيع"
           description={totalBalances.toFixed(0) + " ل.س مجموع أرصدة نقاط البيع"}
@@ -264,9 +314,13 @@ export default function POSUsers() {
                   </form>
                 </div>
               </PopupForm>
+              <Button onClick={()=> {deleteUsers.mutate({id: row._id})}} variant="destructive">حذف نقطة البيع</Button>
             </div>
+            
           )}
+          
         />
+        
 
         <DataTable
           title="ديون نقاط البيع"
