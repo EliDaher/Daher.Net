@@ -6,7 +6,7 @@ import { Eye, Trash, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Invoice from "@/components/invoices/Invoice";
-import AddPosProduct from "./AddProduct";
+import AddPosProduct from "../components/products/AddProduct";
 
 export default function ViewProduct() {
   const [products, setProducts] = useState([]);

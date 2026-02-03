@@ -12,7 +12,7 @@ export default async function getWifiCustomers() {
 export async function getCustomerById(id: string) {
   try {
     const response = await apiClient.get(`/api/wifi/getCustomerById/${id}`);
-    const data = await response.data;
+    const data = await response.data.data;
     return data;
   } catch (error) {
     console.error("Error fetching customer:", error);
@@ -36,7 +36,7 @@ export async function getTransactionsForCustomer(id: string) {
     const response = await apiClient.get(
       `/api/wifi/getTransactionsForCustomer/${id}`,
     );
-    return response.data; 
+    return response.data.data; 
   } catch (error) {
     console.error("Error fetching transactions:", error);
     return { success: false, error };

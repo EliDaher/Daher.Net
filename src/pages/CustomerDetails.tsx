@@ -4,7 +4,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Plus, Printer, RefreshCwIcon } from "lucide-react";
+import { ArrowLeft, Plus, Printer } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   addInvoice,
@@ -64,8 +64,7 @@ export default function CustomerDetails() {
 
 
 
-
-    const handleWhatsApp =()=>{
+  const handleWhatsApp =()=>{
     if(!customer?.Contact){
       alert("لا يوجد رقم هاتف للمشترك");
       return;
@@ -74,13 +73,12 @@ export default function CustomerDetails() {
       alert('لا يوجد عليه فواتير')
       return;
     }
-        const phone = customer.Contact.replace(/\D/g, "");
-const message = `عزيزي المشترك ${customer.Name}، قيمة فاتورتك الحالية هي: ${customer.Balance * -1} دولار.
-يرجى التسديد قبل تاريخ 5-2-2026 لضمان استمرار الخدمة دون انقطاع.
-شكرًا لثقتك بخدماتنا.`;
-        const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-        window.open(url, '_blank');
-      
+    const phone = customer.Contact.replace(/\D/g, "");
+    const message = `عزيزي المشترك ${customer.Name}، قيمة فاتورتك الحالية هي: ${customer.Balance * -1} دولار.
+    يرجى التسديد قبل تاريخ 5-2-2026 لضمان استمرار الخدمة دون انقطاع.
+    شكرًا لثقتك بخدماتنا.`;
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
   };
 
 
