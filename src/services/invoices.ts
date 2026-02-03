@@ -104,6 +104,19 @@ export async function getDoneInvoicesByDate(fromDate: string, toDate: string) {
   }
 }
 
+export async function searchInvoice(searchTerm: string) {
+  try {
+    const res = await apiClient.post("/api/invoices/searchInvoices", {
+      searchValue: searchTerm,
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error getting invoices:", error);
+    return { success: false, error };
+  }
+}
+
+
 export async function deletePayment(id: string) {
   try {
     const res = await invoiceClient.delete(`/api/admin/delete/${id}`);
