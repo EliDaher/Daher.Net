@@ -4,7 +4,7 @@ import axios from "axios";
 export const apiClient = axios.create({
   baseURL:
     import.meta.env.VITE_API_BASE_URL || "https://daherserver-zgmy.onrender.com",
-  timeout: 10000,
+  timeout: 30000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -13,7 +13,7 @@ export const apiClient = axios.create({
 export const googleClient = axios.create({
   baseURL:
     import.meta.env.VITE_API_BASE_URL || "https://daherserver-zgmy.onrender.com",
-  timeout: 10000,
+  timeout: 30000,
   headers: {
     "Content-Type": "application/json",
   },

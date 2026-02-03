@@ -21,24 +21,18 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { DataTable } from "@/components/dashboard/DataTable";
 import addPaymentDealer from "@/services/dealer";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function CustomerDetails() {
 
   const location = useLocation()
   const pppData = location.state
-
-  useEffect(()=>{
-    console.log(pppData)
-  }, [pppData])
+  const queryClient = useQueryClient()
 
   const { id } = useParams();
   const navigate = useNavigate();
   const daherUser = JSON.parse(localStorage.getItem("DaherUser"));
 
-  const [customer, setCustomer] = useState(null);
-  const [transactions, setTransactions] = useState([]);
-  const [loadingCustomer, setLoadingCustomer] = useState(true);
-  const [loadingTransactions, setLoadingTransactions] = useState(true);
 
 
   const [isOpen, setIsOpen] = useState(false);
@@ -51,26 +45,24 @@ export default function CustomerDetails() {
 
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchCustomer = async () => {
-      setLoadingCustomer(true);
-      const userRes = await getCustomerById(id);
-      if (userRes.success) setCustomer(userRes.data);
-      setLoadingCustomer(false);
-    };
-    fetchCustomer();
-  }, [id]);
+  const {
+    data: customer,
+    isLoading: customerLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["customer", id],
+    queryFn: () => getCustomerById(id),
+    enabled: !!id,
+  });
 
-  useEffect(() => {
-    reloadTransactions();
-  }, [id]);
+  const { data: transactions, isLoading: transactionsLoading } = useQuery({
+    queryKey: ["transactions", id],
+    queryFn: () => getTransactionsForCustomer(id),
+    enabled: !!id,
+  });
 
-  const reloadTransactions = async () => {
-    setLoadingTransactions(true);
-    const transRes = await getTransactionsForCustomer(id);
-    if (transRes.success) setTransactions(transRes.data);
-    setLoadingTransactions(false);
-  };
+
 
 
     const handleWhatsApp =()=>{
@@ -111,6 +103,7 @@ const message = `عزيزي المشترك ${customer.Name}، قيمة فاتو�
         subscriberID: id,
         total: Number(customer.Balance) || 0,
         dealer: daherUser.role === "dealer" ? daherUser.username : undefined,
+        type: "cash" as "cash",
       };
 
       let res;
@@ -133,7 +126,6 @@ const message = `عزيزي المشترك ${customer.Name}، قيمة فاتو�
 
         // تنظيف الحقول
         setIsOpen(false);
-        reloadTransactions();
         setPaymentDate(null);
         setPaymentValue(0);
         setPaymentDetails("");
@@ -141,17 +133,7 @@ const message = `عزيزي المشترك ${customer.Name}، قيمة فاتو�
         console.error("API Error Response:", res);
         alert(res?.error || "حدث خطأ أثناء الإرسال، يرجى المحاولة لاحقًا.");
       }
-      if (formTitle === "اضافة فاتورة") {
-        setCustomer({
-          ...customer,
-          Balance: customer.Balance - paymentValue,
-        });
-      } else {
-        setCustomer({
-          ...customer,
-          Balance: customer.Balance + paymentValue,
-        });
-      }
+      queryClient.invalidateQueries({ queryKey: ["customer", id] });
     } catch (error) {
       console.error("Exception in handleSubmit:", error);
       if (error?.response?.data?.error) {
@@ -167,7 +149,7 @@ const message = `عزيزي المشترك ${customer.Name}، قيمة فاتو�
   const tableRef = useRef();
 
   const handlePrint = useReactToPrint({
-    contentRef: tableRef, // استخدام contentRef بشكل صحيح
+    contentRef: tableRef,
     pageStyle: `
       @page {
         size: 80mm auto;
@@ -237,7 +219,7 @@ const message = `عزيزي المشترك ${customer.Name}، قيمة فاتو�
     }
   }, [printOnly, isOpen]);
 
-  if (loadingCustomer || !customer) {
+  if (customerLoading || !customer) {
     return (
       <DashboardLayout>
         <Skeleton className="h-64 w-full" />
@@ -351,8 +333,8 @@ const message = `عزيزي المشترك ${customer.Name}، قيمة فاتو�
           </CardHeader>
           <CardContent className="">
             <DetailsInputs
-              customer={{ ...customer, address: (pppData?.address || '') }}
-              setCustomer={setCustomer}
+              customer={{ ...customer, address: pppData?.address || "" }}
+              setCustomer={() => {}}
             />
           </CardContent>
         </Card>
@@ -380,17 +362,17 @@ const message = `عزيزي المشترك ${customer.Name}، قيمة فاتو�
           >
             <Plus className="w-4 h-4 ml-2" /> إضافة دفعة
           </Button>
-           <Button variant="outline" onClick={handleWhatsApp}>
+          <Button variant="outline" onClick={handleWhatsApp}>
             واتساب
           </Button>
 
-          <Button variant="outline" onClick={reloadTransactions}>
+          {/* <Button variant="outline" onClick={reloadTransactions}>
             <RefreshCwIcon />
-          </Button>
+          </Button> */}
         </div>
 
         <Card className="overflow-x-auto">
-          {loadingTransactions ? (
+          {transactionsLoading ? (
             <Skeleton className="h-48 w-full" />
           ) : transactions?.length === 0 ? (
             <p className="text-muted-foreground text-center">

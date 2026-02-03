@@ -1,148 +1,147 @@
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import React from "react";
-import { Input } from "@/components/ui/input";
 import axios from "axios";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
 import FormInput from "@/components/ui/custom/FormInput";
 import { Button } from "@/components/ui/button";
+import PopupForm from "@/components/ui/custom/PopupForm";
 
-export default function AddProduct() {
-  const [name, setName] = useState("");
-  const [price, setPrice] = useState(0);
-  const [priceCost, setPriceCost] = useState(0);
-  const [priceWolesale, setPriceWolesale] = useState(0);
-  const [category, setCategory] = useState("");
-  const [stock, setStock] = useState(0);
-  const [description, setDescription] = useState("");
-  const [message, setMessage] = useState(null);
+import { addPosProductSchema, AddPosProductInput } from "@/schemas/addPosProduct.schema";
+
+type AddPosProductProp = {
+  isOpen: boolean;
+  setIsOpen: any;
+};
+
+export default function AddPosProduct({
+  isOpen,
+  setIsOpen,
+}: AddPosProductProp) {
+  const [serverMessage, setServerMessage] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
-  const [imageUrl, setImageUrl] = useState("");
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage(null);
 
-    if (!name || !price || !imageUrl || !category || !stock || !priceCost || !priceWolesale) {
-      setMessage({
-        type: "error",
-        text: "الرجاء تعبئة الاسم والسعر وإضافة رابط الصورة.",
-      });
-      return;
-    }
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<AddPosProductInput>({
+    resolver: zodResolver(addPosProductSchema),
+    defaultValues: {
+      stock: 0,
+    },
+  });
 
-    const productData = {
-      name,
-      price,
-      category,
-      description,
-      imageUrl,
-      stock,
-      priceCost,
-      priceWolesale,
-    };
+  const onSubmit = async (data: AddPosProductInput) => {
+    setServerMessage(null);
 
     try {
       setUploading(true);
 
       const apiBase = "https://paynet-1.onrender.com";
 
-      const res = await axios.post(`${apiBase}/api/product/add`, productData);
+      await axios.post(`${apiBase}/api/product/add`, data);
 
-      setMessage({ type: "success", text: "تم رفع المنتج بنجاح!" });
+      setServerMessage({
+        type: "success",
+        text: "تم إضافة المنتج بنجاح",
+      });
 
-      // reset form
-      setName("");
-      setPrice(0);
-      setCategory("");
-      setDescription("");
-      setImageUrl("");
-      setStock(0);
-      setPriceCost(0);
-      setPriceWolesale(0);
-    } catch (err) {
-      console.error(err);
+      reset();
+    } catch (err: any) {
       const errMsg =
-        err?.response?.data?.message || err.message || "حصل خطأ أثناء الرفع";
-      setMessage({ type: "error", text: errMsg });
+        err?.response?.data?.message || err.message || "حدث خطأ أثناء الحفظ";
+
+      setServerMessage({
+        type: "error",
+        text: errMsg,
+      });
     } finally {
       setUploading(false);
     }
   };
 
   return (
-    <DashboardLayout>
-      <div>
-        <form action="" onSubmit={handleSubmit} className="flex flex-col">
-          <FormInput 
-            label="اسم المنتج" 
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="mt-2 mb-4"
-          />
-          <FormInput 
-            label="سعر المنتج" 
-            type="number"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            className="mt-2 mb-4"
-          />
-          <FormInput 
-            label="سعر التكلفة" 
-            type="number"
-            value={priceCost}
-            onChange={(e) => setPriceCost(e.target.value)}
-            className="mt-2 mb-4"
-          />
-          <FormInput 
-            label="سعر الجملة" 
-            type="number"
-            value={priceWolesale}
-            onChange={(e) => setPriceWolesale(e.target.value)}
-            className="mt-2 mb-4"
-          />
-          <FormInput 
-            label="صنف المنتج" 
-            type="text"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="mt-2 mb-4"
-          />
-          <FormInput 
-            label="الكمية" 
-            type="text"
-            value={stock}
-            onChange={(e) => setStock(Number(e.target.value))}
-            className="mt-2 mb-4"
-          />
-          <FormInput 
-            label="الوصف" 
-            type="text"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="mt-2 mb-4"
-          />
-          <FormInput 
-            label="رابط الصورة" 
-            type="text"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            className="mt-2 mb-4"
-          />
-          <Button
-            type="submit"
-            disabled={uploading}
+    <PopupForm
+      isOpen={isOpen}
+      setIsOpen={setIsOpen}
+      trigger={<Button className="w-full">إضافة منتج</Button>}
+    >
+      <form dir="rtl" onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-2 gap-3">
+        <FormInput
+          label="اسم المنتج"
+          type="text"
+          {...register("name")}
+          error={errors.name?.message}
+        />
+
+        <FormInput
+          label="سعر البيع"
+          type="number"
+          step="0.01"
+          {...register("price")}
+          error={errors.price?.message}
+        />
+
+        <FormInput
+          label="سعر الشراء"
+          type="number"
+          step="0.01"
+          {...register("priceCost")}
+          error={errors.priceCost?.message}
+        />
+
+        <FormInput
+          label="سعر الجملة"
+          type="number"
+          step="0.01"
+          {...register("priceWholesale")}
+          error={errors.priceWholesale?.message}
+        />
+
+        <FormInput
+          label="التصنيف"
+          type="text"
+          {...register("category")}
+          error={errors.category?.message}
+        />
+
+        <FormInput
+          label="الكمية"
+          type="number"
+          {...register("stock")}
+          error={errors.stock?.message}
+        />
+
+        <FormInput
+          label="الوصف"
+          type="text"
+          {...register("description")}
+          error={errors.description?.message}
+        />
+
+        <FormInput
+          label="رابط الصورة"
+          type="text"
+          {...register("imageUrl")}
+          error={errors.imageUrl?.message}
+        />
+
+        <Button className="col-span-2" type="submit" disabled={uploading}>
+          {uploading ? "جاري الحفظ..." : "إضافة المنتج"}
+        </Button>
+
+        {serverMessage && (
+          <p
+            className={`text-sm mt-2 ${
+              serverMessage.type === "error" ? "text-red-500" : "text-green-600"
+            }`}
           >
-            {uploading ? "Uploading..." : "Add Product"}
-          </Button>
-          {message && (
-            <p
-              className={`mt-4 ${message.type === "error" ? "text-red-500" : "text-green-500"}`}
-            >
-              {message.text}
-            </p>
-          )}
-        </form>
-      </div>
-    </DashboardLayout>
+            {serverMessage.text}
+          </p>
+        )}
+      </form>
+    </PopupForm>
   );
 }

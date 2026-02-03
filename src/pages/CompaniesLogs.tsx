@@ -20,7 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { getDoneInvoicesByDate } from "@/services/invoices";
 import { getCompaniesLogs } from "@/services/companies";
 
 export default function CompaniesLogs() {
@@ -122,7 +121,7 @@ export default function CompaniesLogs() {
     }, 0);
   }, [filteredData]);
 
-  // 💡 تحميل / خطأ
+  //💡 تحميل / خطأ
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -226,7 +225,9 @@ export default function CompaniesLogs() {
           title="المبالغ المسددة للشركات"
           columns={columns}
           data={filteredData}
+          description={`عدد العمليات ${filteredData.length}`}
           totalPend
+          pageSizeOptions={[10, 20, 50, 100, 200]}
         />
       </div>
     </DashboardLayout>

@@ -1,5 +1,4 @@
 import apiClient from "@/lib/axios";
-import { subscribe } from "diagnostics_channel";
 
 
 export default async function addPaymentDealer(data: {

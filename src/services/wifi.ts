@@ -3,7 +3,6 @@ import apiClient from "@/lib/axios";
 export default async function getWifiCustomers() {
   try {
     const response = await apiClient.get("/api/wifi/getCustomers");
-
     return response.data.customers;
   } catch (err) {
     console.error("خطأ في تسجيل الدخول:", err);
@@ -51,6 +50,7 @@ export async function addPayment(data: {
   subscriberID: string;
   total: number;
   dealer?: string;
+  type: "cash" | "shamCash"
 }) {
   try {
     console.log(data);

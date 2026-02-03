@@ -11,6 +11,20 @@ export default async function getPOSUsers() {
   }
 }
 
+export async function getPOSBalanceReport() {
+  try {
+    const res = await invoiceClient.get(
+      "/api/admin/getPOSBalanceReport",
+    );
+
+    console.log(res.data)
+    return res.data;
+  } catch (error) {
+    console.error("Error getting invoices:", error);
+    throw new Error("Error getting invoices");
+  }
+}
+
 export async function getPOSDebt() {
   try {
     const res = await invoiceClient.get("/api/admin/daen");

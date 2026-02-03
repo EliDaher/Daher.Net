@@ -1,11 +1,10 @@
 import React from "react";
 import { PrivateRoute } from "@/components/auth/PrivateRoute";
-import POSUsers from "./pages/POSUsers";
-import Companies from "./pages/Companies";
-import CompaniesLogs from "./pages/CompaniesLogs";
-import path from "path";
 
 // Lazy Loading للصفحات
+const POSUsers = React.lazy(() => import("@/pages/POSUsers"));
+const Companies = React.lazy(() => import("@/pages/Companies"));
+const CompaniesLogs = React.lazy(() => import("@/pages/CompaniesLogs"));
 const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
 const Analytics = React.lazy(() => import("@/pages/Analytics"));
 const Users = React.lazy(() => import("@/pages/Users"));
@@ -22,7 +21,6 @@ const PendingTransactions = React.lazy(() => import("@/pages/PendingTransactions
 const DoneTransactions = React.lazy(() => import("@/pages/DoneTransactions"));
 const POSPayments = React.lazy(() => import("@/pages/POSPayments"));
 const BillBalance = React.lazy(() => import("@/pages/BillBalance"));
-const AddProduct = React.lazy(()=>import('@/pages/AddProduct'))
 const ViewProduct = React.lazy(()=>import('@/pages/ViewProduct'))
 const InquiryLogs = React.lazy(() => import("@/pages/InquiryLogs"));
 const ViewBills = React.lazy(() => import("@/pages/ViewBills"));
@@ -30,6 +28,7 @@ const ViewBillsDetails = React.lazy(() => import("@/pages/ViewBillsDetails"));
 const FinancialStatement = React.lazy(
   () => import("@/pages/FinancialStatement"),
 );
+
 
 export const routesConfig = [
   { path: "/login", element: <Login /> },
@@ -64,14 +63,6 @@ export const routesConfig = [
     element: (
       <PrivateRoute allowedRoles={["admin", "employee"]}>
         <ViewProduct />
-      </PrivateRoute>
-    ),
-  },
-  {
-    path: "/AddProducts",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "employee"]}>
-        <AddProduct />
       </PrivateRoute>
     ),
   },
