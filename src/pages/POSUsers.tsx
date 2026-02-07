@@ -39,7 +39,7 @@ export default function POSUsers() {
   };
 
   const { data: posReport, isLoading: posReportLoading } = useQuery({
-    queryKey: ["POSUsers-table"],
+    queryKey: ["POSReport-table"],
     queryFn: getPOSBalanceReport,
   });
 
@@ -134,22 +134,22 @@ export default function POSUsers() {
 
 
 
-    const posReportColumns = [
-      { key: "_id", label: "المعرف", sortable: true, hidden: true },
-      { key: "name", label: "الاسم", sortable: true },
-      { key: "email", label: "البريد الإلكتروني", sortable: true },
-      { key: "confirmedDeposits", label: "الايداعات المؤكدة", sortable: true },
-      { key: "expensesPaid", label: "المصاريف المدفوعة", sortable: true },
-      { key: "netBalance", label: "الرصيد الصافي", sortable: true },
-      { key: "POSbalance", label: "الميزانية", sortable: true },
-      { key: "balance", label: "الرصيد", sortable: true },
-      { key: "expensesInProgress", label: "المصاريف الجارية", sortable: true },
-      { key: "totalDeposits", label: "إجمالي الإيداعات", sortable: true },
-      { key: "finalBalance", label: "الرصيد النهائي", sortable: true },
-      { key: "unconfirmedDeposits", label: "الايداعات المرفوضة", sortable: true },
-      { key: "expensesUnpaid", label: "المصاريف غير المدفوعة", sortable: true },
-      { key: "totalExpenses", label: "إجمالي المصاريف", sortable: true },
-    ];
+  const posReportColumns = [
+    { key: "_id", label: "المعرف", sortable: true, hidden: true },
+    { key: "name", label: "الاسم", sortable: true },
+    { key: "email", label: "البريد الإلكتروني", sortable: true },
+    { key: "confirmedDeposits", label: "الايداعات المؤكدة", sortable: true },
+    { key: "expensesPaid", label: "المصاريف المدفوعة", sortable: true },
+    { key: "netBalance", label: "الرصيد الصافي", sortable: true },
+    { key: "POSbalance", label: "الميزانية", sortable: true },
+    { key: "balance", label: "الرصيد", sortable: true },
+    { key: "expensesInProgress", label: "المصاريف الجارية", sortable: true },
+    { key: "totalDeposits", label: "إجمالي الإيداعات", sortable: true },
+    { key: "finalBalance", label: "الرصيد النهائي", sortable: true },
+    { key: "unconfirmedDeposits", label: "الايداعات المرفوضة", sortable: true },
+    { key: "expensesUnpaid", label: "المصاريف غير المدفوعة", sortable: true },
+    { key: "totalExpenses", label: "إجمالي المصاريف", sortable: true },
+  ];
 
 
   const posColumns = [
@@ -202,10 +202,6 @@ export default function POSUsers() {
         >
           <AddUser onSubmit={(userData) => addUserMutation.mutate(userData)} />
         </PopupForm>
-        
-      
-
-
         
         <DataTable
           title="نقاط البيع"

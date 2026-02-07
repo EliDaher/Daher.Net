@@ -132,7 +132,11 @@ export async function addWifiExpenses(data: {
   details: string;
 }) {
   try {
-    const response = await apiClient.post("/api/wifi/addWifiExpenses", data);
+    const response = await apiClient.post("/api/wifi/addWifiExpenses", {
+      amount: data.amount,
+      date: data.date,
+      details: data.details || 'Invoice Payment'
+    });
     return response.data;
   } catch (error) {
     console.error("Error adding invoice:", error);

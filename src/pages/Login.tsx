@@ -65,7 +65,7 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="new-password"
           />
-          <Button type="submit" className="w-full">
+          <Button variant="secondary" type="submit" className="w-full">
             Login
           </Button>
         </form>
