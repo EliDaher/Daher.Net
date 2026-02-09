@@ -1,141 +1,166 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { TrendingUp, CreditCard, HandCoins, Coins } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ChartContainer } from "@/components/dashboard/ChartContainer";
 import { DataTable } from "@/components/dashboard/DataTable";
-import getWifiCustomers, {
-  getWifiBalance,
-} from "@/services/wifi";
-import { useNavigate } from "react-router-dom";
-import monthlyRevenue from "@/services/reports";
 import { Button } from "@/components/ui/button";
-import { getPendingExchange } from "@/services/exchange";
 import ExchangeFrom from "@/components/balance/ExchangeFrom";
 import DoneExForm from "@/components/balance/DoneExForm";
 import BalancePaymentForm from "@/components/balance/BalancePaymentForm";
+import getWifiCustomers, { getWifiBalance } from "@/services/wifi";
+import monthlyRevenue from "@/services/reports";
+import { getPendingExchange } from "@/services/exchange";
+
 
 export default function Balance() {
   const navigate = useNavigate();
 
-  const [totalBalance, setTotalBalance] = useState(0);
-  const [todayTotal, setTodayTotal] = useState(0);
-  const [monthTotal, setMonthTotal] = useState(0);
+  /* ===================== UI State ===================== */
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [paymentTitle, setPaymentTitle] = useState("");
+  const [isExchangeOpen, setIsExchangeOpen] = useState(false);
+  const [activePendingId, setActivePendingId] = useState<string | null>(null);
 
-  const [openRowId, setOpenRowId] = useState<string | null>(null);
-  const [isOpenEx, setIsOpenEx] = useState(false);
-
-  const [isOpen, setIsOpen] = useState(false);
-  const [formTitle, setFormTitle] = useState("");
-
+  /* ===================== Queries ===================== */
 
   const { data: customers, isLoading: customersLoading } = useQuery({
     queryKey: ["customers-table"],
     queryFn: getWifiCustomers,
   });
 
-  const unpaidValue = useMemo(() => {
-    const totalDebt = customers
-      ?.filter((c) => c?.Balance < 0)
-      ?.reduce((sum, c) => sum + Number(c?.Balance), 0);
-
-    return Math.abs(totalDebt);
-  }, [customers]);
-
-  // Fetch dashboard data using React Query
   const { data: balance, isLoading: balanceLoading } = useQuery({
     queryKey: ["balance-table"],
     queryFn: getWifiBalance,
   });
 
-  useEffect(() => {
-    let temBalance = 0;
-    balance?.WifiBalance?.map((ele) => {
-      temBalance += Number(ele.amount);
-    });
-    balance?.WifiPayments?.map((ele) => {
-      temBalance += Number(ele.Amount);
-    });
-    setTotalBalance(temBalance);
-
-    // احصل على التاريخ الحالي
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth(); // صفر-based (0=يناير)
-    const currentDay = today.getDate();
-
-    // فلترة البيانات
-    const paymentsThisMonth = balance?.WifiPayments?.filter((payment) => {
-      const paymentDate = new Date(payment.Date);
-      return (
-        paymentDate.getFullYear() === currentYear &&
-        paymentDate.getMonth() === currentMonth
-      );
-    });
-
-    const paymentsThisDay = balance?.WifiPayments?.filter((payment) => {
-      const paymentDate = new Date(payment.Date);
-      return (
-        paymentDate.getFullYear() === currentYear &&
-        paymentDate.getMonth() === currentMonth &&
-        paymentDate.getDate() === currentDay
-      );
-    });
-
-    let temMonth = 0;
-    paymentsThisMonth?.map((ele) => {
-      temMonth += Number(ele.Amount);
-    });
-    setMonthTotal(temMonth);
-
-    let temDay = 0;
-    paymentsThisDay?.map((ele) => {
-      temDay += Number(ele.Amount);
-    });
-    setTodayTotal(temDay);
-
-  }, [balance]);
-
-
-
   const { data: pendingData, isLoading: pendingLoading } = useQuery({
-    queryKey: ["pendingEx"],
+    queryKey: ["pending-exchange"],
     queryFn: getPendingExchange,
   });
 
-  const totalAmounts = useMemo(() => {
-    let sypTotal = 0;
-    let usdTotal = 0;
-
-    pendingData?.pendingList.forEach((item) => {
-      sypTotal += item.sypAmount || 0;
-      usdTotal += item.usdAmount || 0;
-    });
-
-    return {
-      sypTotal,
-      usdTotal,
-    };
-  }, [pendingData]);
-
-  const { data: monthly, isLoading: monthlyLoading } = useQuery({
-    queryKey: ["monthlyRevenue"],
+  const { data: monthly } = useQuery({
+    queryKey: ["monthly-revenue"],
     queryFn: monthlyRevenue,
   });
 
-  const PendingColumns = [
-    { key: "id", label: "المعرف", sortable: true, hidden: true },
-    { key: "sypAmount", label: "السوري", sortable: true },
-    { key: "usdAmount", label: "دولار", sortable: true },
-    { key: "details", label: "التفاصيل", sortable: true },
-    { key: "timestamp", label: "الوقت", sortable: true },
-  ];
+  /* ===================== Computed Values ===================== */
+
+
+  const paymentsByType = useMemo<any>(() => {
+    const initial: any = {
+      cash: { total: 0, count: 0 },
+      shamCash: { total: 0, count: 0 },
+      other: { total: 0, count: 0 },
+    };
+
+    if (!balance?.WifiPayments) return initial;
+
+    balance.WifiPayments.forEach((payment) => {
+      const amount = Number(payment.Amount) || 0;
+      const type = payment.type as any;
+
+      if (type === "cash" || type === "shamCash") {
+        initial[type].total += amount;
+        initial[type].count += 1;
+      } else {
+        initial.other.total += amount;
+        initial.other.count += 1;
+      }
+    });
+    
+    balance.WifiBalance.forEach((payment) => {
+      const amount = Number(payment.Amount) || 0;
+      const type = payment.type as any;
+
+      if (type === "cash" || type === "shamCash") {
+        initial[type].total += amount;
+        initial[type].count += 1;
+      } else {
+        initial.other.total += amount;
+        initial.other.count += 1;
+      }
+    });
+
+    return initial;
+  }, [balance]);
+
+  const customersById = useMemo(() => {
+    return (customers as any[])?.reduce<Record<string, any>>((acc, c) => {
+      acc[String(c.id)] = c;
+      return acc;
+    }, {});
+  }, [customers]);
+
+  const unpaidValue = useMemo(() => {
+    const debt =
+      customers
+        ?.filter((c) => Number(c.Balance) < 0)
+        .reduce((sum, c) => sum + Number(c.Balance), 0) ?? 0;
+
+    return Math.abs(debt);
+  }, [customers]);
+
+  const totalBalance = useMemo(() => {
+    if (!balance) return 0;
+
+    const box =
+      balance.WifiBalance?.reduce((sum, b) => sum + Number(b.amount), 0) ?? 0;
+
+    const payments =
+      balance.WifiPayments?.reduce((sum, p) => sum + Number(p.Amount), 0) ?? 0;
+
+    return box + payments;
+  }, [balance]);
+
+  const today = new Date();
+
+  const { monthTotal, todayTotal } = useMemo(() => {
+    if (!balance?.WifiPayments) return { monthTotal: 0, todayTotal: 0 };
+
+    let month = 0;
+    let day = 0;
+
+    balance.WifiPayments.forEach((p) => {
+      const d = new Date(p.Date);
+
+      if (
+        d.getFullYear() === today.getFullYear() &&
+        d.getMonth() === today.getMonth()
+      ) {
+        month += Number(p.Amount);
+
+        if (d.getDate() === today.getDate()) {
+          day += Number(p.Amount);
+        }
+      }
+    });
+
+    return { monthTotal: month, todayTotal: day };
+  }, [balance]);
+
+  const pendingTotals = useMemo(() => {
+    let syp = 0;
+    let usd = 0;
+
+    pendingData?.pendingList?.forEach((p) => {
+      syp += p.sypAmount || 0;
+      usd += p.usdAmount || 0;
+    });
+
+    return { syp, usd };
+  }, [pendingData]);
+
+  /* ===================== Columns ===================== */
+
   const BalanceColumns = [
     { key: "amount", label: "الكمية", sortable: true },
     { key: "details", label: "التفاصيل", sortable: true },
     { key: "timestamp", label: "الوقت", sortable: true },
   ];
+
   const PaymentsColumns = [
     { key: "Amount", label: "الكمية", sortable: true },
     { key: "customerName", label: "اسم الزبون", sortable: true },
@@ -143,155 +168,159 @@ export default function Balance() {
     { key: "Details", label: "التفاصيل", sortable: true },
     { key: "Date", label: "الوقت", sortable: true },
   ];
-  
-  const customersById = customers?.reduce((acc, customer) => {
-    acc[String(customer.id)] = customer;
-    return acc;
-  }, {});
 
-  
+  const PendingColumns = [
+    { key: "id", label: "ID", hidden: true },
+    { key: "sypAmount", label: "السوري", sortable: true },
+    { key: "usdAmount", label: "دولار", sortable: true },
+    { key: "details", label: "التفاصيل", sortable: true },
+    { key: "timestamp", label: "الوقت", sortable: true },
+  ];
+
+  /* ===================== Render ===================== */
+
   return (
     <DashboardLayout>
+      {/* Payment Form */}
       <BalancePaymentForm
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
-        formTitle={formTitle}
+        isOpen={isPaymentOpen}
+        setIsOpen={setIsPaymentOpen}
+        formTitle={paymentTitle}
       />
 
-      {/* Stats Cards */}
+      {/* ===================== Stats ===================== */}
       <div dir="rtl" className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <div>
           <StatsCard
             className="rounded-b-none"
             title="الرصيد الحالي"
-            value={totalBalance || 0}
-            description=" . فرق عن الشهر السابق"
+            value={totalBalance}
             icon={TrendingUp}
             trend={{
-              value: totalBalance - monthTotal || 0,
-              isPositive: totalBalance - monthTotal > 0 ? true : false,
+              value: totalBalance - monthTotal,
+              isPositive: totalBalance - monthTotal > 0,
             }}
             loading={balanceLoading}
           />
-          <div className="">
+
+          <div className="flex">
             <Button
+              className="w-1/2 rounded-l-none rounded-t-none"
               onClick={() => {
-                setFormTitle("اضافة دفعة الى الصندوق");
-                setIsOpen(true);
+                setPaymentTitle("إضافة دفعة إلى الصندوق");
+                setIsPaymentOpen(true);
               }}
-              className="w-1/2 rounded-l-none rounded-tr-none"
-              disabled={balanceLoading}
             >
-              اضف دفعة
+              إضافة
             </Button>
+
             <Button
               variant="destructive"
+              className="w-1/2 rounded-r-none rounded-t-none"
               onClick={() => {
-                setFormTitle("دفع من الصندوق");
-                setIsOpen(true);
+                setPaymentTitle("دفع من الصندوق");
+                setIsPaymentOpen(true);
               }}
-              className="w-1/2 rounded-r-none rounded-tl-none"
-              disabled={balanceLoading}
             >
-              دفع من الصندوق
+              سحب
             </Button>
           </div>
         </div>
+
         <StatsCard
-          title="ايرادات هذا الشهر"
-          value={monthTotal || 0}
-          description=" . اليوم"
+          title="إيرادات هذا الشهر"
+          value={monthTotal}
           icon={CreditCard}
-          trend={{ value: todayTotal || 0, isPositive: true }}
+          trend={{ value: todayTotal, isPositive: true }}
         />
 
         <StatsCard
-          onClick={() => {
-            navigate("/users", { state: "unpaid" });
-          }}
+          title="مقبوضات الشام كاش"
+          value={paymentsByType.shamCash.total}
+          icon={CreditCard}
+        />
+
+        <StatsCard
+          title="مقبوضات كاش"
+          value={paymentsByType.cash.total}
+          icon={CreditCard}
+        />
+
+        <StatsCard
           title="الديون"
-          value={unpaidValue || 0}
-          description=""
+          value={unpaidValue}
           icon={HandCoins}
           loading={customersLoading}
+          onClick={() => navigate("/users", { state: "unpaid" })}
         />
 
-        <div className="flex flex-col">
+        <div>
           <StatsCard
             className="rounded-b-none"
             title="للتحويل"
-            value={totalAmounts.sypTotal}
-            description=" . دولار"
+            value={pendingTotals.syp}
             icon={Coins}
-            trend={{
-              value: totalAmounts?.usdTotal || 0,
-              isPositive: false,
-            }}
+            trend={{ value: pendingTotals.usd, isPositive: false }}
             loading={pendingLoading}
           />
+
           <ExchangeFrom
-            className={"rounded-t-none w-full"}
-            isOpen={isOpenEx}
-            setIsOpen={setIsOpenEx}
+            className="rounded-t-none"
+            isOpen={isExchangeOpen}
+            setIsOpen={setIsExchangeOpen}
           />
         </div>
       </div>
 
-      {/* Charts Section */}
+      {/* ===================== Chart ===================== */}
       <ChartContainer
-        className="mdL:col-span-2"
-        title=" الحركة المالية "
+        title="الحركة المالية"
+        type="area"
+        dataKey="الفواتير"
+        dataKey2="المدفوعات"
         data={
           monthly
-            ? Object.entries(monthly).map(([month, values]: any) => ({
+            ? Object.entries(monthly).map(([month, v]: any) => ({
                 name: month,
-                الفواتير: values.invoices,
-                المدفوعات: values.payments,
+                الفواتير: v.invoices,
+                المدفوعات: v.payments,
               }))
             : []
         }
-        type="area"
-        dataKey2="المدفوعات"
-        dataKey="الفواتير"
       />
 
-      {/* Data Tables */}
+      {/* ===================== Tables ===================== */}
       <div dir="rtl" className="flex flex-col md:flex-row gap-4">
         <DataTable
           title="الصندوق"
-          description=""
           columns={BalanceColumns}
-          data={balance?.WifiBalance ? [...balance.WifiBalance].reverse() : []}
+          data={[...(balance?.WifiBalance ?? [])].reverse()}
         />
+
         <DataTable
           title="الدفعات"
-          description="دفعات المشتركين"
           columns={PaymentsColumns}
           data={
-            balance?.WifiPayments
-              ? balance.WifiPayments.map((payment) => ({
-                  ...payment,
-                  customerName:
-                    customersById?.[String(payment.SubscriberID)]?.Name ||
-                    "غير معروف",
-                })).reverse()
-              : []
+            balance?.WifiPayments?.map((p) => ({
+              ...p,
+              customerName:
+                customersById?.[String(p.SubscriberID)]?.Name || "غير معروف",
+            })).reverse() ?? []
           }
         />
 
         <DataTable
           title="دفعات للتحويل"
-          description=""
           columns={PendingColumns}
-          data={pendingData?.pendingList ? pendingData?.pendingList : []}
-          renderRowActions={(x) => (
+          data={pendingData?.pendingList ?? []}
+          renderRowActions={(row) => (
             <DoneExForm
-              isOpen={openRowId === x.id}
-              setIsOpen={(v) => setOpenRowId(v ? x.id : null)}
-              className=""
-              SYPAmount={x.sypAmount}
-              USDAmount={x.usdAmount}
-              pendingId={x.id}
+              className={""}
+              isOpen={activePendingId === row.id}
+              setIsOpen={(v) => setActivePendingId(v ? row.id : null)}
+              SYPAmount={row.sypAmount}
+              USDAmount={row.usdAmount}
+              pendingId={row.id}
             />
           )}
         />

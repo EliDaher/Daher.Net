@@ -12,6 +12,7 @@ import FormInput from "../ui/custom/FormInput";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BalancePaymentFormData, BalancePaymentFormSchema } from "@/schemas/BalancePaymentForm.schema";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 type BalancePaymentFormProp = {
   isOpen: boolean;
@@ -81,6 +82,7 @@ const BalancePaymentForm = ({
         formTitle === "اضافة دفعة الى الصندوق" ? data.amount : -data.amount,
       date: data.date ? dayjs(data.date).format("YYYY-MM-DD") : "",
       details: data.details || "",
+      type: data.type || "cash"
     });
   };
 
@@ -128,6 +130,25 @@ const BalancePaymentForm = ({
             control={control}
             render={({ field }) => (
               <FormInput label="" {...field} type="text" placeholder="تفاصيل (اختياري)" />
+            )}
+          /> 
+
+          <Controller
+            name="type"
+            control={control}
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="نوع الدفع" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none" disabled>
+                    اختر نوع الدفع
+                  </SelectItem>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="shamCash">Sham Cash</SelectItem>
+                </SelectContent>
+              </Select>
             )}
           />
 

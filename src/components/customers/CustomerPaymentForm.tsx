@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import PopupForm from "../ui/custom/PopupForm";
 
@@ -28,6 +28,8 @@ import {
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addPayment } from "@/services/wifi";
+import { motion, AnimatePresence } from "framer-motion";
+import addPendingExchange from "@/services/exchange";
 
 /* ================= TYPES ================= */
 
@@ -55,6 +57,11 @@ const CustomerPaymentForm = ({
 }: CustomerPaymentFormProps) => {
   const printRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+
+  type Currency = "USD" | "SYP";
+
+  const [paymentCur, setPaymentCur] = useState<Currency>("USD");
+  const [sypValue, setSypValue] = useState(0)
 
   /* ================= FORM ================= */
   const {
@@ -95,6 +102,8 @@ const CustomerPaymentForm = ({
     mutationFn: addPayment,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["balance-table"] });
+      queryClient.invalidateQueries({ queryKey: ["customer", customer.id] });
+      queryClient.invalidateQueries({ queryKey: ["transactions", customer.id] });
 
       if (window.confirm("هل تريد طباعة إيصال؟")) {
         handlePrint();
@@ -106,6 +115,26 @@ const CustomerPaymentForm = ({
     onError: () => {
       alert("❌ حدث خطأ أثناء تسجيل الدفعة");
     },
+  });
+
+  const SYPMutation = useMutation({
+    mutationFn: (data: { 
+      sypAmount: number;
+      usdAmount: number; 
+      details: string 
+    }) => addPendingExchange(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pendingEx'] });
+      queryClient.invalidateQueries({ queryKey: ["balance-table"] });
+      queryClient.invalidateQueries({ queryKey: ["customer", customer.id] });
+      queryClient.invalidateQueries({ queryKey: ["transactions", customer.id] });
+      alert('تم الاضافة بمجاح')
+      handlePrint()
+      setIsOpen(false)
+    },
+    onError: ()=> {
+        alert('حدث خطأ اثناء الاضافة')
+    }
   });
 
   /* ================= SUBMIT ================= */
@@ -129,6 +158,15 @@ const CustomerPaymentForm = ({
       total: customer.Balance ?? 0,
       type: data.type,
     });
+
+    if(paymentCur == "SYP"){
+      SYPMutation.mutate({
+        sypAmount: sypValue,
+        usdAmount: data.amount,
+        details: data.details
+      })
+    }
+
   };
 
   /* ================= RENDER ================= */
@@ -142,7 +180,17 @@ const CustomerPaymentForm = ({
     >
       <div className="flex flex-row-reverse gap-4">
         {!printOnly && (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 w-full">
+          <motion.form
+            layout
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-4 w-full"
+            transition={{
+              layout: {
+                duration: 0.45,
+                ease: [0.22, 1, 0.36, 1], // easeOutExpo
+              },
+            }}
+          >
             <Controller
               name="amount"
               control={control}
@@ -159,25 +207,85 @@ const CustomerPaymentForm = ({
               <p className="text-red-500 text-sm">{errors.amount.message}</p>
             )}
 
-            <Controller
-              name="type"
-              control={control}
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="نوع الدفع" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none" disabled>
-                      اختر نوع الدفع
-                    </SelectItem>
+            <div className="grid grid-cols-2 gap-4">
+              <Controller
+                name="type"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="نوع الدفع" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none" disabled>
+                        اختر نوع الدفع
+                      </SelectItem>
 
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="shamCash">Sham Cash</SelectItem>
-                  </SelectContent>
-                </Select>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="shamCash">Sham Cash</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+
+              <Select
+                value={paymentCur}
+                onValueChange={(value) => setPaymentCur(value as Currency)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="العملة" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="none" disabled>
+                    اختر نوع العملة المدفوع بها
+                  </SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="SYP">SYP</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <AnimatePresence>
+              {paymentCur === "SYP" && (
+                <motion.div
+                  key="syp-field"
+                  layout
+                  initial={{
+                    opacity: 0,
+                    scale: 0.96,
+                    y: -8,
+                    filter: "blur(6px)",
+                  }}
+                  animate={{
+                    opacity: 1,
+                    scale: 1,
+                    y: 0,
+                    filter: "blur(0px)",
+                  }}
+                  exit={{
+                    opacity: 0,
+                    scale: 0.96,
+                    y: -8,
+                    filter: "blur(6px)",
+                  }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 260,
+                    damping: 22,
+                  }}
+                  className="overflow-hidden rounded-xl border border-border/40 bg-background/60 backdrop-blur-md p-3 shadow-sm"
+                >
+                  <FormInput
+                    label="القيمة بالليرة السورية"
+                    type="number"
+                    placeholder="Ex: 100000"
+                    value={sypValue}
+                    onChange={e => setSypValue(Number(e.target.value))}
+                  />
+                </motion.div>
               )}
-            />
+            </AnimatePresence>
 
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <Controller
@@ -214,7 +322,7 @@ const CustomerPaymentForm = ({
             >
               {paymentMutation.isPending ? "جاري الحفظ..." : "تأكيد الدفع"}
             </Button>
-          </form>
+          </motion.form>
         )}
 
         {/* ================= PRINT ================= */}

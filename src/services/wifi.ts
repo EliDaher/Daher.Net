@@ -130,12 +130,14 @@ export async function addWifiExpenses(data: {
   amount: number;
   date: string;
   details: string;
+  type: "cash" | "shamCash";
 }) {
   try {
     const response = await apiClient.post("/api/wifi/addWifiExpenses", {
       amount: data.amount,
       date: data.date,
-      details: data.details || 'Invoice Payment'
+      details: data.details || "Invoice Payment",
+      type: data.type || "cash"
     });
     return response.data;
   } catch (error) {

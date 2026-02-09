@@ -7,7 +7,10 @@ export const BalancePaymentFormSchema = z.object({
 
   date: z.any().nullable(),
 
+  type: z.enum(["cash", "shamCash"]), // ✅ تصحيح هنا
+
   details: z.string().optional(),
+
 });
 
 export type BalancePaymentFormData = z.infer<typeof BalancePaymentFormSchema>;
