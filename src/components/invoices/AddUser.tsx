@@ -77,8 +77,7 @@ export default function AddUser({ onSubmit }: AddUserProps) {
   };
 
   return (
-    <div dir="rtl" className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4">إضافة مستخدم جديد</h2>
+    <div dir="rtl" className="max-w-md mx-auto bg-white rounded-lg shadow-md">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <Label htmlFor="email">البريد الإلكتروني</Label>

@@ -1,4 +1,4 @@
-import { LucideIcon } from "lucide-react";
+import { Loader2, LucideIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -30,13 +30,12 @@ export function StatsCard({
   onlyAdmin,
   loading
 }: StatsCardProps) {
+  const [daherUser, setDaherUser] = useState<daherUser>();
 
-  const [daherUser, setDaherUser] = useState<daherUser>()
-
-  useEffect(()=>{
+  useEffect(() => {
     const temUser = JSON.parse(localStorage.getItem("DaherUser") || "null");
-    setDaherUser(temUser)
-  },[])
+    setDaherUser(temUser);
+  }, []);
 
   return onlyAdmin && daherUser?.role !== "admin" ? null : !loading ? (
     <Card onClick={onClick} className={cn("stat-card", className)}>
@@ -65,28 +64,50 @@ export function StatsCard({
       </CardContent>
     </Card>
   ) : (
-    <Card onClick={onClick} className={cn("stat-card", className)}>
+    <Card
+      onClick={onClick}
+      className={cn(
+        "stat-card relative overflow-hidden transition-all duration-500",
+        loading && "opacity-60 pointer-events-none",
+        !loading && "opacity-100",
+        className,
+      )}
+    >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="h-5 w-5 text-muted-foreground" />
+        <Loader2 className="animate-spin repeat-infinite opacity-25" />
       </CardHeader>
+
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        {(description || trend) && (
-          <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-            {trend && (
-              <span
-                className={cn(
-                  "inline-flex items-center font-medium",
-                  trend.isPositive ? "text-accent-600" : "text-destructive",
-                )}
-              >
-                {trend.isPositive ? "+" : ""}
-                {trend.value}
-              </span>
-            )}
-            {description && <span>{description}</span>}
+        {loading ? (
+          <div className="space-y-2 animate-pulse">
+            <div className="h-7 w-24 rounded bg-muted" />
+            <div className="h-3 w-32 rounded bg-muted" />
           </div>
+        ) : (
+          <>
+            <div className="text-2xl font-bold">{value}</div>
+
+            {(description || trend) && (
+              <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                {trend && (
+                  <span
+                    className={cn(
+                      "inline-flex items-center font-medium",
+                      trend.isPositive
+                        ? "text-emerald-600"
+                        : "text-destructive",
+                    )}
+                  >
+                    {trend.isPositive ? "+" : ""}
+                    {trend.value}
+                  </span>
+                )}
+
+                {description && <span>{description}</span>}
+              </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>

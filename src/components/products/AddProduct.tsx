@@ -41,7 +41,15 @@ export default function AddPosProduct({
 
       const apiBase = "https://paynet-1.onrender.com";
 
-      await axios.post(`${apiBase}/api/product/add`, data);
+      await axios.post(`${apiBase}/api/product/add`, {
+        name: data.name,
+        price: data.price,
+        description: data.description,
+        category: data.category,
+        imageUrl: data.imageUrl,
+        priceCost: data.priceCost,
+        priceWolesale: data.priceWholesale
+      });
 
       setServerMessage({
         type: "success",
