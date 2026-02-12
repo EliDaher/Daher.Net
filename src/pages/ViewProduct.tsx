@@ -19,8 +19,8 @@ export default function ViewProduct() {
   const columns = [
     { key: "name", label: "اسم المنتج", sortable: true },
     { key: "price", label: "سعر المبيع", sortable: true },
-    { key: "priceCost", label: "سعر الشراء", sortable: true },
-    { key: "priceWolesale", label: "سعر الجملة", sortable: true },
+    { key: "priceCost", label: "سعر الشراء", sortable: true , onlyAdmin : true },
+    { key: "priceWolesale", label: "سعر الجملة", sortable: true , onlyAdmin : true },
     { key: "category", label: "الصنف" },
     { key: "stock", label: "المستودع" },
     { key: "description", label: "الوصف" },
