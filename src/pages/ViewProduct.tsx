@@ -113,7 +113,7 @@ export default function ViewProduct() {
         />
       )}
       <div className="mb-8 p-6 rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="flex text-right flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex text-right flex-col md:flex-row-reverse md:items-center md:justify-between gap-4">
           {/* Title */}
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
@@ -124,26 +124,30 @@ export default function ViewProduct() {
             </p>
           </div>
 
-          <AddPosProduct isOpen={isOpen} setIsOpen={setIsOpen} />
+          <div
+            className="flex flex-col gap-2"
+          >
+            <AddPosProduct isOpen={isOpen} setIsOpen={setIsOpen} />
 
-          {/* Action Button */}
-          <Button variant="outline" onClick={() => startInvoiceCreation()}>
-            {invoice ? "إلغاء الفاتورة" : "إنشاء فاتورة"}
+            {/* Action Button */}
+            <Button variant="outline" onClick={() => startInvoiceCreation()}>
+              {invoice ? "إلغاء الفاتورة" : "إنشاء فاتورة"}
 
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              {invoice ? (
-                <path d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path d="M12 5v14M5 12h14" />
-              )}
-            </svg>
-          </Button>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                {invoice ? (
+                  <path d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path d="M12 5v14M5 12h14" />
+                )}
+              </svg>
+            </Button>
+          </div>
         </div>
       </div>
 
