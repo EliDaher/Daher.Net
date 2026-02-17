@@ -110,14 +110,20 @@ const navigationGroups = [
         icon: ArrowDownCircle,
         allowed: ["admin", "employee"],
       },
+    ],
+    allowed: ["admin", "employee"],
+  },
+  {
+    title: "Warehouse",
+    items: [
       {
-        name: "View Products",
+        name: "Products",
         href: "/ViewProducts",
         icon: Boxes,
         allowed: ["admin", "employee"],
       },
       {
-        name: "View Bills",
+        name: "Products Bills",
         href: "/viewBills",
         icon: FileText,
         allowed: ["admin", "employee"],
@@ -125,18 +131,6 @@ const navigationGroups = [
     ],
     allowed: ["admin", "employee"],
   },
-  // {
-  //   title: "Warehouse",
-  //   items: [
-  //     {
-  //       name: "Add Products",
-  //       href: "/AddProducts",
-  //       icon: PackagePlus,
-  //       allowed: ["admin", "employee"],
-  //     },
-  //   ],
-  //   allowed: ["admin", "employee"],
-  // },
   {
     title: "Analytics",
     items: [

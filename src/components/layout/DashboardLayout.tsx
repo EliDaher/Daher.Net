@@ -27,7 +27,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               "transition-all duration-300",
             )}
           >
-            <div className="mx-auto max-w-7xl space-y-6">{children}</div>
+            <div dir="rtl" className="mx-auto max-w-7xl space-y-6">{children}</div>
           </main>
         </div>
       </div>

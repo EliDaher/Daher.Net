@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -12,11 +12,13 @@ import { addPosProductSchema, AddPosProductInput } from "@/schemas/addPosProduct
 type AddPosProductProp = {
   isOpen: boolean;
   setIsOpen: any;
+  product?: any;
 };
 
 export default function AddPosProduct({
   isOpen,
   setIsOpen,
+  product
 }: AddPosProductProp) {
   const [serverMessage, setServerMessage] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
@@ -33,6 +35,25 @@ export default function AddPosProduct({
     },
   });
 
+  useEffect(() => {
+    if (product) {
+      reset({
+        ...product,
+      });
+    } else {
+      reset({
+        name: "",
+        price: 0,
+        priceCost: 0,
+        priceWholesale: 0,
+        category: "",
+        stock: 0,
+        description: "",
+        imageUrl: "",
+      });
+    }
+  }, [product, reset]);
+
   const onSubmit = async (data: AddPosProductInput) => {
     setServerMessage(null);
 
@@ -48,7 +69,8 @@ export default function AddPosProduct({
         category: data.category,
         imageUrl: data.imageUrl,
         priceCost: data.priceCost,
-        priceWolesale: data.priceWholesale
+        priceWolesale: data.priceWholesale,
+        stock: data.stock,
       });
 
       setServerMessage({

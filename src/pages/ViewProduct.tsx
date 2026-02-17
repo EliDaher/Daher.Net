@@ -2,7 +2,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { DataTable } from "@/components/dashboard/DataTable";
 import { Button } from "@/components/ui/button";
 import UpdateProduct from "@/components/products/UpdateProduct";
-import { Eye, Trash, Loader2 } from "lucide-react";
+import { Eye, Trash, Loader2, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Invoice from "@/components/invoices/Invoice";
@@ -113,21 +113,21 @@ export default function ViewProduct() {
         />
       )}
       <div className="mb-8 p-6 rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="flex text-right flex-col md:flex-row-reverse md:items-center md:justify-between gap-4">
+        <div className="flex text-right flex-col md:flex-row md:items-center md:justify-between gap-4">
           {/* Title */}
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              إنشاء فاتورة جديدة
+              المنتجات المتاحة
             </h1>
             <p className="text-gray-500 text-sm mt-1">
-              قم بإنشاء فاتورة للعملاء بسهولة
+              قم بإنشاء فاتورة بيع بسهولة
             </p>
           </div>
 
           <div
             className="flex flex-col gap-2"
           >
-            <AddPosProduct isOpen={isOpen} setIsOpen={setIsOpen} />
+            <AddPosProduct isOpen={isOpen} setIsOpen={setIsOpen} product={selectedProduct}/>
 
             {/* Action Button */}
             <Button variant="outline" onClick={() => startInvoiceCreation()}>
@@ -168,6 +168,16 @@ export default function ViewProduct() {
               </Button>
             ) : (
               <>
+                <Button
+                  onClick={()=>{
+                    setSelectedProduct(product);
+                    setIsOpen(true);
+                  }}
+                  size="sm"
+                  variant="outline"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
                 <Button
                   onClick={() => setSelectedProduct(product)}
                   size="sm"
