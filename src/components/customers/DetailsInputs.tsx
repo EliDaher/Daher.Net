@@ -1,6 +1,7 @@
 import { updateCustomer } from "@/services/wifi";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 /* ================= TYPES ================= */
 
@@ -75,10 +76,10 @@ export default function DetailsInputs({
 
       queryClient.invalidateQueries({ queryKey: ["customers-table"] });
 
-      alert("تم حفظ التعديلات!");
+      toast.success("تم حفظ التعديلات!");
     } catch (error) {
       console.error(error);
-      alert("حدث خطأ أثناء حفظ التعديلات");
+      toast.error("حدث خطأ أثناء حفظ التعديلات");
     }
   };
 

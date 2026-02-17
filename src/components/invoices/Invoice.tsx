@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Trash } from "lucide-react";
 import axios from "axios";
 import { a } from "node_modules/framer-motion/dist/types.d-B50aGbjN";
+import { toast } from "sonner";
 export default function Invoice({ items, setItems }) {
   const [loading, setLoading] = useState(false);
   const [customerName, setCustomerName] = useState("");
@@ -68,11 +69,11 @@ export default function Invoice({ items, setItems }) {
         customerName: customerName,
         customerPhone: customerPhone
       });
-      alert("تم إنشاء الفاتورة بنجاح!");
+      toast.success("تم إنشاء الفاتورة بنجاح!");
 
     } catch (err) {
       console.log(err);
-      alert(err?.response?.data?.message || "حدث خطأ أثناء إنشاء الفاتورة");
+      toast.error(err?.response?.data?.message || "حدث خطأ أثناء إنشاء الفاتورة");
     }finally {
       setLoading(false);  
     };

@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import Invoice from "@/components/invoices/Invoice";
 import AddPosProduct from "../components/products/AddProduct";
+import { toast } from "sonner";
 
 export default function ViewProduct() {
   const [products, setProducts] = useState([]);
@@ -35,7 +36,7 @@ export default function ViewProduct() {
       setProducts(res.data);
     } catch (err) {
       console.log(err);
-      alert(err?.response?.data?.message || "حدث خطأ أثناء الحذف");
+      toast.error(err?.response?.data?.message || "حدث خطأ أثناء الحذف");
     }
   };
 
@@ -50,11 +51,11 @@ export default function ViewProduct() {
       setDeletingId(id);
 
       await axios.delete(`${apiBase}/api/product/delete-product/${id}`);
-      alert("تم حذف المنتج بنجاح");
+      toast.success("تم حذف المنتج بنجاح");
       setProducts((prev) => prev.filter((p) => p._id !== id));
     } catch (err) {
       console.log(err);
-      alert(err?.response?.data?.message || "حدث خطأ أثناء الحذف");
+      toast.error(err?.response?.data?.message || "حدث خطأ أثناء الحذف");
     } finally {
       setDeletingId(null);
     }
@@ -62,9 +63,9 @@ export default function ViewProduct() {
 
   const startInvoiceCreation = () => {
     if (!invoice) {
-      alert("يمكنك الان البدء في انشاء فاتورة جديدة");
+      toast.success("يمكنك الان البدء في انشاء فاتورة جديدة");
     } else {
-      alert("تم إلغاء إنشاء الفاتورة");
+      toast.warning("تم إلغاء إنشاء الفاتورة");
     }
     setInvoice(!invoice);
   };

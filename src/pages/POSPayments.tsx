@@ -5,6 +5,7 @@ import PopupForm from '@/components/ui/custom/PopupForm';
 import { confirmPayment, getPayments, deletePayment } from '@/services/invoices';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export default function POSPayments() {
 
@@ -27,10 +28,10 @@ export default function POSPayments() {
         mutationFn: (id: string) => deletePayment(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['payment-table'] });
-            alert("تم حذف الدفعة بنجاح.");
+            toast.success("تم حذف الدفعة بنجاح.");
         },
         onError: () => {
-            alert("حدث خطأ أثناء حذف الدفعة.");
+            toast.error("حدث خطأ أثناء حذف الدفعة.");
         },
     });
 

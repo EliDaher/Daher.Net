@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addCompany } from "@/services/companies";
 import FormInput from "../ui/custom/FormInput";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 type AddCompanyFormValues = {
   name: string;
@@ -37,7 +38,7 @@ export default function AddCompanyForm({ isOpen, setIsOpen }) {
       setIsOpen(false);
     },
     onError: () => {
-      alert("حدث خطأ أثناء الإضافة");
+      toast.error("حدث خطأ أثناء الإضافة");
     },
   });
 

@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { increaseBalance } from "@/services/companies";
 import FormInput from "../ui/custom/FormInput";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 type CompanyIncreaseFormValues = {
   companyId: string;
@@ -74,7 +75,7 @@ export default function CompanyIncreaseForm({
       setIsOpen(false);
     },
     onError: () => {
-      alert("حدث خطأ أثناء زيادة الرصيد");
+      toast.error("حدث خطأ أثناء زيادة الرصيد");
     },
   });
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import { toast } from "sonner";
 
 
 function AddBalanceForm({ payOrInv, isOpen, onClose, onSubmit, mahal = false }) {
@@ -38,12 +39,12 @@ function AddBalanceForm({ payOrInv, isOpen, onClose, onSubmit, mahal = false }) 
         const response = await axios.post("https://server-uvnz.onrender.com/addInvoice", invoiceData);
 
         if (response.data.success) {
-          alert("تمت إضافة الفاتورة بنجاح!");
+          toast.success("تمت إضافة الفاتورة بنجاح!");
         }
       
     } catch (error) {
       console.error("حدث خطأ أثناء إرسال الفاتورة:", error.response?.data || error.message);
-      alert("حدث خطأ أثناء إرسال الفاتورة");
+      toast.error("حدث خطأ أثناء إرسال الفاتورة");
     } 
     
     setLoading(false)

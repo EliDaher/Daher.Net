@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import FormInput from "@/components/ui/custom/FormInput";
 import { searchInvoice } from "@/services/invoices";
 import * as Popover from "@radix-ui/react-popover";
+import { toast } from "sonner";
 
 export default function FinancialStatement() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -14,7 +15,7 @@ export default function FinancialStatement() {
   const searchMutation = useMutation({
     mutationFn: async () => {
       if (!searchTerm.trim()) {
-        alert("الرجاء إدخال كلمة للبحث");
+        toast.error("الرجاء إدخال كلمة للبحث");
         return;
       }
       const data = await searchInvoice(searchTerm);
@@ -23,7 +24,7 @@ export default function FinancialStatement() {
     onSuccess: (data) => {
       if (!data || data.message) {
         setResults([]);
-        alert("لا توجد نتائج مطابقة");
+        toast.error("لا توجد نتائج مطابقة");
       } else {
         console.log("Search Results:", data);
         setResults(data); // ← لأنها مصفوفة مباشرة
@@ -31,7 +32,7 @@ export default function FinancialStatement() {
     },
     onError: (error: any) => {
       console.error(error);
-      alert("حدث خطأ أثناء تنفيذ البحث");
+      toast.error("حدث خطأ أثناء تنفيذ البحث");
     },
   });
 

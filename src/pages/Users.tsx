@@ -36,6 +36,7 @@ import AddCustomerForm from "@/components/customers/AddCustomerForm";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { socket } from "@/contexts/socket";
 import UsersPopForm from "@/components/customers/UsersPopForm";
+import { toast } from "sonner";
 
 export default function Users() {
   const navigate = useNavigate();
@@ -90,7 +91,7 @@ export default function Users() {
       setCustomerToDelete(null);
     },
     onError: () => {
-      alert("حدث خطأ أثناء الحذف");
+      toast.error("حدث خطأ أثناء الحذف");
     },
   });
 

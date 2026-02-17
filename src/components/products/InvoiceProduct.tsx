@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { DataTable } from "@/components/dashboard/DataTable";
 import { useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function InvoiceForm({ initialItems = [], products = []}) {
   const [addProduct, setAddProduct] = useState(true);
@@ -39,12 +40,12 @@ export default function InvoiceForm({ initialItems = [], products = []}) {
     try {
       
       await axios.put(`https://paynet-1.onrender.com/api/invoice/add-bill-items/${id}`, { items, initialItems  });
-      alert('تم حفظ العناصر بنجاح');
+      toast.success('تم حفظ العناصر بنجاح');
       setAddProduct(false); // إغلاق الفورم بعد الإرسال
 
     } catch (err) {
       console.error(err);
-      alert(err?.response?.data?.message || 'حدث خطأ أثناء الحفظ');
+      toast.error(err?.response?.data?.message || 'حدث خطأ أثناء الحفظ');
     }
   };
   return (

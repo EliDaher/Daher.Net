@@ -4,6 +4,7 @@ import { Controller, useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { sendInvoice } from "@/services/pos";
 import FormInput from "../ui/custom/FormInput";
+import { toast } from "sonner";
 
 type SendToPayForm = {
   landline: string;
@@ -97,7 +98,7 @@ export default function SendToPay({ isOpen, setIsOpen }: Props) {
       setIsOpen(false);
     },
     onError: () => {
-      alert("حدث خطأ أثناء إرسال الطلب");
+      toast.error("حدث خطأ أثناء إرسال الطلب");
     },
   });
 

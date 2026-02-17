@@ -13,6 +13,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BalancePaymentFormData, BalancePaymentFormSchema } from "@/schemas/BalancePaymentForm.schema";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { toast } from "sonner";
 
 type BalancePaymentFormProp = {
   isOpen: boolean;
@@ -51,13 +52,13 @@ const BalancePaymentForm = ({
   const mutation = useMutation({
     mutationFn: addWifiExpenses,
     onSuccess: () => {
-      alert("✅ تمت إضافة الدفعة.");
+      toast.success("✅ تمت إضافة الدفعة.");
       queryClient.invalidateQueries({ queryKey: ["balance-table"] });
       reset();
       setIsOpen(false);
     },
     onError: () => {
-      alert("❌ حدث خطأ أثناء الإرسال.");
+      toast.error("❌ حدث خطأ أثناء الإرسال.");
     },
   });
 

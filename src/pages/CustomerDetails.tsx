@@ -11,6 +11,7 @@ import { useReactToPrint } from "react-to-print";
 import { DataTable } from "@/components/dashboard/DataTable";
 import { useQuery } from "@tanstack/react-query";
 import CustomerPaymentForm from "@/components/customers/CustomerPaymentForm";
+import { toast } from "sonner";
 
 export default function CustomerDetails() {
   const { id } = useParams<{ id: string }>();
@@ -55,12 +56,12 @@ export default function CustomerDetails() {
 
   const handleWhatsApp = () => {
     if (!customer?.Contact) {
-      alert("لا يوجد رقم هاتف للمشترك");
+      toast.error("لا يوجد رقم هاتف للمشترك");
       return;
     }
 
     if (customer.Balance >= 0) {
-      alert("لا يوجد عليه فواتير");
+      toast.error("لا يوجد عليه فواتير");
       return;
     }
 

@@ -11,6 +11,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Navigate, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 
 export default function ViewBills() {
@@ -31,11 +32,11 @@ export default function ViewBills() {
       const isConfirm = window.confirm('هل انت متاكد من حذف الفاتورة؟');
       if (!isConfirm) return;
       await axios.delete(`https://paynet-1.onrender.com/api/invoice/delete-bill/${id}`);
-      alert('تم حذف الفاتورة بنجاح');
+      toast.success('تم حذف الفاتورة بنجاح');
       setBills(prev => prev.filter(bill => bill._id !== id));
     } catch (err) {
       console.error(err);
-      alert(err?.response?.data?.message || 'حدث خطأ أثناء الحذف');
+      toast.error(err?.response?.data?.message || 'حدث خطأ أثناء الحذف');
     }
   };
 

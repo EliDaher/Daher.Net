@@ -30,6 +30,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addPayment } from "@/services/wifi";
 import { motion, AnimatePresence } from "framer-motion";
 import addPendingExchange from "@/services/exchange";
+import { toast } from "sonner";
 
 /* ================= TYPES ================= */
 
@@ -113,7 +114,7 @@ const CustomerPaymentForm = ({
       setIsOpen(false);
     },
     onError: () => {
-      alert("❌ حدث خطأ أثناء تسجيل الدفعة");
+      toast.error("❌ حدث خطأ أثناء تسجيل الدفعة");
     },
   });
 
@@ -128,12 +129,12 @@ const CustomerPaymentForm = ({
       queryClient.invalidateQueries({ queryKey: ["balance-table"] });
       queryClient.invalidateQueries({ queryKey: ["customer", customer.id] });
       queryClient.invalidateQueries({ queryKey: ["transactions", customer.id] });
-      alert('تم الاضافة بمجاح')
+      toast.success('تم الاضافة بمجاح')
       handlePrint()
       setIsOpen(false)
     },
     onError: ()=> {
-        alert('حدث خطأ اثناء الاضافة')
+        toast.error('حدث خطأ اثناء الاضافة')
     }
   });
 
@@ -141,7 +142,7 @@ const CustomerPaymentForm = ({
 
   const onSubmit = (data: wifiCustomerFormData) => {
     if (!customer?.id) {
-      alert("❌ المشترك غير معروف");
+      toast.error("❌ المشترك غير معروف");
       return;
     }
 

@@ -15,6 +15,7 @@ import getPOSUsers, {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import AddUser from '@/components/invoices/AddUser'
+import { toast } from "sonner";
 
 export default function POSUsers() {
   const [amount, setAmount] = useState(0);
@@ -60,7 +61,7 @@ export default function POSUsers() {
   const mutation = useMutation({
     mutationFn: addPOSPayment,
     onSuccess: () => {
-      alert("تمت إضافة الدفعة.");
+      toast.success("تمت إضافة الدفعة.");
       queryClient.invalidateQueries({
         queryKey: ["POSdebt-table"],
       });
@@ -68,14 +69,14 @@ export default function POSUsers() {
       setAmount(0);
     },
     onError: () => {
-      alert("حدث خطأ أثناء الإرسال.");
+      toast.error("حدث خطأ أثناء الإرسال.");
     },
   });
 
   const endDebtMutation = useMutation({
     mutationFn: endPOSDebt,
     onSuccess: () => {
-      alert("تم انهاء الدين.");
+      toast.success("تم انهاء الدين.");
       queryClient.invalidateQueries({
         queryKey: ["POSdebt-table"],
       });
@@ -83,14 +84,14 @@ export default function POSUsers() {
       setAmount(0);
     },
     onError: () => {
-      alert("حدث خطأ أثناء الإرسال.");
+      toast.error("حدث خطأ أثناء الإرسال.");
     },
   });
 
   const addPoint = useMutation({
     mutationFn: addPOSUser,
     onSuccess: () => {
-      alert("تم اضافة نقطة البيع.");
+      toast.success("تم اضافة نقطة البيع.");
       queryClient.invalidateQueries({
         queryKey: ["POSUsers-table"],
       });
@@ -98,7 +99,7 @@ export default function POSUsers() {
       setAmount(0);
     },
     onError: () => {
-      alert("حدث خطأ أثناء الإرسال.");
+      toast.error("حدث خطأ أثناء الإرسال.");
     },
   });
 
@@ -106,7 +107,7 @@ export default function POSUsers() {
   const deleteUsers = useMutation({
     mutationFn: deleteUser,
     onSuccess: () => {
-      alert("تم حذف المستخدم بنجاح.");
+      toast.success("تم حذف المستخدم بنجاح.");
       queryClient.invalidateQueries({
         queryKey: ["POSUsers-table"],
       });
@@ -114,21 +115,21 @@ export default function POSUsers() {
       setAmount(0);
     },
     onError: () => {
-      alert("حدث خطأ أثناء الإرسال.");
+      toast.error("حدث خطأ أثناء الإرسال.");
     },
   });
 
   const addUserMutation = useMutation({
     mutationFn: AddNewUser,
     onSuccess: () => {
-      alert("تم إضافة المستخدم بنجاح.");
+      toast.success("تم إضافة المستخدم بنجاح.");
       queryClient.invalidateQueries({
         queryKey: ["POSUsers-table"],
       });
       setOpenAdd(false);
     },
     onError: () => {
-      alert("حدث خطأ أثناء إضافة المستخدم.");
+      toast.error("حدث خطأ أثناء إضافة المستخدم.");
     },
   });
 

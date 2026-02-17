@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import decreaseBalance from "@/services/companies";
 import FormInput from "../ui/custom/FormInput";
+import { toast } from "sonner";
 
 type TransferFormValues = {
   reason: string;
@@ -76,7 +77,7 @@ export default function TransfareBalanceForm({
     },
 
     onError: () => {
-      alert("حدث خطأ أثناء تحويل الرصيد");
+      toast.error("حدث خطأ أثناء تحويل الرصيد");
     },
   });
 

@@ -24,6 +24,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { useRef } from "react";
 import { Form } from 'react-router-dom';
+import { toast } from 'sonner';
 
 
 
@@ -74,11 +75,11 @@ export default function ViewBillsDetails() {
             const isConfirm = window.confirm('هل انت متاكد من حذف الفاتورة؟');
             if (!isConfirm) return;
             await axios.delete(`https://paynet-1.onrender.com/api/invoice/delete-bill-items/${id}/delete-item/${itemId}`);
-            alert('تم حذف الفاتورة بنجاح');
+            toast.success('تم حذف الفاتورة بنجاح');
             setItems(prev => prev.filter(item => item._id !== itemId));
         } catch (err) {
             console.error(err);
-            alert(err?.response?.data?.message || 'حدث خطأ أثناء الحذف');
+            toast.error(err?.response?.data?.message || 'حدث خطأ أثناء الحذف');
         }
     };
     useEffect(() => {
@@ -95,7 +96,7 @@ export default function ViewBillsDetails() {
         }
         catch (err) {
             console.log(err)
-            alert(err?.response?.data?.message || 'حدث خطأ أثناء الحذف');
+            toast.error(err?.response?.data?.message || 'حدث خطأ أثناء الحذف');
 
         }
     }
@@ -109,12 +110,12 @@ export default function ViewBillsDetails() {
                 details: paymentDetails,
                 FormTitle: formTitle,
             });
-            alert('تم إضافة الدفعة بنجاح');
+            toast.success('تم إضافة الدفعة بنجاح');
             setIsOpen(false);
             fetchBillDetails();
         } catch (err) {
             console.log(err);
-            alert(err?.response?.data?.message || 'حدث خطأ أثناء إضافة الدفعة');
+            toast.error(err?.response?.data?.message || 'حدث خطأ أثناء إضافة الدفعة');
         }
         finally {
             setLoading(false);
@@ -128,11 +129,11 @@ export default function ViewBillsDetails() {
             const isConfirm = window.confirm('هل انت متاكد من حذف الدفعة؟');
             if (!isConfirm) return;
             await axios.delete(`https://paynet-1.onrender.com/api/invoice/delete-payment/${id}/delete-payment/${paymentId}`);
-            alert('تم حذف الدفعة بنجاح');
+            toast.success('تم حذف الدفعة بنجاح');
             setPayments(prev => prev.filter(payment => payment._id !== paymentId));
         } catch (err) {
             console.error(err);
-            alert(err?.response?.data?.message || 'حدث خطأ أثناء الحذف');
+            toast.error(err?.response?.data?.message || 'حدث خطأ أثناء الحذف');
         }
     };
 

@@ -4,6 +4,7 @@ import FormInput from "../ui/custom/FormInput";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addDoneExchange, deletePendingExchange } from "@/services/exchange";
+import { toast } from "sonner";
 
 export default function DoneExForm({
   isOpen,
@@ -26,7 +27,7 @@ export default function DoneExForm({
       addMutation.mutate(variables.dataToDelete);
     },
     onError: () => {
-      alert("حدث خطأ أثناء الحذف");
+      toast.error("حدث خطأ أثناء الحذف");
     },
   });
 
@@ -40,11 +41,11 @@ export default function DoneExForm({
     }) => addDoneExchange(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["DoneEx"] });
-      alert("تم الانهاء بمجاح");
+      toast.success("تم الانهاء بمجاح");
       setIsOpen(false);
     },
     onError: () => {
-      alert("حدث خطأ اثناء الانهاء");
+      toast.error("حدث خطأ اثناء الانهاء");
     },
   });
 

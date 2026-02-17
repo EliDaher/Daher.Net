@@ -1,4 +1,5 @@
 import { invoiceClient } from "@/lib/axios";
+import { toast } from "sonner";
 
 export default async function getPOSUsers() {
   try {
@@ -17,12 +18,13 @@ export  async function deleteUser({id}) {
     const confirmed = window.confirm("هل انت متاكد من حذف المستخدم");
     if (!confirmed) return;
     const res = await invoiceClient.delete(`/api/admin/deleteuser/${id}`)
+    toast.success("تم حذف المستخدم")
     return res.data
-    alert("تم حذف المستخدم")
 
   }catch(err){
     console.error("خطأ في الحذف", err);
-
+    toast.error("حدث خطأ أثناء حذف المستخدم");
+    return { success: false, error: err };
   }
   
 }

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import FormInput from "@/components/ui/custom/FormInput";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addMofadale } from "@/services/balance";
+import { toast } from "sonner";
 
 
 function Invoice(){
@@ -60,7 +61,7 @@ function Invoice(){
     const mofMutation = useMutation({
       mutationFn: (mofData: any) => addMofadale(mofData),
       onSuccess: () => {
-        alert('✅ تمت إضافة الدفعة.');
+        toast.success('تمت إضافة الدفعة.');
         queryClient.invalidateQueries({
           queryKey: ['balance-table'],
         });
@@ -69,7 +70,7 @@ function Invoice(){
         setMofIsOpen(false);
       },
       onError: () => {
-        alert('❌ حدث خطأ أثناء الإرسال.');
+        toast.error('حدث خطأ أثناء الإرسال.');
       },
     });
 

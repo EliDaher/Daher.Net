@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import addPendingExchange from "@/services/exchange";
 import { useReactToPrint } from "react-to-print";
+import { toast } from "sonner";
 
 export default function ExchangeFrom({ isOpen, setIsOpen, className }) {
   const [SYPAmount, setSYPAmount] = useState(0);
@@ -21,12 +22,12 @@ export default function ExchangeFrom({ isOpen, setIsOpen, className }) {
     }) => addPendingExchange(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pendingEx"] });
-      alert("تم الاضافة بمجاح");
+      toast.success("تم الاضافة بمجاح");
       handlePrint();
       setIsOpen(false);
     },
     onError: () => {
-      alert("حدث خطأ اثناء الاضافة");
+      toast.error("حدث خطأ اثناء الاضافة");
     },
   });
 

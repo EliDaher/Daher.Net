@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function UpdateProduct({ product, onClose, onUpdated }) {
   const [formData, setFormData] = useState({
@@ -35,7 +36,7 @@ export default function UpdateProduct({ product, onClose, onUpdated }) {
       );
       onUpdated(res.data);
     } catch (err) {
-      alert(err?.response?.data?.message || "حدث خطأ");
+      toast.error(err?.response?.data?.message || "حدث خطأ");
     } finally {
       setLoading(false);
     }

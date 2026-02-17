@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import userLogin from "@/services/auth";
 import axios from "axios";
+import { toast } from "sonner";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -33,14 +34,14 @@ export default function Login() {
   
       } else {
         console.log(res2)
-        alert(res2?.error || "فشل تسجيل الدخول");
+        toast.error(res2?.error || "فشل تسجيل الدخول");
       }
 
       const token = res.data.token;
       localStorage.setItem("token", token);
     } catch (err: any) {
       console.log(err.response?.data?.message || "حدث خطأ ما. حاول مرة أخرى.");
-      alert("حدث خطأ ما. حاول مرة أخرى.");
+      toast.error("حدث خطأ ما. حاول مرة أخرى.");
       return
     }
 
