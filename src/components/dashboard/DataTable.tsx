@@ -27,6 +27,8 @@ interface TableColumn {
   sortable?: boolean;
   hidden?: boolean;
   onlyAdmin?: boolean;
+  accessor?: (row: TableData) => any; // 👈 أضف هذا
+
 }
 
 interface TableData {
@@ -171,7 +173,7 @@ export function DataTable({
           "
         >
           <span className="truncate">View Image</span>
-      
+
           <svg
             className="w-4 h-4 shrink-0"
             fill="none"
@@ -238,7 +240,7 @@ export function DataTable({
                   <TableHead
                     className={
                       column.hidden ||
-                      (column.onlyAdmin && daherUser?.role !== "admin")
+                        (column.onlyAdmin && daherUser?.role !== "admin")
                         ? "hidden"
                         : "text-center"
                     }
@@ -277,7 +279,7 @@ export function DataTable({
                         key={column.key}
                         className={
                           column.hidden ||
-                          (column.onlyAdmin && daherUser?.role !== "admin")
+                            (column.onlyAdmin && daherUser?.role !== "admin")
                             ? "hidden"
                             : ""
                         }
@@ -302,13 +304,19 @@ export function DataTable({
                       <TableCell
                         className={
                           column.hidden ||
-                          (column.onlyAdmin && daherUser?.role !== "admin")
+                            (column.onlyAdmin && daherUser?.role !== "admin")
                             ? "hidden"
                             : "text-center"
                         }
                         key={column.key}
                       >
-                        {renderCellContent(row[column.key], column.key)}
+                        {(() => {
+                          const value = column.accessor
+                            ? column.accessor(row)
+                            : row[column.key];
+
+                          return renderCellContent(value, column.key);
+                        })()}
                       </TableCell>
                     ))}
                     {renderRowActions && (
@@ -331,7 +339,7 @@ export function DataTable({
         </div>
 
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <span className="text-sm text-muted-foreground">عدد الاسطر : {(filteredData.length || 0)}</span>
+          <span className="text-sm text-muted-foreground">عدد الاسطر : {(filteredData.length || 0)}</span>
           <div className="flex items-center space-x-2">
             <span className="text-sm text-muted-foreground">عدد الاسطر في الصفحة :</span>
             <select
