@@ -1,5 +1,8 @@
 import React from "react";
 import { PrivateRoute } from "@/components/auth/PrivateRoute";
+import path from "path";
+import UpdatePrice from "./pages/UpdatePrice";
+import UpdatePriceDetails from "./pages/UpdatePriceDetails";
 
 // Lazy Loading للصفحات
 const POSUsers = React.lazy(() => import("@/pages/POSUsers"));
@@ -143,6 +146,22 @@ export const routesConfig = [
     element: (
       <PrivateRoute allowedRoles={["admin", "employee"]}>
         <POSPayments />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/UpdatePrices",
+    element: (
+      <PrivateRoute allowedRoles={["admin", "employee"]}>
+        <UpdatePrice />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/UpdatePrice/:id",
+    element: (
+      <PrivateRoute allowedRoles={["admin", "employee"]}>
+        <UpdatePriceDetails />
       </PrivateRoute>
     ),
   },

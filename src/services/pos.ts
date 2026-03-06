@@ -1,4 +1,6 @@
 import { invoiceClient } from "@/lib/axios";
+import axios from "axios";
+import exp from "constants";
 import { toast } from "sonner";
 
 export default async function getPOSUsers() {
@@ -141,4 +143,32 @@ export async function AddNewUser(formData) {
     throw new Error("Error adding user");
   }
 }
-  
+
+export async function productName(){
+  try {
+    const res = await invoiceClient.get('/api/productonline/get-product-online/name');
+    return res.data;
+  } catch (err) {
+    console.error(err);
+    throw new Error("Error fetching products");
+  }
+}
+
+export async function productNameDetails(id:string) {
+  try {
+    const res = await invoiceClient.get(`/api/productonline/get-product-online/name/${id}`);
+    return res.data;
+  } catch (err) {
+    console.error(err);
+    throw new Error("Error fetching products");
+  }
+}
+
+export async function updateProduct(product) {
+  const res = await invoiceClient.put(
+    `/api/productonline/update/${product._id}`,
+    product
+  );
+
+  return res.data;
+}

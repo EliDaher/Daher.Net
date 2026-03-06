@@ -110,6 +110,12 @@ const navigationGroups = [
         icon: ArrowDownCircle,
         allowed: ["admin", "employee"],
       },
+      {
+        name: "Update Prices",
+        href: "/UpdatePrices",
+        icon: Wallet,
+        allowed: ["admin", "employee"],
+      },
     ],
     allowed: ["admin", "employee"],
   },
