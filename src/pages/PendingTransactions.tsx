@@ -24,13 +24,11 @@ export default function PendingTransactions() {
   const [selectedRow, setSelectedRow] = useState<any | null>(null);
 
   const queryClient = useQueryClient();
-  const [socket, setSocket] = useState<Socket | null>(null);
 
   const [sendToPayOpen, setSendToPayOpen] = useState(false);
 
   useEffect(() => {
     const newSocket = io("https://paynet-1.onrender.com");
-    setSocket(newSocket);
 
     newSocket.on("pendingPaymentsUpdate", (updatedPayments) => {
       queryClient.setQueryData(['pending-table'], updatedPayments);
