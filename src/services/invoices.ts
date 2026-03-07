@@ -10,6 +10,7 @@ export default async function getPendingInvoices() {
     }
 
     const res = await invoiceClient.get("/api/admin/pending");
+    console.log(res.data);
 
     return res.data;
   } catch (error) {

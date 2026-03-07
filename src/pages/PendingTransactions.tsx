@@ -88,14 +88,20 @@ export default function PendingTransactions() {
   });
 
   const invoicesColumns = [
+    
     { key: '_id', label: 'المعرف', sortable: true, hidden: true },
-    { key: 'landline', label: 'الرقم', sortable: true },
-    { key: 'company', label: 'الشركة', sortable: true },
+{
+  key: "landline",
+  label: "الرقم / ID",
+  accessor: (row) => row.extra?.playerId || row.landline
+},
+  { key: 'company', label: 'الشركة', sortable: true },
     { key: 'speed', label: 'السرعة', sortable: true },
     { key: 'email', label: 'الحساب المرسل', sortable: true },
     { key: 'amount', label: 'المبلغ الواجب دفعه', sortable: true },
     { key: 'status', label: 'حالة العملية', sortable: true },
     { key: 'createdAt', label: 'الوقت', sortable: true },
+    // {key : 'extra', label: 'معلومات الشحن', sortable: true}
   ];
 
   useEffect(() => {
@@ -109,6 +115,7 @@ export default function PendingTransactions() {
   const prevDataRef = useRef<any[]>([]);
 
   useEffect(() => {
+    console.log("Pending data updated:", pendingData);
     if (pendingData && pendingData.length > 0) {
       const prevData = prevDataRef.current;
 

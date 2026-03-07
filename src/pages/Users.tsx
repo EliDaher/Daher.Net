@@ -170,6 +170,36 @@ export default function Users() {
       setSelectedDealer(daherUser.username);
     }
   }, []);
+  
+const customer = customers.find(
+  c => c.id === customerToDelete?.id
+);
+    /* ================= WHATSAPP ================= */
+
+  const handleWhatsApp = (customer) => {
+    if (!customer?.Contact) {
+      toast.error("لا يوجد رقم هاتف للمشترك");
+      return;
+    }
+
+    if (customer.Balance >= 0) {
+      toast.error("لا يوجد عليه فواتير");
+      return;
+    }
+
+    const phone = customer.Contact.replace(/\D/g, "");
+    const message = `عزيزي المشترك ${customer.Name}، قيمة فاتورتك الحالية هي: ${
+      customer.Balance * -1
+    } دولار.
+يرجى التسديد قبل تاريخ 8-3-2026 لضمان استمرار الخدمة دون انقطاع.
+شكرًا لثقتك بخدماتنا.`;
+
+    window.open(
+      `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
+      "_blank",
+    );
+  };
+
 
   return (
     <DashboardLayout>
@@ -474,7 +504,8 @@ export default function Users() {
                           </p>
                         )}
                       </CardContent>
-                      {daherUser.username == "elidaher" && (
+                      {daherUser.username == "elidaher" || daherUser.username == "andreh" && (
+                        <>
                         <Button
                           onClick={(e) => {
                             e.preventDefault();
@@ -486,6 +517,15 @@ export default function Users() {
                         >
                           حذف
                         </Button>
+
+               <Button 
+               variant="outline" 
+               className="w-full bg-green-500"
+               onClick={() => handleWhatsApp(customer)}>
+            واتساب
+          </Button>
+                        </>
+                        
                       )}
                     </Card>
                   ))}
