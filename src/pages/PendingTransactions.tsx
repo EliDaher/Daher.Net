@@ -171,7 +171,7 @@ export default function PendingTransactions() {
               if (selectedRow) {
                 deleteMutation.mutate({
                   payment: {
-                    id: selectedRow._id,
+                    id: selectedRow?._id,
                     email: selectedRow.email,
                     amount: selectedRow.amount,
                   },

@@ -156,7 +156,7 @@ export default function Dashboard() {
 
     const map: Record<string, { name: string; value: number }> = {};
 
-    customers.forEach((customer: any) => {
+    customers?.forEach((customer: any) => {
       const speed = customer?.SubscriptionSpeed || "غير محددة";
 
       if (!map[speed]) {
@@ -207,7 +207,7 @@ export default function Dashboard() {
                   navigate("/PendingTransactions");
                 }}
                 title="الفواتير الغير مدفوعة"
-                value={pendingData ? pendingData.length : 0}
+                value={pendingData ? pendingData?.length : 0}
                 icon={ReceiptIcon}
               />
             </>
@@ -221,7 +221,7 @@ export default function Dashboard() {
             title=" توزع المرسلات "
             data={customers?.reduce((acc, customer) => {
               const sender = (customer.sender ?? "").trim();
-              const SubscriptionSpeed = Number(customer.SubscriptionSpeed);
+              const SubscriptionSpeed = Number(customer?.SubscriptionSpeed);
 
               const existing = acc.find((item) => item.sender === sender);
 
