@@ -18,7 +18,7 @@ export async function getBalanceByDate(date?: string) {
       params: date ? { date } : {},
     });
 
-    return response.data;
+    return response.data.BalanceTable;
   } catch (err) {
     console.error("خطأ في جلب الرصيد اليومي:", err);
   }

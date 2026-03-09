@@ -17,6 +17,7 @@ import {
   AreaChart,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoaderCircle } from "lucide-react";
 
 interface ChartData {
   name: string;
@@ -29,8 +30,9 @@ interface ChartContainerProps {
   type: "line" | "bar" | "pie" | "stackBar" | "area";
   dataKey?: string;
   className?: string;
-  desc? : string
-  dataKey2?: string
+  desc? : string;
+  dataKey2?: string;
+  loading?: boolean;
 }
 
 const COLORS = [
@@ -46,40 +48,138 @@ export function ChartContainer({
   className,
   desc,
   dataKey2,
+  loading,
 }: ChartContainerProps) {
   const renderChart = () => {
-    switch (type) {
-      case "line":
-        return (
-          <div>
+
+    if (loading){
+      return (
+        <div>
+          <ResponsiveContainer width="100%" height={300}>
+            <>
+              <LoaderCircle className="animate-spin" />
+            </>
+          </ResponsiveContainer>
+
+          {/* هنا تضيف النص أسفل الرسم */}
+          <p
+            className="text-foreground/80"
+            style={{
+              marginTop: "5px",
+              fontWeight: "bold",
+              fontSize: "22px",
+            }}
+          >
+            {Number(desc).toLocaleString("En-SY", {
+              style: "currency",
+              currency: "SYP",
+              minimumFractionDigits: 0,
+            })}
+          </p>
+        </div>
+      );
+    }
+      switch (type) {
+        case "line":
+          return (
+            <div>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={data}>
+                  <CartesianGrid strokeDasharray="3 3" />
+
+                  <XAxis
+                    dataKey="id"
+                    tick={{ fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+
+                  {/* المحور الأيسر للـ total */}
+                  <YAxis
+                    yAxisId="left"
+                    tick={{ fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+
+                  {/* المحور الأيمن للـ count */}
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tick={{ fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "6px",
+                    }}
+                  />
+
+                  {/* الخط الأول - total */}
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey={dataKey}
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                    dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: "hsl(var(--primary))" }}
+                    fill="hsl(var(--primary))"
+                    fillOpacity={0.5}
+                  />
+
+                  {/* الخط الثاني - count */}
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey={dataKey2}
+                    stroke="hsl(var(--accent))"
+                    fill="hsl(var(--accent))"
+                    fillOpacity={0.5}
+                    strokeWidth={2}
+                    dot={{ fill: "hsl(var(--accent))", strokeWidth: 2, r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+
+              {/* هنا تضيف النص أسفل الرسم */}
+              <p
+                className="text-foreground/80"
+                style={{
+                  marginTop: "5px",
+                  fontWeight: "bold",
+                  fontSize: "22px",
+                }}
+              >
+                {Number(desc).toLocaleString("En-SY", {
+                  style: "currency",
+                  currency: "SYP",
+                  minimumFractionDigits: 0,
+                })}
+              </p>
+            </div>
+          );
+
+        case "bar":
+          return (
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={data}>
+              <BarChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" />
-
                 <XAxis
-                  dataKey="id"
-                  tick={{ fontSize: 12 }}
+                  dataKey="sender"
+                  tick={{ fontSize: 14 }}
                   tickLine={false}
                   axisLine={false}
                 />
-
-                {/* المحور الأيسر للـ total */}
                 <YAxis
-                  yAxisId="left"
                   tick={{ fontSize: 12 }}
                   tickLine={false}
                   axisLine={false}
                 />
-
-                {/* المحور الأيمن للـ count */}
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  tick={{ fontSize: 12 }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
@@ -87,155 +187,109 @@ export function ChartContainer({
                     borderRadius: "6px",
                   }}
                 />
-
-                {/* الخط الأول - total */}
-                <Line
-                  yAxisId="left"
-                  type="monotone"
+                <Bar
                   dataKey={dataKey}
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, stroke: "hsl(var(--primary))" }}
                   fill="hsl(var(--primary))"
-                  fillOpacity={0.5}
-                  />
-
-                {/* الخط الثاني - count */}
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey={dataKey2}
-                  stroke="hsl(var(--accent))"
-                  fill="hsl(var(--accent))"
-                  fillOpacity={0.5}
-                  strokeWidth={2}
-                  dot={{ fill: "hsl(var(--accent))", strokeWidth: 2, r: 4 }}
+                  radius={[4, 4, 0, 0]}
                 />
-              </LineChart>
+                {dataKey2 && (
+                  <Bar
+                    dataKey={dataKey2}
+                    fill="hsl(var(--accent))"
+                    radius={[4, 4, 0, 0]}
+                  />
+                )}
+              </BarChart>
             </ResponsiveContainer>
-                
-           {/* هنا تضيف النص أسفل الرسم */}
-            <p className="text-foreground/80" style={{ marginTop: "5px", fontWeight: "bold", fontSize: "22px" }}>
-              {Number(desc).toLocaleString("En-SY", {
-                style: "currency",
-                currency: "SYP",
-                minimumFractionDigits: 0,
-              })}
-            </p>
-          </div>
-        );
+          );
 
-      case "bar":
-        return (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="sender"
-                tick={{ fontSize: 14 }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 12 }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "6px",
+        case "pie":
+          const pieData = data.map((item, index) => ({
+            name: item.name,
+            value: item[dataKey as keyof ChartData] as number,
+            fill: COLORS[index % COLORS.length],
+          }));
+
+          return (
+            <div style={{ width: "100%", textAlign: "center" }}>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    innerRadius={10}
+                    cornerRadius={5}
+                    paddingAngle={5}
+                    dataKey="value"
+                    label={({ name, percent }) =>
+                      `${name} ${(percent * 100).toFixed(0)}%`
+                    }
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+
+              {/* هنا تضيف النص أسفل الرسم */}
+              <p
+                className="text-foreground/80"
+                style={{
+                  marginTop: "5px",
+                  fontWeight: "bold",
+                  fontSize: "22px",
                 }}
-              />
-              <Bar
-                dataKey={dataKey}
-                fill="hsl(var(--primary))"
-                radius={[4, 4, 0, 0]}
-              />
-              {dataKey2 && <Bar
-                dataKey={dataKey2}
-                fill="hsl(var(--accent))"
-                radius={[4, 4, 0, 0]}
-              />}
-            </BarChart>
-          </ResponsiveContainer>
-        );
-
-      case "pie":
-        const pieData = data.map((item, index) => ({
-          name: item.name,
-          value: item[dataKey as keyof ChartData] as number,
-          fill: COLORS[index % COLORS.length],
-        }));
-
-        return (
-        <div style={{ width: "100%", textAlign: "center" }}>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                innerRadius={10}
-                cornerRadius={5}
-                paddingAngle={5}
-                dataKey="value"
-                label={({ name, percent }) =>
-                  `${name} ${(percent * 100).toFixed(0)}%`
-                }
               >
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-              
-          {/* هنا تضيف النص أسفل الرسم */}
-          <p className="text-foreground/80" style={{ marginTop: "5px", fontWeight: "bold", fontSize: "22px" }}>
-            {desc}
-          </p>
-        </div>
-        );
-      
-        case 'stackBar': {
+                {desc}
+              </p>
+            </div>
+          );
 
+        case "stackBar": {
           function transformData(rawData: any) {
             const result = [];
-          
+
             for (const [date, usersData] of Object.entries(rawData)) {
               const dayEntry: Record<string, any> = { date };
-            
+
               for (const [user, entries] of Object.entries(usersData)) {
                 if (user === "mahal") continue; // تجاهل mahal
-              
-                const totalAmount = Object.values(entries).reduce((sum, entry: any) => {
-                  const hasAndre = entry.details?.some((d: any) =>
-                    Object.values(d).some((val: any) =>
-                      typeof val === "string" && val.includes("اندريه")
-                    )
-                  );
-                  return hasAndre ? sum : sum + (entry.amount || 0);
-                }, 0);
-              
+
+                const totalAmount = Object.values(entries).reduce(
+                  (sum, entry: any) => {
+                    const hasAndre = entry.details?.some((d: any) =>
+                      Object.values(d).some(
+                        (val: any) =>
+                          typeof val === "string" && val.includes("اندريه"),
+                      ),
+                    );
+                    return hasAndre ? sum : sum + (entry.amount || 0);
+                  },
+                  0,
+                );
+
                 dayEntry[user] = totalAmount;
               }
-            
+
               result.push(dayEntry);
             }
-          
+
             return result;
           }
-        
+
           const stackData = transformData(data);
           const users = Array.from(
-            new Set(stackData.flatMap(day => Object.keys(day)).filter(k => k !== 'date'))
+            new Set(
+              stackData
+                .flatMap((day) => Object.keys(day))
+                .filter((k) => k !== "date"),
+            ),
           );
-        
+
           function getColor(user: string) {
             const colors: Record<string, string> = {
               mahal: "hsl(var(--primary))",
@@ -249,70 +303,103 @@ export function ChartContainer({
             };
             return colors[user] || "hsl(var(--foreground)/0.8)";
           }
-        
+
           const CustomTooltip = ({ active, payload, label }: any) => {
             if (active && payload && payload.length) {
-              const total = payload.reduce((sum: number, item: any) => sum + (item.value || 0), 0);
+              const total = payload.reduce(
+                (sum: number, item: any) => sum + (item.value || 0),
+                0,
+              );
               return (
-                <div style={{
-                  background: "white",
-                  border: "1px solid #ccc",
-                  padding: "10px",
-                  borderRadius: "6px"
-                }}>
-                  <p><strong>{label}</strong></p>
+                <div
+                  style={{
+                    background: "white",
+                    border: "1px solid #ccc",
+                    padding: "10px",
+                    borderRadius: "6px",
+                  }}
+                >
+                  <p>
+                    <strong>{label}</strong>
+                  </p>
                   {payload.map((entry: any, i: number) => (
                     <p key={i} style={{ color: entry.color }}>
-                      {entry.name}: {Number(entry.value).toLocaleString("en-SY")}
+                      {entry.name}:{" "}
+                      {Number(entry.value).toLocaleString("en-SY")}
                     </p>
                   ))}
                   <hr />
-                  <p><strong>المجموع:</strong> {Number(total).toLocaleString("en-SY")}</p>
+                  <p>
+                    <strong>المجموع:</strong>{" "}
+                    {Number(total).toLocaleString("en-SY")}
+                  </p>
                 </div>
               );
             }
-          
-            
+
             return null;
           };
           const monthlyTotal = stackData.reduce((total, day) => {
             // مجموع عمليات اليوم (نجمع قيم كل المستخدمين في ذلك اليوم)
-            const dayTotal = users.reduce((sum, user) => sum + (day[user] || 0), 0);
+            const dayTotal = users.reduce(
+              (sum, user) => sum + (day[user] || 0),
+              0,
+            );
             return total + dayTotal;
           }, 0);
-        
+
           // حساب المتوسط الشهري (المجموع ÷ عدد الأيام)
-          const averageMonthly = stackData.length ? monthlyTotal / stackData.length : 0;
-        
+          const averageMonthly = stackData.length
+            ? monthlyTotal / stackData.length
+            : 0;
+
           return (
             <div>
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={stackData}>
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-                {users.map(user => (
-                  <Bar key={user} dataKey={user} stackId="a" fill={getColor(user)}>
-                    <LabelList dataKey={user} content={({ value }: any) => (
-                      <text
-                        x={0}
-                        y={0}
-                        dy={-10}
-                        fill="#000"
-                        fontSize={12}
-                        textAnchor="middle"
-                      >
-                        {user[0]?.toUpperCase()}
-                      </text>
-                    )} />
-                  </Bar>
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
-              <div style={{ textAlign: "center", marginTop: "10px", fontWeight: "bold", fontSize: 18 }}>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={stackData}>
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  {users.map((user) => (
+                    <Bar
+                      key={user}
+                      dataKey={user}
+                      stackId="a"
+                      fill={getColor(user)}
+                    >
+                      <LabelList
+                        dataKey={user}
+                        content={() => (
+                          <text
+                            x={0}
+                            y={0}
+                            dy={-10}
+                            fill="#000"
+                            fontSize={12}
+                            textAnchor="middle"
+                          >
+                            {user[0]?.toUpperCase()}
+                          </text>
+                        )}
+                      />
+                    </Bar>
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+              <div
+                style={{
+                  textAlign: "center",
+                  marginTop: "10px",
+                  fontWeight: "bold",
+                  fontSize: 18,
+                }}
+              >
                 <p>المجموع الشهري: {monthlyTotal.toLocaleString("en-SY")}</p>
-                <p>المتوسط اليومي: {Number(averageMonthly.toFixed(0)).toLocaleString("en-SY")}</p>
+                <p>
+                  المتوسط اليومي:{" "}
+                  {Number(averageMonthly.toFixed(0)).toLocaleString("en-SY")}
+                </p>
               </div>
             </div>
           );
@@ -321,15 +408,34 @@ export function ChartContainer({
         case "area":
           return (
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+              <AreaChart
+                data={data}
+                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+              >
                 <defs>
                   <linearGradient id="colorPrimary" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    <stop
+                      offset="5%"
+                      stopColor="hsl(var(--primary))"
+                      stopOpacity={0.8}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="hsl(var(--primary))"
+                      stopOpacity={0}
+                    />
                   </linearGradient>
                   <linearGradient id="colorAccent" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
+                    <stop
+                      offset="5%"
+                      stopColor="hsl(var(--accent))"
+                      stopOpacity={0.8}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="hsl(var(--accent))"
+                      stopOpacity={0}
+                    />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -374,10 +480,9 @@ export function ChartContainer({
             </ResponsiveContainer>
           );
 
-
-      default:
-        return null;
-    }
+        default:
+          return null;
+      }
   };
 
   return (

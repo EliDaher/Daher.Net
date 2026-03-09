@@ -21,7 +21,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import getPendingInvoices from "@/services/invoices";
-import { io, Socket } from "socket.io-client";
+import { io } from "socket.io-client";
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -29,16 +29,15 @@ export default function Dashboard() {
 
   const [totalBalance, setTotalBalance] = useState(0)
   const [todayBalance, setTodayBalance] = useState([])
-  const [monthBalance, setMonthBalance] = useState([])
   const [balanceDate, setBalanceDate] = useState('')
 
-  const [socket, setSocket] = useState<Socket | null>(null);
   const queryClient = useQueryClient();
 
   const { data: pendingData, isLoading: pendingLoading } = useQuery({
     queryKey: ['pending-table'],
     queryFn: getPendingInvoices,
   });
+
 
   useEffect(() => {
     if ("Notification" in window) {
@@ -78,7 +77,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     const newSocket = io("https://paynet-1.onrender.com");
-    setSocket(newSocket);
 
     newSocket.on("pendingPaymentsUpdate", (updatedPayments) => {
       queryClient.setQueryData(['pending-table'], updatedPayments);
@@ -89,14 +87,11 @@ export default function Dashboard() {
     };
   }, [queryClient]);
 
-  const getMonthTable = async () => {
-    const res = await getBalanceByDate("");
-    if(res?.success){
-      setMonthBalance(res.BalanceTable);
-    }else{
-      console.error(res)
-    }
-  }
+  const { data: monthBalance, isLoading: monthBalanceLoading } = useQuery({
+    queryKey: ["monthBalance-table", balanceDate],
+    queryFn: () => getBalanceByDate(balanceDate),
+  });
+
 
   const { data: customers, isLoading: customersLoading } = useQuery({
     queryKey: ["customers-table"],
@@ -189,6 +184,7 @@ export default function Dashboard() {
             title="عدد مشتركين الفضائي"
             value={customers?.length || 0}
             icon={Users}
+            loading={customersLoading}
           />
           <StatsCard
             onClick={() => {
@@ -197,8 +193,9 @@ export default function Dashboard() {
             title="ديون الفضائي"
             value={unpaidValue || 0}
             icon={CreditCard}
+            loading={customersLoading}
           />
-          {daherUser.role != "admin" ? (
+          {daherUser?.role != "admin" ? (
             <></>
           ) : (
             <>
@@ -209,6 +206,7 @@ export default function Dashboard() {
                 title="الفواتير الغير مدفوعة"
                 value={pendingData ? pendingData?.length : 0}
                 icon={ReceiptIcon}
+                loading={pendingLoading}
               />
             </>
           )}
@@ -216,6 +214,22 @@ export default function Dashboard() {
 
         {/* Charts Section */}
         <div className="grid gap-6 lg:grid-cols-2 text-center">
+          {daherUser.role != "admin" ? (
+            <></>
+          ) : (
+            <>
+              <ChartContainer
+                className="col-span-2"
+                title="صناديق اليوم"
+                data={todayBalance}
+                type="line"
+                dataKey2="count"
+                desc={totalBalance.toString()}
+                dataKey="total" // OK لأنك استخدمته أثناء التحويل
+              />
+            </>
+          )}
+
           <ChartContainer
             className="mdL:col-span-2"
             title=" توزع المرسلات "
@@ -243,21 +257,6 @@ export default function Dashboard() {
             dataKey="totalSpeed"
           />
 
-          {daherUser.role != "admin" ? (
-            <></>
-          ) : (
-            <>
-              <ChartContainer
-                title="صناديق اليوم"
-                data={todayBalance}
-                type="line"
-                dataKey2="count"
-                desc={totalBalance.toString()}
-                dataKey="total" // OK لأنك استخدمته أثناء التحويل
-              />
-            </>
-          )}
-
           <ChartContainer
             title="عدد المشتركين حسب السرعة"
             type="pie"
@@ -275,54 +274,15 @@ export default function Dashboard() {
             <Tabs defaultValue="overview" className="space-y-4">
               <TabsList>
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger onClick={getMonthTable} value="analytics">
-                  Analytics
-                </TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
                 <TabsTrigger value="reports">Reports</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-4">
-                <div className="grid gap-6 lg:grid-cols-3">
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        Active Users
-                      </CardTitle>
-                      <Activity className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">2,350</div>
-                      <p className="text-xs text-muted-foreground">
-                        +180.1% from last month
-                      </p>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        Total Revenue
-                      </CardTitle>
-                      <CreditCard className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">$45,231.89</div>
-                      <p className="text-xs text-muted-foreground">
-                        +20.1% from last month
-                      </p>
-                    </CardContent>
-                  </Card>
-
-                  <ChartContainer
-                    title="Revenue Distribution"
-                    data={customers?.slice(0, 4) || []}
-                    type="pie"
-                    dataKey="revenue"
-                  />
-                </div>
+                <div className="grid gap-6 lg:grid-cols-3"></div>
               </TabsContent>
 
-              <TabsContent value="analytics" className="space-y-4">
+              <TabsContent value="analytics" className="space-y-4 text-center">
                 <div className="grid gap-6">
                   <div className="bg-background/80 text-foreground">
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -335,11 +295,6 @@ export default function Dashboard() {
                           onChange={(newValue) => {
                             const formatted = newValue.format("YYYY-MM");
                             setBalanceDate(formatted);
-                            getBalanceByDate(formatted).then((res) => {
-                              if (res?.success) {
-                                setMonthBalance(res.BalanceTable);
-                              }
-                            });
                           }}
                         />
                       </DemoContainer>
@@ -350,6 +305,7 @@ export default function Dashboard() {
                     data={monthBalance || []}
                     type="stackBar"
                     dataKey="users"
+                    loading={monthBalanceLoading}
                   />
                 </div>
               </TabsContent>
