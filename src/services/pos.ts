@@ -2,6 +2,7 @@ import { invoiceClient } from "@/lib/axios";
 import axios from "axios";
 import exp from "constants";
 import { toast } from "sonner";
+import { T } from "vitest/dist/chunks/reporters.d.C-cu31ET.js";
 
 export default async function getPOSUsers() {
   try {
@@ -171,4 +172,43 @@ export async function updateProduct(product) {
   );
 
   return res.data;
+}
+
+export async function addProduct(formData:object , id:string) {
+try{
+    const res = await invoiceClient.post(
+    `/api/productonline/add-card/${id}`
+    , formData
+  )
+  return res.data
+}
+catch(err){
+  console.log(err)
+}
+  
+}
+
+export async function deleteProductOnline(id:string) {
+  try{
+    const res =await invoiceClient.delete(
+      `/api/productOnline/delete/${id}`
+    )
+    return res.data
+
+  }
+  catch(err){
+    console.log(err)
+  }
+  
+}
+
+export async function addType(formData:object) {
+  try{
+    const res = await invoiceClient.post('/api/productOnline/addType' , formData)
+    return res.data
+  }
+  catch(err){
+    console.log(err)
+  }
+  
 }

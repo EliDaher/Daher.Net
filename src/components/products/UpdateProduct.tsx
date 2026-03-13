@@ -126,6 +126,7 @@ export default function UpdateProduct({ product, onClose, onUpdated }) {
               "Update Product"
             )}
           </Button>
+          
         </form>
       </div>
     </div>

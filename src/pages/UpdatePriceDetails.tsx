@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useParams } from "react-router-dom";
-import { useProductNameDetails } from "@/hooks/useProducts";
+import { useDeleteProduct, useProductNameDetails } from "@/hooks/useProducts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateProduct } from "@/services/pos";
+import ProductOnline from '@/components/products/ProductOnline';
+
 
 export default function UpdatePriceDetails() {
   const { id } = useParams();
@@ -13,6 +15,7 @@ export default function UpdatePriceDetails() {
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState([]);
+    const [isOpen , setIsOpen] = useState(false)
 
   useEffect(() => {
     if (products) {
@@ -44,11 +47,27 @@ export default function UpdatePriceDetails() {
     mutation.mutate(product);
   };
 
+
+  const {mutate , isPending } = useDeleteProduct()
+  const handlDelete = async (id)=>{
+    console.log(id)
+  mutate(
+    {id : id},
+    {onSuccess : ()=>alert('تم حذف البطاقة بنجاح')}
+  )
+  }
+
   if (isLoading) return <p className="p-6">Loading products...</p>;
   if (isError) return <p className="p-6 text-red-500">Error loading products</p>;
-
+  
   return (
+
     <DashboardLayout>
+      <ProductOnline
+  isOpen={isOpen}
+  setIsOpen={setIsOpen}
+  productId={id}
+/>      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
         {formData?.map((product, index) => (
@@ -110,12 +129,19 @@ export default function UpdatePriceDetails() {
             </CardContent>
 
             <CardFooter>
-              <button
+          <div className="flex flex-col w-full gap-1">
+                        <button
                 onClick={() => handleUpdate(product)}
                 className="w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 transition"
               >
                 {mutation.isPending ? "Updating..." : "Update Product"}
               </button>
+              <button
+                onClick={()=> handlDelete(product._id)}
+               className="w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600 transition">
+                {isPending ? 'Deleting...' : 'Delete'}
+              </button>
+          </div>
             </CardFooter>
 
           </Card>
