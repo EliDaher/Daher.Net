@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
   Card,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -25,11 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { useLocation, useNavigate } from "react-router-dom";
 import PopupForm from "@/components/ui/custom/PopupForm";
 import AddCustomerForm from "@/components/customers/AddCustomerForm";
@@ -171,9 +165,9 @@ export default function Users() {
     }
   }, []);
   
-const customer = customers.find(
-  c => c.id === customerToDelete?.id
-);
+  // const customer = customers.find(
+  //   c => c.id === customerToDelete?.id
+  // );
     /* ================= WHATSAPP ================= */
 
   const handleWhatsApp = (customer) => {
