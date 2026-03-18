@@ -469,7 +469,7 @@ export default function Dashboard() {
         <div className="grid gap-6 text-center lg:grid-cols-2">
           {isAdmin && (
             <ChartContainer
-              className="col-span-2"
+              className="md:col-span-2"
               title="صناديق اليوم"
               data={todayBalance as any}
               type="line"
@@ -480,7 +480,7 @@ export default function Dashboard() {
           )}
 
           <ChartContainer
-            className="mdL:col-span-2"
+            className="md:col-span-2"
             title="توزيع المرسلات"
             data={senderDistributionData as any}
             type="bar"
