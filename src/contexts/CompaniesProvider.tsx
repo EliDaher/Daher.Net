@@ -1,9 +1,11 @@
 import { useCompanies } from "@/hooks/useCompanies";
-import { createContext, useContext } from "react";
+import { createContext, useContext, type ReactNode } from "react";
 
-const CompaniesContext = createContext(null);
+type CompaniesQuery = ReturnType<typeof useCompanies>;
 
-export function CompaniesProvider({ children }) {
+const CompaniesContext = createContext<CompaniesQuery | null>(null);
+
+export function CompaniesProvider({ children }: { children: ReactNode }) {
   const companiesQuery = useCompanies();
 
   return (
@@ -14,5 +16,11 @@ export function CompaniesProvider({ children }) {
 }
 
 export function useCompaniesContext() {
-  return useContext(CompaniesContext);
+  const context = useContext(CompaniesContext);
+
+  if (!context) {
+    throw new Error("useCompaniesContext must be used within CompaniesProvider");
+  }
+
+  return context;
 }

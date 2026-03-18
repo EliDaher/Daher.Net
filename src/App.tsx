@@ -27,9 +27,9 @@ const App = () => (
               fallback={<div className="p-10 text-center">Loading...</div>}
             >
               <Routes>
-                {routesConfig.map((route, index) => (
+                {routesConfig.map((route) => (
                   <Route
-                    key={index}
+                    key={route.path}
                     path={route.path}
                     element={route.element}
                   />

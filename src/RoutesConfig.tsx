@@ -1,217 +1,133 @@
-import React from "react";
+import { lazy, type ReactElement } from "react";
 import { PrivateRoute } from "@/components/auth/PrivateRoute";
-import path from "path";
 import UpdatePrice from "./pages/UpdatePrice";
 import UpdatePriceDetails from "./pages/UpdatePriceDetails";
 
-// Lazy Loading للصفحات
-const POSUsers = React.lazy(() => import("@/pages/POSUsers"));
-const Companies = React.lazy(() => import("@/pages/Companies"));
-const CompaniesLogs = React.lazy(() => import("@/pages/CompaniesLogs"));
-const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
-const Analytics = React.lazy(() => import("@/pages/Analytics"));
-const Users = React.lazy(() => import("@/pages/Users"));
-const NotFound = React.lazy(() => import("@/pages/NotFound"));
-const Login = React.lazy(() => import("@/pages/Login"));
-const SignUp = React.lazy(() => import("@/pages/SignUp"));
-const UnauthorizedPage = React.lazy(() => import("@/pages/Unauthorized"));
-const CustomerDetails = React.lazy(() => import("@/pages/CustomerDetails"));
-const DealerBalance = React.lazy(() => import("@/pages/DealerBalance"));
-const Balance = React.lazy(() => import("@/pages/Balance"));
-const Invoices = React.lazy(() => import("@/pages/Invoices"));
-const MyBalance = React.lazy(() => import("@/pages/MyBalance"));
-const PendingTransactions = React.lazy(() => import("@/pages/PendingTransactions"));
-const DoneTransactions = React.lazy(() => import("@/pages/DoneTransactions"));
-const POSPayments = React.lazy(() => import("@/pages/POSPayments"));
-const BillBalance = React.lazy(() => import("@/pages/BillBalance"));
-const ViewProduct = React.lazy(()=>import('@/pages/ViewProduct'))
-const InquiryLogs = React.lazy(() => import("@/pages/InquiryLogs"));
-const ViewBills = React.lazy(() => import("@/pages/ViewBills"));
-const ViewBillsDetails = React.lazy(() => import("@/pages/ViewBillsDetails"));
-const FinancialStatement = React.lazy(
-  () => import("@/pages/FinancialStatement"),
-);
+const POSUsers = lazy(() => import("@/pages/POSUsers"));
+const Companies = lazy(() => import("@/pages/Companies"));
+const CompaniesLogs = lazy(() => import("@/pages/CompaniesLogs"));
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Analytics = lazy(() => import("@/pages/Analytics"));
+const Users = lazy(() => import("@/pages/Users"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+const Login = lazy(() => import("@/pages/Login"));
+const SignUp = lazy(() => import("@/pages/SignUp"));
+const UnauthorizedPage = lazy(() => import("@/pages/Unauthorized"));
+const CustomerDetails = lazy(() => import("@/pages/CustomerDetails"));
+const DealerBalance = lazy(() => import("@/pages/DealerBalance"));
+const Balance = lazy(() => import("@/pages/Balance"));
+const Invoices = lazy(() => import("@/pages/Invoices"));
+const MyBalance = lazy(() => import("@/pages/MyBalance"));
+const PendingTransactions = lazy(() => import("@/pages/PendingTransactions"));
+const DoneTransactions = lazy(() => import("@/pages/DoneTransactions"));
+const POSPayments = lazy(() => import("@/pages/POSPayments"));
+const BillBalance = lazy(() => import("@/pages/BillBalance"));
+const ViewProduct = lazy(() => import("@/pages/ViewProduct"));
+const InquiryLogs = lazy(() => import("@/pages/InquiryLogs"));
+const ViewBills = lazy(() => import("@/pages/ViewBills"));
+const ViewBillsDetails = lazy(() => import("@/pages/ViewBillsDetails"));
+const FinancialStatement = lazy(() => import("@/pages/FinancialStatement"));
 
+interface AppRoute {
+  path: string;
+  element: ReactElement;
+}
 
-export const routesConfig = [
+function withPrivateRoute(element: ReactElement, allowedRoles: string[]) {
+  return <PrivateRoute allowedRoles={allowedRoles}>{element}</PrivateRoute>;
+}
+
+export const routesConfig: AppRoute[] = [
   { path: "/login", element: <Login /> },
   { path: "/signUp", element: <SignUp /> },
   { path: "/unauthorized", element: <UnauthorizedPage /> },
   {
     path: "/dashboard",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "dealer"]}>
-        <Dashboard />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<Dashboard />, ["admin", "dealer"]),
   },
   {
     path: "/dealerBalance",
-    element: (
-      <PrivateRoute allowedRoles={["dealer", "admin"]}>
-        <DealerBalance />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<DealerBalance />, ["dealer", "admin"]),
   },
   {
     path: "/balance",
-    element: (
-      <PrivateRoute allowedRoles={["admin"]}>
-        <Balance />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<Balance />, ["admin"]),
   },
   {
     path: "/ViewProducts",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "employee"]}>
-        <ViewProduct />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<ViewProduct />, ["admin", "employee"]),
   },
   {
     path: "/viewBills",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "employee"]}>
-        <ViewBills />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<ViewBills />, ["admin", "employee"]),
   },
   {
     path: "/viewBills/:id",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "employee"]}>
-        <ViewBillsDetails />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<ViewBillsDetails />, ["admin", "employee"]),
   },
   {
     path: "/users",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "dealer", "employee"]}>
-        <Users />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<Users />, ["admin", "dealer", "employee"]),
   },
   {
     path: "/CustomerDetails/:id",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "dealer", "employee"]}>
-        <CustomerDetails />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<CustomerDetails />, ["admin", "dealer", "employee"]),
   },
   {
     path: "/analytics",
-    element: (
-      <PrivateRoute allowedRoles={["admin"]}>
-        <Analytics />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<Analytics />, ["admin"]),
   },
   {
     path: "/invoices",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "employee"]}>
-        <Invoices />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<Invoices />, ["admin", "employee"]),
   },
   {
     path: "/myBalance",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "employee"]}>
-        <MyBalance />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<MyBalance />, ["admin", "employee"]),
   },
   {
     path: "/PendingTransactions",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "employee"]}>
-        <PendingTransactions />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<PendingTransactions />, ["admin", "employee"]),
   },
   {
     path: "/DoneTransactions",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "employee"]}>
-        <DoneTransactions />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<DoneTransactions />, ["admin", "employee"]),
   },
   {
     path: "/POSPayments",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "employee"]}>
-        <POSPayments />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<POSPayments />, ["admin", "employee"]),
   },
   {
     path: "/UpdatePrices",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "employee"]}>
-        <UpdatePrice />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<UpdatePrice />, ["admin", "employee"]),
   },
   {
     path: "/UpdatePrice/:id",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "employee"]}>
-        <UpdatePriceDetails />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<UpdatePriceDetails />, ["admin", "employee"]),
   },
   {
     path: "/BillBalance",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "employee"]}>
-        <BillBalance />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<BillBalance />, ["admin", "employee"]),
   },
   {
     path: "/POSUsers",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "employee"]}>
-        <POSUsers />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<POSUsers />, ["admin", "employee"]),
   },
   {
     path: "/FinancialStatement",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "employee"]}>
-        <FinancialStatement />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<FinancialStatement />, ["admin", "employee"]),
   },
   {
     path: "/InquiryLogs",
-    element: (
-      <PrivateRoute allowedRoles={["admin"]}>
-        <InquiryLogs />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<InquiryLogs />, ["admin"]),
   },
   {
     path: "/companies/logs",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "employee"]}>
-        <CompaniesLogs />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<CompaniesLogs />, ["admin", "employee"]),
   },
   {
     path: "/companies",
-    element: (
-      <PrivateRoute allowedRoles={["admin", "employee"]}>
-        <Companies />
-      </PrivateRoute>
-    ),
+    element: withPrivateRoute(<Companies />, ["admin", "employee"]),
   },
   { path: "*", element: <NotFound /> },
 ];

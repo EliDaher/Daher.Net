@@ -11,27 +11,15 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { clearStoredUser, getStoredUser } from "@/lib/auth";
 
 interface HeaderProps {
   onToggleSidebar: () => void;
 }
 
-export interface daherUser {
-  id: string,
-  password: string,
-  role: string,
-  username: string,
-}
-
 export function Header({ onToggleSidebar }: HeaderProps) {
   const navigate = useNavigate()
-  const [daherUser, setDaherUser] = useState<daherUser>()
-
-  useEffect(()=>{
-    const temUser = JSON.parse(localStorage.getItem("DaherUser") || "null");
-    setDaherUser(temUser)
-  },[])
+  const daherUser = getStoredUser();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -78,7 +66,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
                 <DropdownMenuItem>Settings</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={()=>{
-                  localStorage.removeItem('DaherUser')
+                  clearStoredUser();
                   navigate('/login')
                 }}>Log out</DropdownMenuItem>
               </DropdownMenuContent>

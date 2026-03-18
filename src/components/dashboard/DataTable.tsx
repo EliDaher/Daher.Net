@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   Table,
   TableBody,
@@ -18,8 +18,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { daherUser } from "../layout/Header";
 import { Skeleton } from "../ui/skeleton";
+import { getStoredUser } from "@/lib/auth";
 
 interface TableColumn {
   key: string;
@@ -27,8 +27,7 @@ interface TableColumn {
   sortable?: boolean;
   hidden?: boolean;
   onlyAdmin?: boolean;
-  accessor?: (row: TableData) => any; // 👈 أضف هذا
-
+  accessor?: (row: TableData) => unknown;
 }
 
 interface TableData {
@@ -46,7 +45,7 @@ interface DataTableProps {
   pageSizeOptions?: number[];
   defaultPageSize?: number;
   getRowClassName?: (row: TableData) => string;
-  renderRowActions?: (row: TableData) => React.ReactNode;
+  renderRowActions?: (row: TableData) => ReactNode;
   amountBold?: boolean;
   isLoading?: boolean;
 }
@@ -64,20 +63,9 @@ export function DataTable({
   getRowClassName,
   renderRowActions,
   amountBold = false,
-  isLoading = false
+  isLoading = false,
 }: DataTableProps) {
-
-
-  const [daherUser, setDaherUser] = useState<daherUser>();
-
-  useEffect(() => {
-    const temUser = JSON.parse(localStorage.getItem("DaherUser") || "null");
-    setDaherUser(temUser);
-  }, []);
-
-
-
-
+  const daherUser = getStoredUser();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{
     key: string;
@@ -86,32 +74,70 @@ export function DataTable({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(defaultPageSize);
 
-  const filteredData = data.filter((item) =>
-    Object.values(item).some((value) =>
-      value?.toString().toLowerCase().includes(searchTerm.toLowerCase()),
-    ),
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+
+  const visibleColumns = useMemo(
+    () =>
+      columns.filter(
+        (column) =>
+          !column.hidden &&
+          !(column.onlyAdmin && daherUser?.role !== "admin"),
+      ),
+    [columns, daherUser?.role],
   );
 
-  const sortedData = [...filteredData].sort((a, b) => {
-    if (!sortConfig) return 0;
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
-    if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-    return 0;
-  });
+  const filteredData = useMemo(
+    () =>
+      data.filter((item) =>
+        normalizedSearchTerm === ""
+          ? true
+          : Object.values(item).some((value) =>
+              value?.toString().toLowerCase().includes(normalizedSearchTerm),
+            ),
+      ),
+    [data, normalizedSearchTerm],
+  );
+
+  const sortedData = useMemo(() => {
+    if (!sortConfig) {
+      return filteredData;
+    }
+
+    return [...filteredData].sort((a, b) => {
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+
+      if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [filteredData, sortConfig]);
 
   const totalPages = Math.ceil(sortedData.length / pageSize);
-  const paginatedData = sortedData.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
+
+  const paginatedData = useMemo(
+    () =>
+      sortedData.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize,
+      ),
+    [currentPage, pageSize, sortedData],
   );
+
+  const totalPendValue = useMemo(
+    () => filteredData.reduce((sum, item) => sum + Number(item.amount), 0),
+    [filteredData],
+  );
+
+  const skeletonRows = useMemo(() => Array.from({ length: pageSize }), [pageSize]);
 
   const handleSort = (key: string) => {
     let direction: "asc" | "desc" = "asc";
+
     if (sortConfig?.key === key && sortConfig.direction === "asc") {
       direction = "desc";
     }
+
     setSortConfig({ key, direction });
   };
 
@@ -119,42 +145,55 @@ export function DataTable({
     if (key === "status") {
       return (
         <Badge
-          variant={value == "completed" || value == 'تم التسديد' ? "default" : value == 'جاري التسديد' ? 'secondary' : "destructive"}
+          variant={
+            value === "completed" || value === "تم التسديد"
+              ? "default"
+              : value === "جاري التسديد"
+                ? "secondary"
+                : "destructive"
+          }
           className="capitalize text-center"
         >
           {value}
         </Badge>
       );
     }
+
     if (key === "email") {
       return <span className="text-muted-foreground">{value}</span>;
     }
-    if (key === "createdAt" || key === "date" || key === 'timestamp' || key === 'lastUpdate') {
-      return <span className="text-muted-foreground">{new Date(value).toLocaleString("en-GB")}</span>;
+
+    if (
+      key === "createdAt" ||
+      key === "date" ||
+      key === "timestamp" ||
+      key === "lastUpdate"
+    ) {
+      return (
+        <span className="text-muted-foreground">
+          {new Date(value).toLocaleString("en-GB")}
+        </span>
+      );
     }
+
     if (key === "amount" && amountBold) {
-      return <span className="text-primary font-extrabold text-xl">{value}</span>;
+      return <span className="text-primary text-xl font-extrabold">{value}</span>;
     }
+
     if (key === "total") {
       return (
-        <span className="">
-          {value.toLocaleString("en-EG", { minimumFractionDigits: 0 })}
-        </span>
+        <span>{value.toLocaleString("en-EG", { minimumFractionDigits: 0 })}</span>
       );
     }
-    if (key === "balance") {
-      return (
-        <span className="">
-          {value.toFixed(0)}
-        </span>
-      );
-    }
-    if (key === "avgAmount") {
+
+    if (key === "balance" || key === "avgAmount") {
       return <span>{value.toFixed(0)}</span>;
     }
+
     if (key === "description") {
       return <span className="line-clamp-3 w-64">{value}</span>;
     }
+
     if (key === "imageUrl") {
       return (
         <a
@@ -162,20 +201,11 @@ export function DataTable({
           target="_blank"
           rel="noopener noreferrer"
           title={value}
-          className="
-            inline-flex items-center gap-2
-            max-w-[150px]
-            px-2 py-1
-            text-sm font-medium
-            text-blue-600 hover:text-blue-800
-            hover:underline
-            truncate
-          "
+          className="inline-flex max-w-[150px] items-center gap-2 truncate px-2 py-1 text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
         >
           <span className="truncate">View Image</span>
-
           <svg
-            className="w-4 h-4 shrink-0"
+            className="h-4 w-4 shrink-0"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
@@ -187,16 +217,8 @@ export function DataTable({
       );
     }
 
-
     return value;
   };
-
-  const totalPendValue = useMemo(() => {
-    return filteredData.reduce((sum, c) => sum + Number(c.amount), 0);
-  }, [filteredData]);
-
-  const SKELETON_ROWS = Array.from({ length: pageSize });
-
 
   return (
     <Card className={className}>
@@ -208,9 +230,7 @@ export function DataTable({
               <CardDescription className="mt-2">{description}</CardDescription>
             )}
             {totalPend && (
-              <CardDescription className="mt-2">
-                {totalPendValue}
-              </CardDescription>
+              <CardDescription className="mt-2">{totalPendValue}</CardDescription>
             )}
           </div>
           {searchable && (
@@ -220,8 +240,8 @@ export function DataTable({
                 <Input
                   placeholder="Search..."
                   value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
+                  onChange={(event) => {
+                    setSearchTerm(event.target.value);
                     setCurrentPage(1);
                   }}
                   className="pl-8"
@@ -233,27 +253,16 @@ export function DataTable({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="overflow-x-auto rounded-md border">
-          <Table className="">
+          <Table>
             <TableHeader>
               <TableRow>
-                {columns.map((column) => (
-                  <TableHead
-                    className={
-                      column.hidden ||
-                        (column.onlyAdmin && daherUser?.role !== "admin")
-                        ? "hidden"
-                        : "text-center"
-                    }
-                    key={column.key}
-                  >
+                {visibleColumns.map((column) => (
+                  <TableHead className="text-center" key={column.key}>
                     {column.sortable ? (
                       <Button
                         variant="ghost"
-                        onClick={() => {
-                          handleSort(column.key);
-                          console.log(column.hidden);
-                        }}
-                        className={`h-auto p-0 font-medium`}
+                        onClick={() => handleSort(column.key)}
+                        className="h-auto p-0 font-medium"
                       >
                         {column.label}
                         {sortConfig?.key === column.key && (
@@ -270,20 +279,12 @@ export function DataTable({
                 {renderRowActions && <TableHead>Actions</TableHead>}
               </TableRow>
             </TableHeader>
-            <TableBody className="">
+            <TableBody>
               {isLoading ? (
-                SKELETON_ROWS.map((_, rowIndex) => (
+                skeletonRows.map((_, rowIndex) => (
                   <TableRow key={`skeleton-${rowIndex}`}>
-                    {columns.map((column) => (
-                      <TableCell
-                        key={column.key}
-                        className={
-                          column.hidden ||
-                            (column.onlyAdmin && daherUser?.role !== "admin")
-                            ? "hidden"
-                            : ""
-                        }
-                      >
+                    {visibleColumns.map((column) => (
+                      <TableCell key={column.key}>
                         <Skeleton className="h-4 w-full rounded-md" />
                       </TableCell>
                     ))}
@@ -297,28 +298,18 @@ export function DataTable({
               ) : paginatedData.length > 0 ? (
                 paginatedData.map((row, index) => (
                   <TableRow
-                    key={index}
+                    key={row._id ?? index}
                     className={getRowClassName ? getRowClassName(row) : ""}
                   >
-                    {columns.map((column) => (
-                      <TableCell
-                        className={
-                          column.hidden ||
-                            (column.onlyAdmin && daherUser?.role !== "admin")
-                            ? "hidden"
-                            : "text-center"
-                        }
-                        key={column.key}
-                      >
-                        {(() => {
-                          const value = column.accessor
-                            ? column.accessor(row)
-                            : row[column.key];
+                    {visibleColumns.map((column) => {
+                      const value = column.accessor ? column.accessor(row) : row[column.key];
 
-                          return renderCellContent(value, column.key);
-                        })()}
-                      </TableCell>
-                    ))}
+                      return (
+                        <TableCell className="text-center" key={column.key}>
+                          {renderCellContent(value, column.key)}
+                        </TableCell>
+                      );
+                    })}
                     {renderRowActions && (
                       <TableCell>{renderRowActions(row)}</TableCell>
                     )}
@@ -327,7 +318,7 @@ export function DataTable({
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={columns.length + (renderRowActions ? 1 : 0)}
+                    colSpan={visibleColumns.length + (renderRowActions ? 1 : 0)}
                     className="text-center"
                   >
                     No data found.
@@ -339,14 +330,18 @@ export function DataTable({
         </div>
 
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <span className="text-sm text-muted-foreground">عدد الاسطر : {(filteredData.length || 0)}</span>
+          <span className="text-sm text-muted-foreground">
+            عدد الاسطر : {filteredData.length || 0}
+          </span>
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-muted-foreground">عدد الاسطر في الصفحة :</span>
+            <span className="text-sm text-muted-foreground">
+              عدد الاسطر في الصفحة :
+            </span>
             <select
-              className="border rounded px-2 py-1 text-sm"
+              className="rounded border px-2 py-1 text-sm"
               value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
+              onChange={(event) => {
+                setPageSize(Number(event.target.value));
                 setCurrentPage(1);
               }}
             >

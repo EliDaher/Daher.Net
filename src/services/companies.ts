@@ -1,4 +1,28 @@
+import axios from "axios";
 import apiClient from "@/lib/axios";
+
+interface BalancePayload {
+  amount: number;
+  reason?: string;
+  company: string;
+  number?: string;
+  companyId: string;
+  port: string;
+  paidAmount?: number;
+  paymentNote?: string;
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.message || error.message || fallback;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return fallback;
+}
 
 export default async function decreaseBalance({
   amount,
@@ -7,7 +31,7 @@ export default async function decreaseBalance({
   number,
   companyId,
   port,
-}) {
+}: BalancePayload) {
   try {
     const response = await apiClient.post("/api/company/decreaseBalance", {
       amount,
@@ -17,12 +41,10 @@ export default async function decreaseBalance({
       companyId,
       port,
     });
-    console.log(response.data)
 
     return response.data;
-  } catch (err) {
-    console.error("خطا في انقاص الرصيد:", err);
-    throw new Error(err);
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to decrease balance"));
   }
 }
 
@@ -35,11 +57,11 @@ export async function increaseBalance({
   port,
   paidAmount,
   paymentNote,
-}) {
+}: BalancePayload) {
   try {
     const response = await apiClient.post("/api/company/increaseBalance", {
       amount,
-      reason : reason || "اضافة رصيد",
+      reason: reason || "اضافة رصيد",
       company,
       number: number || "0",
       companyId,
@@ -49,13 +71,20 @@ export async function increaseBalance({
     });
 
     return response.data;
-  } catch (err) {
-    console.error("خطا في انقاص الرصيد:", err);
-    throw new Error(err);
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to increase balance"));
   }
 }
 
-export async function addCompany({ name, initialBalance, balanceLimit }) {
+export async function addCompany({
+  name,
+  initialBalance,
+  balanceLimit,
+}: {
+  name: string;
+  initialBalance: number;
+  balanceLimit: number;
+}) {
   try {
     const response = await apiClient.post("/api/company/", {
       name,
@@ -64,32 +93,33 @@ export async function addCompany({ name, initialBalance, balanceLimit }) {
     });
 
     return response.data;
-  } catch (err) {
-    console.error("خطأ في اضافة الشركة:", err);
-    throw new Error(err);
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to add company"));
   }
 }
 
 export async function getAllCompanies() {
   try {
     const response = await apiClient.get("/api/company/");
-
     return Object.values(response.data.companies);
-  } catch (err) {
-    console.error("خطأ في جلب الشركات:", err);
-    throw new Error(err);
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to get companies"));
   }
 }
 
-export async function getCompaniesLogs({fromDate, toDate}) {
+export async function getCompaniesLogs({
+  fromDate,
+  toDate,
+}: {
+  fromDate: string;
+  toDate: string;
+}) {
   try {
     const response = await apiClient.get("/api/company/logs", {
       params: { fromDate, toDate },
     });
-    console.log(response.data);
     return Object.values(response.data.logs);
-  } catch (err) {
-    console.error("خطأ في جلب العمليات:", err);
-    throw new Error(err);
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to get company logs"));
   }
 }

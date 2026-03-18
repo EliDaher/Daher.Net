@@ -1,17 +1,16 @@
 import { Navigate } from "react-router-dom";
+import { getStoredUser } from "@/lib/auth";
 
 export function PrivateRoute({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: string[] }) {
-  const userStr = localStorage.getItem("DaherUser");
-  if (!userStr) return <Navigate to="/login" replace />;
+  const user = getStoredUser();
 
-  try {
-    const user = JSON.parse(userStr);
-    if (allowedRoles.includes(user.role)) {
-      return <>{children}</>;
-    } else {
-      return <Navigate to="/unauthorized" replace />;
-    }
-  } catch {
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
+
+  if (!allowedRoles.includes(user.role)) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  return <>{children}</>;
 }

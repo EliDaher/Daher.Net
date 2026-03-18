@@ -1,192 +1,219 @@
-import SendToPay from '@/components/companies/SendToPay';
-import { DataTable } from '@/components/dashboard/DataTable';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Button } from '@/components/ui/button';
-import PopupForm from '@/components/ui/custom/PopupForm';
-import { Input } from '@/components/ui/input';
-import { useCompaniesContext } from '@/contexts/CompaniesProvider';
-import decreaseBalance from '@/services/companies';
-import getPendingInvoices, { confirmInvoice, rejectInvoice, startPayment } from '@/services/invoices';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { io, Socket } from "socket.io-client";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import SendToPay from "@/components/companies/SendToPay";
+import { DataTable } from "@/components/dashboard/DataTable";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { Button } from "@/components/ui/button";
+import PopupForm from "@/components/ui/custom/PopupForm";
+import { Input } from "@/components/ui/input";
+import { useCompaniesContext } from "@/contexts/CompaniesProvider";
+import { getStoredUser } from "@/lib/auth";
+import { usePendingPaymentsRealtime } from "@/hooks/usePendingPaymentsRealtime";
+import decreaseBalance from "@/services/companies";
+import getPendingInvoices, {
+  confirmInvoice,
+  rejectInvoice,
+  startPayment,
+} from "@/services/invoices";
+
+interface PendingTransaction {
+  _id: string;
+  amount: number;
+  company: string;
+  email: string;
+  landline?: string;
+  number?: string;
+  speed?: string;
+  status: string;
+  createdAt: string;
+  extra?: {
+    playerId?: string;
+  };
+}
+
+interface RejectInvoicePayload {
+  payment: {
+    id: string;
+    email: string;
+    amount: number;
+  };
+  reason: string;
+}
+
+interface DecreaseBalancePayload {
+  amount: number;
+  reason: string;
+  company: string;
+  number: string;
+  companyId: string;
+  port: string;
+}
+
+const REJECTION_FORM_TITLE = "سبب الغاء العملية";
+
+function normalizeLandlineForClipboard(number?: string) {
+  if (!number) {
+    return "";
+  }
+
+  if (number.startsWith("033") || number.startsWith("013")) {
+    return number.slice(3);
+  }
+
+  if (number.startsWith("33") || number.startsWith("13")) {
+    return number.slice(2);
+  }
+
+  return number;
+}
 
 export default function PendingTransactions() {
-  const { data: companies, isLoading } = useCompaniesContext();
-  const daherUser = JSON.parse(localStorage.getItem("DaherUser"));
-
+  const { data: companies = [] } = useCompaniesContext();
+  const currentUser = getStoredUser();
   const navigate = useNavigate();
-
-  const [isOpen, setIsOpen] = useState(false);
-  const [formTitle] = useState('سبب الغاء العملية');
-  const [reason, setReason] = useState('');
-  const [selectedRow, setSelectedRow] = useState<any | null>(null);
-
   const queryClient = useQueryClient();
 
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [selectedRow, setSelectedRow] = useState<PendingTransaction | null>(null);
   const [sendToPayOpen, setSendToPayOpen] = useState(false);
 
-  useEffect(() => {
-    const newSocket = io("https://paynet-1.onrender.com");
+  usePendingPaymentsRealtime();
 
-    newSocket.on("pendingPaymentsUpdate", (updatedPayments) => {
-      queryClient.setQueryData(['pending-table'], updatedPayments);
-    });
-
-    return () => {
-      newSocket.disconnect();
-    };
-  }, [queryClient]);
-
-  const { data: pendingData, isLoading: pendingLoading, isError, error } = useQuery({
+  const {
+    data: pendingData = [],
+    isLoading: pendingLoading,
+    isError,
+    error,
+  } = useQuery<PendingTransaction[]>({
     queryKey: ["pending-table"],
     queryFn: getPendingInvoices,
   });
-  
+
   useEffect(() => {
-    if (isError) {
-      if (error?.message === "No token found") {
-        navigate("/login");
-      }
+    if (isError && error instanceof Error && error.message === "No token found") {
+      navigate("/login");
     }
-  }, [isError, error, navigate]);
+  }, [error, isError, navigate]);
 
   const confirmMutation = useMutation({
-    mutationFn: (invoiceId: string) => confirmInvoice(invoiceId),
+    mutationFn: confirmInvoice,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pending-table'] });
+      void queryClient.invalidateQueries({ queryKey: ["pending-table"] });
     },
   });
-  
+
   const decreaseBalanceMutation = useMutation({
-    mutationFn: (dataToSend: {
-      amount;
-      reason;
-      company;
-      number;
-      companyId;
-      port;
-    }) => decreaseBalance(dataToSend),
+    mutationFn: (payload: DecreaseBalancePayload) => decreaseBalance(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pending-table"] });
+      void queryClient.invalidateQueries({ queryKey: ["pending-table"] });
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (data: { payment: object; reason: string }) => rejectInvoice(data),
+  const rejectMutation = useMutation({
+    mutationFn: (payload: RejectInvoicePayload) => rejectInvoice(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pending-table'] });
+      void queryClient.invalidateQueries({ queryKey: ["pending-table"] });
     },
   });
-  
+
   const startMutation = useMutation({
-    mutationFn: ( id: string ) => startPayment(id),
+    mutationFn: startPayment,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pending-table'] });
+      void queryClient.invalidateQueries({ queryKey: ["pending-table"] });
     },
   });
 
-  const invoicesColumns = [
-    
-    { key: '_id', label: 'المعرف', sortable: true, hidden: true },
-{
-  key: "landline",
-  label: "الرقم / ID",
-  accessor: (row) => row.extra?.playerId || row.landline
-},
-  { key: 'company', label: 'الشركة', sortable: true },
-    { key: 'speed', label: 'السرعة', sortable: true },
-    { key: 'email', label: 'الحساب المرسل', sortable: true },
-    { key: 'amount', label: 'المبلغ الواجب دفعه', sortable: true },
-    { key: 'status', label: 'حالة العملية', sortable: true },
-    { key: 'createdAt', label: 'الوقت', sortable: true },
-    // {key : 'extra', label: 'معلومات الشحن', sortable: true}
-  ];
+  const companyIdByName = useMemo(
+    () =>
+      new Map(
+        companies.map((company: any) => [company.name, company.id] as const),
+      ),
+    [companies],
+  );
 
-  useEffect(() => {
-    if ("Notification" in window) {
-      Notification.requestPermission().then(permission => {
-        console.log("Notification permission:", permission);
-      });
+  const invoicesColumns = useMemo(
+    () => [
+      { key: "_id", label: "المعرف", sortable: true, hidden: true },
+      {
+        key: "landline",
+        label: "الرقم / ID",
+        accessor: (row: PendingTransaction) => row.extra?.playerId || row.landline,
+      },
+      { key: "company", label: "الشركة", sortable: true },
+      { key: "speed", label: "السرعة", sortable: true },
+      { key: "email", label: "الحساب المرسل", sortable: true },
+      { key: "amount", label: "المبلغ الواجب دفعه", sortable: true },
+      { key: "status", label: "حالة العملية", sortable: true },
+      { key: "createdAt", label: "الوقت", sortable: true },
+    ],
+    [],
+  );
+
+  const handleConfirm = (row: PendingTransaction) => {
+    if (!window.confirm("هل انت متأكد من انهاء العملية")) {
+      return;
     }
-  }, []);
-  
-  const prevDataRef = useRef<any[]>([]);
 
-  useEffect(() => {
-    console.log("Pending data updated:", pendingData);
-    if (pendingData && pendingData.length > 0) {
-      const prevData = prevDataRef.current;
+    confirmMutation.mutate(row._id);
+    decreaseBalanceMutation.mutate({
+      amount: row.amount,
+      reason: "",
+      company: row.company,
+      number: row.landline || row.number || "",
+      companyId: companyIdByName.get(row.company) || "",
+      port: currentUser?.username || "",
+    });
+  };
 
-      // استخراج الطلبات الجديدة فقط
-      const newItems = pendingData.filter(
-        (item) => !prevData.some((prev) => prev._id === item._id)
-      );
+  const handleRejectSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-      if (newItems.length > 0) {
-        // إرسال إشعار بأول عنصر جديد كمثال
-        new Notification("طلب دفع جديد", {
-          body: `المبلغ: ${newItems[0].amount} - الشركة: ${newItems[0].company}`,
-          icon: "/logo.png"
-        });
-
-        const audio = new Audio("/notification.mp3");
-        audio.play();
-      }
-
-      // تحديث النسخة السابقة
-      prevDataRef.current = pendingData;
+    if (!selectedRow) {
+      return;
     }
-  }, [pendingData]);
 
-  if (pendingLoading) {
-    return (
-      <DashboardLayout>
-        <div dir="rtl" className="space-y-6 text-center text-lg font-semibold">
-          جارِ تحميل البيانات...
-        </div>
-      </DashboardLayout>
-    );
-  }
+    rejectMutation.mutate({
+      payment: {
+        id: selectedRow._id,
+        email: selectedRow.email,
+        amount: selectedRow.amount,
+      },
+      reason: rejectionReason,
+    });
+
+    setIsRejectDialogOpen(false);
+    setRejectionReason("");
+    setSelectedRow(null);
+  };
+
+  const handleStartExecution = (row: PendingTransaction) => {
+    const textToCopy = normalizeLandlineForClipboard(row.landline);
+
+    if (textToCopy) {
+      void navigator.clipboard.writeText(textToCopy).catch(() => undefined);
+    }
+
+    startMutation.mutate(row._id);
+  };
 
   return (
     <DashboardLayout>
-      <SendToPay 
-        isOpen={sendToPayOpen} 
-        setIsOpen={setSendToPayOpen}
-      />
+      <SendToPay isOpen={sendToPayOpen} setIsOpen={setSendToPayOpen} />
 
-      {/* نافذة إدخال سبب الرفض */}
       <PopupForm
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
-        title={formTitle}
+        isOpen={isRejectDialogOpen}
+        setIsOpen={setIsRejectDialogOpen}
+        title={REJECTION_FORM_TITLE}
         trigger={<></>}
       >
         <div className="flex flex-row-reverse gap-2">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (selectedRow) {
-                deleteMutation.mutate({
-                  payment: {
-                    id: selectedRow?._id,
-                    email: selectedRow.email,
-                    amount: selectedRow.amount,
-                  },
-                  reason: reason,
-                });
-                setIsOpen(false);
-                setReason("");
-              }
-            }}
-            className="space-y-4 w-full"
-          >
+          <form onSubmit={handleRejectSubmit} className="w-full space-y-4">
             <Input
               dir="rtl"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              value={rejectionReason}
+              onChange={(event) => setRejectionReason(event.target.value)}
               type="text"
               placeholder="سبب الرفض (مثال: لا يوجد رصيد)"
               required
@@ -196,83 +223,50 @@ export default function PendingTransactions() {
         </div>
       </PopupForm>
 
-      {/* جدول الفواتير */}
       <div dir="rtl" className="space-y-6">
         <DataTable
-          amountBold={true}
+          amountBold
           title="تسديدات معلقة"
           description=""
-          totalPend={true}
+          totalPend
           columns={invoicesColumns}
-          data={pendingData || []}
-          renderRowActions={(row) =>
-            row.status != "جاري التسديد" ? (
+          data={pendingData}
+          isLoading={pendingLoading}
+          renderRowActions={(row: PendingTransaction) =>
+            row.status !== "جاري التسديد" ? (
               <div className="flex gap-2">
                 <Button
                   variant="default"
                   size="sm"
-                  onClick={() => {
-                    if (window.confirm("هل انت متأكد من انهاء العملية")) {
-                      confirmMutation.mutate(row._id);
-                      decreaseBalanceMutation.mutate({
-                        amount: row.amount,
-                        reason: "",
-                        company: row.company,
-                        number: row.landline || row.number,
-                        companyId: companies
-                          ? companies.find((c) => c.name === row.company)?.id
-                          : "",
-                        port: daherUser.username,
-                      });
-                    }
-                  }}
-                  disabled={confirmMutation.isPending}
+                  onClick={() => handleConfirm(row)}
+                  disabled={
+                    confirmMutation.isPending || decreaseBalanceMutation.isPending
+                  }
                 >
-                  {confirmMutation.isPending ? "..." : "تأكيد"}
+                  {confirmMutation.isPending || decreaseBalanceMutation.isPending
+                    ? "..."
+                    : "تأكيد"}
                 </Button>
                 <Button
                   variant="destructive"
                   size="sm"
                   onClick={() => {
                     setSelectedRow(row);
-                    setIsOpen(true);
+                    setIsRejectDialogOpen(true);
                   }}
-                  disabled={deleteMutation.isPending}
+                  disabled={rejectMutation.isPending}
                 >
-                  {deleteMutation.isPending ? "..." : "رفض"}
+                  {rejectMutation.isPending ? "..." : "رفض"}
                 </Button>
               </div>
             ) : (
-              <>
-                <div>
-                  <Button
-                    variant="default"
-                    disabled={startMutation.isPending}
-                    onClick={() => {
-                      const number = row.landline as string;
-
-                      let textToCopy = number;
-
-                      if (number.startsWith("033")) {
-                        textToCopy = number.slice(3);
-                      } else if (number.startsWith("33")) {
-                        textToCopy = number.slice(2);
-                      }
-                      if (number.startsWith("013")) {
-                        textToCopy = number.slice(3);
-                      } else if (number.startsWith("13")) {
-                        textToCopy = number.slice(2);
-                      }
-
-                      navigator.clipboard.writeText(textToCopy);
-
-                      startMutation.mutate(row._id);
-                    }}
-                  >
-                    {startMutation.isPending ? "..." : "بدء التنفيذ"}
-                  </Button>
-                </div>
-              </>
+              <Button
+                variant="default"
+                disabled={startMutation.isPending}
+                onClick={() => handleStartExecution(row)}
+              >
+                {startMutation.isPending ? "..." : "بدء التنفيذ"}
+              </Button>
             )
           }
         />
