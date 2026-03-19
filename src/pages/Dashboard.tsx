@@ -253,15 +253,15 @@ export default function Dashboard() {
     [pendingData],
   );
 
-  const pendingByStatus = useMemo(() => {
-    const statusMap: Record<string, number> = {};
+  const pendingByCompany = useMemo(() => {
+    const company: Record<string, number> = {};
 
     pendingData.forEach((payment) => {
-      const status = payment.status || "غير معروف";
-      statusMap[status] = (statusMap[status] || 0) + 1;
+      const status = payment.company || "غير معروف";
+      company[status] = (company[status] || 0) + 1;
     });
 
-    return Object.entries(statusMap).map(([name, value]) => ({ name, value }));
+    return Object.entries(company).map(([name, value]) => ({ name, value }));
   }, [pendingData]);
 
   const quickInsights = useMemo(
@@ -511,7 +511,7 @@ export default function Dashboard() {
                   <CardHeader>
                     <CardTitle>حالة الطلبات الحالية</CardTitle>
                     <CardDescription>
-                      توزيع الطلبات المعلقة حسب الحالة.
+                      توزيع الطلبات المعلقة حسب النوع.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -519,7 +519,7 @@ export default function Dashboard() {
                       title="حالة المدفوعات"
                       type="pie"
                       dataKey="value"
-                      data={pendingByStatus}
+                      data={pendingByCompany}
                       desc={`${pendingData.length} طلب`}
                     />
                   </CardContent>

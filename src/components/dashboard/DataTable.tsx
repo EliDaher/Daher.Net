@@ -50,6 +50,47 @@ interface DataTableProps {
   isLoading?: boolean;
 }
 
+function stringifyTableValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint"
+  ) {
+    return String(value);
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => stringifyTableValue(item)).filter(Boolean).join(", ");
+  }
+
+  if (typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .map(([nestedKey, nestedValue]) => {
+        const serializedValue = stringifyTableValue(nestedValue);
+
+        return serializedValue ? `${nestedKey}: ${serializedValue}` : "";
+      })
+      .filter(Boolean);
+
+    if (entries.length > 0) {
+      return entries.join(", ");
+    }
+
+    return JSON.stringify(value);
+  }
+
+  return String(value);
+}
+
 export function DataTable({
   title,
   totalPend,
@@ -92,7 +133,9 @@ export function DataTable({
         normalizedSearchTerm === ""
           ? true
           : Object.values(item).some((value) =>
-              value?.toString().toLowerCase().includes(normalizedSearchTerm),
+              stringifyTableValue(value)
+                .toLowerCase()
+                .includes(normalizedSearchTerm),
             ),
       ),
     [data, normalizedSearchTerm],
@@ -191,7 +234,7 @@ export function DataTable({
     }
 
     if (key === "description") {
-      return <span className="line-clamp-3 w-64">{value}</span>;
+      return <span className="line-clamp-3 w-64">{stringifyTableValue(value)}</span>;
     }
 
     if (key === "imageUrl") {
@@ -217,7 +260,7 @@ export function DataTable({
       );
     }
 
-    return value;
+    return stringifyTableValue(value);
   };
 
   return (
