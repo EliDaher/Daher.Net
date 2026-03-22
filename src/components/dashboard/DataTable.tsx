@@ -91,6 +91,29 @@ function stringifyTableValue(value: unknown): string {
   return String(value);
 }
 
+function getTextColorClassByName(value: string) {
+  const palette = [
+    "text-emerald-700 bg-emerald-100 dark:text-emerald-200 dark:bg-emerald-900/40",
+    "text-sky-700 bg-sky-100 dark:text-sky-200 dark:bg-sky-900/40",
+    "text-amber-700 bg-amber-100 dark:text-amber-200 dark:bg-amber-900/40",
+    "text-fuchsia-700 bg-fuchsia-100 dark:text-fuchsia-200 dark:bg-fuchsia-900/40",
+    "text-indigo-700 bg-indigo-100 dark:text-indigo-200 dark:bg-indigo-900/40",
+    "text-rose-700 bg-rose-100 dark:text-rose-200 dark:bg-rose-900/40",
+  ];
+
+  const normalized = value.trim().toLowerCase();
+  if (!normalized || normalized === "غير محدد") {
+    return "text-muted-foreground bg-muted";
+  }
+
+  let hash = 0;
+  for (let index = 0; index < normalized.length; index += 1) {
+    hash = (hash * 31 + normalized.charCodeAt(index)) >>> 0;
+  }
+
+  return palette[hash % palette.length];
+}
+
 export function DataTable({
   title,
   totalPend,
@@ -204,6 +227,18 @@ export function DataTable({
 
     if (key === "email") {
       return <span className="text-muted-foreground">{value}</span>;
+    }
+
+    if (key === "startedBy") {
+      const label = stringifyTableValue(value) || "غير محدد";
+      return (
+        <Badge
+          variant="outline"
+          className={`capitalize text-center border-0 ${getTextColorClassByName(label)}`}
+        >
+          {label}
+        </Badge>
+      );
     }
 
     if (

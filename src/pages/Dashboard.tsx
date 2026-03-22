@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
   AlertTriangle,
+  CalendarDays,
   CreditCard,
   ReceiptIcon,
+  ShieldAlert,
   TrendingUp,
   Users,
   Wallet,
@@ -26,9 +28,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import getWifiCustomers from "@/services/wifi";
 import getTodayBalance, { getBalanceByDate } from "@/services/balance";
 import getPendingInvoices from "@/services/invoices";
+import { getAllCompanies } from "@/services/companies";
 import { getStoredUser } from "@/lib/auth";
 import { usePendingPaymentsRealtime } from "@/hooks/usePendingPaymentsRealtime";
 
@@ -56,6 +60,14 @@ interface PendingTransaction {
   createdAt?: string;
   email?: string;
   landline?: string;
+}
+
+interface ProviderCompany {
+  id?: string;
+  name: string;
+  balance: number;
+  balanceLimit: number;
+  lastUpdate?: string;
 }
 
 function formatCurrency(value: number) {
@@ -90,8 +102,8 @@ function formatRelativeTime(timestamp?: string) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const currentUser = getStoredUser();
-  const [todayBalance, setTodayBalance] = useState<DailyBalanceEntry[]>([]);
-  const [balanceDate, setBalanceDate] = useState("");
+  const isAdmin = currentUser?.role === "admin";
+  const [balanceDate, setBalanceDate] = useState(dayjs().format("YYYY-MM"));
 
   usePendingPaymentsRealtime(Boolean(currentUser));
 
@@ -100,12 +112,32 @@ export default function Dashboard() {
   >({
     queryKey: ["pending-table"],
     queryFn: getPendingInvoices,
-    enabled: currentUser?.role === "admin",
+    enabled: isAdmin,
   });
 
   const { data: monthBalance = [], isLoading: monthBalanceLoading } = useQuery({
     queryKey: ["monthBalance-table", balanceDate],
     queryFn: () => getBalanceByDate(balanceDate),
+    enabled: isAdmin,
+  });
+
+  const { data: providerCompanies = [], isLoading: providersLoading } = useQuery<
+    ProviderCompany[]
+  >({
+    queryKey: ["provider-companies-dashboard"],
+    queryFn: async () => (await getAllCompanies()) as ProviderCompany[],
+    enabled: isAdmin,
+  });
+
+  const { data: todayBalance = [], isLoading: todayBalanceLoading } = useQuery<
+    DailyBalanceEntry[]
+  >({
+    queryKey: ["todayBalance-table"],
+    queryFn: async () => {
+      const response = await getTodayBalance("");
+      return response?.success ? response.BalanceTable : [];
+    },
+    enabled: Boolean(currentUser),
   });
 
   const { data: customers = [], isLoading: customersLoading } = useQuery<
@@ -125,18 +157,6 @@ export default function Dashboard() {
       return response;
     },
   });
-
-  useEffect(() => {
-    async function loadTodayBalance() {
-      const response = await getTodayBalance("");
-
-      if (response?.success) {
-        setTodayBalance(response.BalanceTable);
-      }
-    }
-
-    void loadTodayBalance();
-  }, []);
 
   const totalBalance = useMemo(
     () => todayBalance.reduce((sum, item) => sum + Number(item.total), 0),
@@ -257,12 +277,47 @@ export default function Dashboard() {
     const company: Record<string, number> = {};
 
     pendingData.forEach((payment) => {
-      const status = payment.company || "غير معروف";
-      company[status] = (company[status] || 0) + 1;
+      const name = payment.company || "غير معروف";
+      company[name] = (company[name] || 0) + 1;
     });
 
     return Object.entries(company).map(([name, value]) => ({ name, value }));
   }, [pendingData]);
+
+  const pendingTotalAmount = useMemo(
+    () =>
+      pendingData.reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
+    [pendingData],
+  );
+
+  const lowBalanceProviders = useMemo(
+    () =>
+      providerCompanies
+        .filter(
+          (company) =>
+            Number(company.balance) <= Number(company.balanceLimit || 0),
+        )
+        .sort((a, b) => Number(a.balance) - Number(b.balance)),
+    [providerCompanies],
+  );
+
+  const criticalProviders = useMemo(
+    () =>
+      lowBalanceProviders.filter(
+        (company) => Number(company.balance) <= 0,
+      ).length,
+    [lowBalanceProviders],
+  );
+
+  const providerBalanceChartData = useMemo(
+    () =>
+      lowBalanceProviders.slice(0, 8).map((company) => ({
+        sender: company.name,
+        balance: Number(company.balance || 0),
+        balanceLimit: Number(company.balanceLimit || 0),
+      })),
+    [lowBalanceProviders],
+  );
 
   const quickInsights = useMemo(
     () => [
@@ -282,33 +337,70 @@ export default function Dashboard() {
       },
       {
         label: "حجم السرعات",
-        value: `${totalSpeed} Mbps`,
+        value: `${formatCurrency(totalSpeed)} Mbps`,
       },
     ],
-    [averageDebt, debtCustomers.length, topSender, totalSpeed, totalTransactionsToday],
+    [
+      averageDebt,
+      debtCustomers.length,
+      topSender,
+      totalSpeed,
+      totalTransactionsToday,
+    ],
   );
 
-  const isAdmin = currentUser?.role === "admin";
+  const currentMonthLabel = useMemo(() => {
+    if (!balanceDate) {
+      return "الشهر الحالي";
+    }
+
+    return dayjs(`${balanceDate}-01`).format("MMMM YYYY");
+  }, [balanceDate]);
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6" dir="rtl">
+        <Card className="border-primary/20 bg-gradient-to-l from-primary/5 to-background">
+          <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-2">
+              <CardTitle className="text-2xl font-bold">
+                لوحة التحكم التشغيلية
+              </CardTitle>
+              <CardDescription>
+                نظرة لحظية على المشتركين، الديون، والطلبات المعلقة مع مسارات
+                متابعة سريعة.
+              </CardDescription>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="gap-1">
+                <Users className="h-3.5 w-3.5" />
+                {currentUser?.username || "مستخدم"}
+              </Badge>
+              <Badge variant={isAdmin ? "default" : "secondary"}>
+                {isAdmin ? "صلاحية مدير" : "صلاحية موظف"}
+              </Badge>
+              <Badge variant="outline" className="gap-1">
+                <CalendarDays className="h-3.5 w-3.5" />
+                {currentMonthLabel}
+              </Badge>
+            </div>
+          </CardHeader>
+        </Card>
 
         <div
-          dir="rtl"
-          className={`grid gap-4 ${isAdmin ? "md:grid-cols-2 xl:grid-cols-5" : "md:grid-cols-2 xl:grid-cols-4"}`}
+          className={`grid gap-4 ${isAdmin ? "md:grid-cols-2 xl:grid-cols-6" : "md:grid-cols-2 xl:grid-cols-4"}`}
         >
           <StatsCard
             onClick={() => navigate("/users")}
-            title="عدد مشتركين الفضائي"
+            title="عدد المشتركين"
             value={customers.length}
             icon={Users}
             loading={customersLoading}
-            description={`${formatCurrency(totalSpeed)} Mbps مجموع السرعات`}
+            description={`${formatCurrency(totalSpeed)} Mbps إجمالي السرعات`}
           />
           <StatsCard
             onClick={() => navigate("/users", { state: "unpaid" })}
-            title="ديون الفضائي"
+            title="إجمالي الديون"
             value={`${formatCurrency(unpaidValue)} USD`}
             icon={CreditCard}
             loading={customersLoading}
@@ -316,7 +408,7 @@ export default function Dashboard() {
           />
           <StatsCard
             onClick={() => navigate("/users", { state: "unpaid" })}
-            title="العملاء الخطرين"
+            title="عملاء عاليي المخاطر"
             value={debtCustomers.length}
             icon={AlertTriangle}
             loading={customersLoading}
@@ -333,33 +425,62 @@ export default function Dashboard() {
             loading={customersLoading}
             description={
               topSender
-                ? `${topSender.customerCount} مشترك / ${topSender.totalSpeed} Mbps`
+                ? `${topSender.customerCount} مشترك / ${formatCurrency(topSender.totalSpeed)} Mbps`
                 : "لا يوجد بيانات"
             }
           />
           {isAdmin && (
             <StatsCard
               onClick={() => navigate("/PendingTransactions")}
-              title="الفواتير الغير مدفوعة"
+              title="الفواتير غير المدفوعة"
               value={pendingData.length}
               icon={ReceiptIcon}
               loading={pendingLoading}
               description={
                 pendingData.length
-                  ? `${formatCurrency(
-                      pendingData.reduce(
-                        (sum, payment) => sum + Number(payment.amount || 0),
-                        0,
-                      ),
-                    )} SYP بانتظار المعالجة`
+                  ? `${formatCurrency(pendingTotalAmount)} SYP بانتظار المعالجة`
                   : "لا يوجد طلبات معلقة"
               }
             />
           )}
+          {isAdmin && (
+            <StatsCard
+              onClick={() => navigate("/companies")}
+              title="مزودون تحت الحد"
+              value={lowBalanceProviders.length}
+              icon={ShieldAlert}
+              loading={providersLoading}
+              description={
+                lowBalanceProviders.length
+                  ? `${criticalProviders} أرصدة حرجة (<= 0)`
+                  : "جميع المزودين ضمن الحدود الآمنة"
+              }
+            />
+          )}
+          {/* {isAdmin && (
+            <StatsCard
+              onClick={() => navigate("/companies")}
+              title="إجمالي أرصدة المزودين"
+              value={`${formatCurrency(providersTotalBalance)} SYP`}
+              icon={Building2}
+              loading={providersLoading}
+              description={
+                topProvider
+                  ? `أعلى رصيد: ${topProvider.name}`
+                  : "لا يوجد بيانات مزودين"
+              }
+            />
+          )} */}
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.2fr_1fr_1fr]">
-          <Card dir="rtl">
+        <div
+          className={`grid gap-6 ${
+            isAdmin
+              ? "xl:grid-cols-[1.2fr_1fr_1fr_1fr]"
+              : "xl:grid-cols-[1.2fr_1fr]"
+          }`}
+        >
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <AlertTriangle className="h-5 w-5 text-amber-500" />
@@ -402,7 +523,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card dir="rtl">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Wallet className="h-5 w-5 text-primary" />
@@ -414,10 +535,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="space-y-3">
               {quickInsights.map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-lg border px-3 py-3"
-                >
+                <div key={item.label} className="rounded-lg border px-3 py-3">
                   <p className="text-sm text-muted-foreground">{item.label}</p>
                   <p className="mt-1 font-semibold">{item.value}</p>
                 </div>
@@ -426,7 +544,7 @@ export default function Dashboard() {
           </Card>
 
           {isAdmin && (
-            <Card dir="rtl">
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Activity className="h-5 w-5 text-emerald-500" />
@@ -446,9 +564,12 @@ export default function Dashboard() {
                       onClick={() => navigate("/PendingTransactions")}
                     >
                       <div className="space-y-1">
-                        <p className="font-semibold">{payment.company}</p>
+                        <p className="font-semibold">
+                          {payment.company || "غير معروف"}
+                        </p>
                         <p className="text-sm text-muted-foreground">
-                          {payment.status} / {formatRelativeTime(payment.createdAt)}
+                          {payment.status || "جديد"} /{" "}
+                          {formatRelativeTime(payment.createdAt)}
                         </p>
                       </div>
                       <span className="font-bold">
@@ -459,6 +580,48 @@ export default function Dashboard() {
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     لا يوجد طلبات معلقة حالياً.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {isAdmin && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <ShieldAlert className="h-5 w-5 text-destructive" />
+                  تنبيهات أرصدة المزودين
+                </CardTitle>
+                <CardDescription>
+                  المزودون الذين وصلوا للحد الأدنى أو أقل ويحتاجون تعبئة عاجلة.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {lowBalanceProviders.slice(0, 5).length ? (
+                  lowBalanceProviders.slice(0, 5).map((provider) => (
+                    <button
+                      key={provider.id || provider.name}
+                      type="button"
+                      className="flex w-full items-center justify-between rounded-lg border px-3 py-3 text-right transition-colors hover:bg-accent/30"
+                      onClick={() => navigate("/companies")}
+                    >
+                      <div className="space-y-1">
+                        <p className="font-semibold">{provider.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          الحد الأدنى:{" "}
+                          {formatCurrency(Number(provider.balanceLimit || 0))}{" "}
+                          SYP
+                        </p>
+                      </div>
+                      <span className="font-bold text-destructive">
+                        {formatCurrency(Number(provider.balance || 0))} SYP
+                      </span>
+                    </button>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    لا يوجد مزودون تحت الحد الأدنى حالياً.
                   </p>
                 )}
               </CardContent>
@@ -476,12 +639,13 @@ export default function Dashboard() {
               dataKey2="count"
               desc={totalBalance.toString()}
               dataKey="total"
+              loading={todayBalanceLoading}
             />
           )}
 
           <ChartContainer
             className="md:col-span-2"
-            title="توزيع المرسلات"
+            title="توزيع المرسلين"
             data={senderDistributionData as any}
             type="bar"
             dataKey2="customerCount"
@@ -493,25 +657,35 @@ export default function Dashboard() {
             type="pie"
             dataKey="value"
             data={customersSpeedData}
-            desc={`${totalSpeed} Mbps`}
+            desc={`${formatCurrency(totalSpeed)} Mbps`}
           />
+
+          {isAdmin && providerBalanceChartData.length > 0 && (
+            <ChartContainer
+              title="مقارنة رصيد المزودين منخفضي الرصيد"
+              type="bar"
+              data={providerBalanceChartData as any}
+              dataKey="balance"
+              dataKey2="balanceLimit"
+            />
+          )}
         </div>
 
         {isAdmin && (
           <Tabs defaultValue="overview" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="overview">نظرة عامة</TabsTrigger>
+              <TabsTrigger value="analytics">تحليلات</TabsTrigger>
+              <TabsTrigger value="reports">تقارير</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
               <div className="grid gap-6 lg:grid-cols-2">
-                <Card dir="rtl">
+                <Card>
                   <CardHeader>
-                    <CardTitle>حالة الطلبات الحالية</CardTitle>
+                    <CardTitle>توزيع الطلبات المعلقة</CardTitle>
                     <CardDescription>
-                      توزيع الطلبات المعلقة حسب النوع.
+                      توزيع الطلبات حسب الجهة أو النوع الأكثر تكراراً.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -525,11 +699,11 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
 
-                <Card dir="rtl">
+                <Card>
                   <CardHeader>
                     <CardTitle>مؤشرات اليوم</CardTitle>
                     <CardDescription>
-                      عرض سريع لما حدث خلال اليوم الحالي.
+                      ملخص تنفيذي لأداء اليوم الحالي.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="grid gap-3 sm:grid-cols-2">
@@ -558,9 +732,7 @@ export default function Dashboard() {
                       </p>
                     </div>
                     <div className="rounded-lg border p-4 text-right">
-                      <p className="text-sm text-muted-foreground">
-                        أعلى مرسل
-                      </p>
+                      <p className="text-sm text-muted-foreground">أفضل مرسل</p>
                       <p className="mt-2 text-lg font-bold">
                         {topSender?.sender || "غير محدد"}
                       </p>
@@ -572,24 +744,25 @@ export default function Dashboard() {
 
             <TabsContent value="analytics" className="space-y-4 text-center">
               <div className="grid gap-6">
-                <div className="bg-background/80 text-foreground">
+                <div className="rounded-lg border bg-background/80 p-2 text-foreground">
                   <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DemoContainer
-                      components={["DatePicker", "DatePicker", "DatePicker"]}
-                    >
+                    <DemoContainer components={["DatePicker"]}>
                       <DatePicker
+                        label="الشهر"
                         views={["month", "year"]}
-                        value={balanceDate ? dayjs(balanceDate) : null}
+                        value={balanceDate ? dayjs(`${balanceDate}-01`) : null}
                         onChange={(newValue: Dayjs | null) => {
-                          setBalanceDate(newValue ? newValue.format("YYYY-MM") : "");
+                          setBalanceDate(
+                            newValue ? newValue.format("YYYY-MM") : "",
+                          );
                         }}
                       />
                     </DemoContainer>
                   </LocalizationProvider>
                 </div>
                 <ChartContainer
-                  title="صناديق الشهر الحالي"
-                  data={monthBalance}
+                  title="صناديق الشهر"
+                  data={monthBalance as any}
                   type="stackBar"
                   dataKey="users"
                   loading={monthBalanceLoading}
@@ -599,34 +772,34 @@ export default function Dashboard() {
 
             <TabsContent value="reports" className="space-y-4">
               <div className="grid gap-6 lg:grid-cols-3">
-                <Card dir="rtl">
+                <Card>
                   <CardHeader>
-                    <CardTitle>اقتراح تقارير</CardTitle>
+                    <CardTitle>تقارير موصى بها</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm text-muted-foreground">
-                    <p>أكبر العملاء ديوناً خلال الشهر</p>
-                    <p>أداء الموظفين حسب عمليات الصندوق</p>
-                    <p>تغير حجم كل مرسل عبر الأشهر</p>
+                    <p>أكبر العملاء ديوناً خلال الشهر.</p>
+                    <p>أداء الموظفين حسب عمليات الصندوق.</p>
+                    <p>تغير حجم كل مرسل عبر الأشهر.</p>
                   </CardContent>
                 </Card>
-                <Card dir="rtl">
+                <Card>
                   <CardHeader>
-                    <CardTitle>ماذا تضيف لاحقاً</CardTitle>
+                    <CardTitle>تحسينات مستقبلية</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm text-muted-foreground">
-                    <p>مقارنة شهرية بالنسبة المئوية</p>
-                    <p>فلتر زمني موحد لكل الصفحة</p>
-                    <p>تصدير مباشر للتقارير PDF / Excel</p>
+                    <p>مقارنة شهرية بالنسبة المئوية.</p>
+                    <p>فلتر زمني موحد لكل الصفحة.</p>
+                    <p>تصدير مباشر للتقارير PDF / Excel.</p>
                   </CardContent>
                 </Card>
-                <Card dir="rtl">
+                <Card>
                   <CardHeader>
-                    <CardTitle>أقصر طريق للعمل</CardTitle>
+                    <CardTitle>روتين العمل اليومي</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm text-muted-foreground">
-                    <p>راجع قائمة المتابعة يومياً</p>
-                    <p>افتح الطلبات المعلقة مباشرة من البطاقة</p>
-                    <p>تابع أفضل المرسلين عند تغير الحمل</p>
+                    <p>مراجعة قائمة المتابعة يومياً.</p>
+                    <p>فتح الطلبات المعلقة مباشرة من البطاقة.</p>
+                    <p>متابعة أفضل المرسلين عند تغير الحمل.</p>
                   </CardContent>
                 </Card>
               </div>
