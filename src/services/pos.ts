@@ -1,8 +1,5 @@
 import { invoiceClient } from "@/lib/axios";
-import axios from "axios";
-import exp from "constants";
 import { toast } from "sonner";
-import { T } from "vitest/dist/chunks/reporters.d.C-cu31ET.js";
 
 export default async function getPOSUsers() {
   try {

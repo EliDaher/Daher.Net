@@ -173,18 +173,18 @@ const navigationGroups = [
     ],
     allowed: ["admin", "employee"],
   },
-  // {
-  //   title: "Employeers",
-  //   items: [
-  //     {
-  //       name: "Employees",
-  //       href: "/employees",
-  //       icon: Users,
-  //       allowed: ["admin", "employee"],
-  //     },
-  //   ],
-  //   allowed: ["admin", "employee"],
-  // },
+  {
+    title: "Employeers",
+    items: [
+      {
+        name: "Employees",
+        href: "/employees",
+        icon: Users,
+        allowed: ["admin", "employee"],
+      },
+    ],
+    allowed: ["admin", "employee"],
+  },
 ];
 
 interface SidebarProps {
