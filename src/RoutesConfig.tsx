@@ -27,6 +27,7 @@ const InquiryLogs = lazy(() => import("@/pages/InquiryLogs"));
 const ViewBills = lazy(() => import("@/pages/ViewBills"));
 const ViewBillsDetails = lazy(() => import("@/pages/ViewBillsDetails"));
 const FinancialStatement = lazy(() => import("@/pages/FinancialStatement"));
+const Employees = lazy(() => import("@/pages/Employees"));
 
 interface AppRoute {
   path: string;
@@ -84,6 +85,10 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/myBalance",
     element: withPrivateRoute(<MyBalance />, ["admin", "employee"]),
+  },
+  {
+    path: "/employees",
+    element: withPrivateRoute(<Employees />, ["admin", "employee"]),
   },
   {
     path: "/PendingTransactions",

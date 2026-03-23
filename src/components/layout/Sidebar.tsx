@@ -173,6 +173,18 @@ const navigationGroups = [
     ],
     allowed: ["admin", "employee"],
   },
+  // {
+  //   title: "Employeers",
+  //   items: [
+  //     {
+  //       name: "Employees",
+  //       href: "/employees",
+  //       icon: Users,
+  //       allowed: ["admin", "employee"],
+  //     },
+  //   ],
+  //   allowed: ["admin", "employee"],
+  // },
 ];
 
 interface SidebarProps {
@@ -236,8 +248,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
 
       {/* Other Navigation Groups */}
       <nav className="flex-1 px-2 py-2 overflow-y-auto">
-        {navigationGroups.map((group) => (
-          group.allowed.includes(user.role) &&
+        {navigationGroups?.map((group) => (
+          group?.allowed?.includes(user.role) &&
           <Accordion type="single" collapsible key={group.title} className="mb-2">
             <AccordionItem value={group.title} className="border-none">
               <AccordionTrigger
