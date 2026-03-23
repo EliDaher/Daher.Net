@@ -1,9 +1,11 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import PopupForm from "@/components/ui/custom/PopupForm";
+import FormInput from "@/components/ui/custom/FormInput";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function UpdateProduct({ product, onClose, onUpdated }) {
   const [formData, setFormData] = useState({
@@ -23,7 +25,7 @@ export default function UpdateProduct({ product, onClose, onUpdated }) {
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -33,7 +35,7 @@ export default function UpdateProduct({ product, onClose, onUpdated }) {
       setLoading(true);
       const res = await axios.put(
         `${apiBase}/api/product/update-product/${product._id}`,
-        formData
+        formData,
       );
       onUpdated(res.data);
     } catch (err) {
@@ -46,81 +48,141 @@ export default function UpdateProduct({ product, onClose, onUpdated }) {
   return (
     <PopupForm
       isOpen={true}
-      setIsOpen={(open) => { if (!open) onClose(); }}
+      setIsOpen={(open) => {
+        if (!open) onClose();
+      }}
       trigger={<></>}
-      title="Update Product"
+      title="تعديل المنتج"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          placeholder="Name"
-          className="w-full border p-2 rounded"
-        />
+      <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
+        <div className="rounded-xl border bg-background/70 p-4 space-y-3">
+          <h3 className="text-sm font-semibold text-muted-foreground">المعلومات الأساسية</h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <FormInput
+              id="name"
+              name="name"
+              label="اسم المنتج"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="أدخل اسم المنتج"
+              autoFocus
+            />
 
-        <input
-          name="price"
-          value={formData.price}
-          onChange={handleChange}
-          placeholder="Price"
-          className="w-full border p-2 rounded"
-        />
-        <input
-          name="priceCost"
-          value={formData.priceCost}
-          onChange={handleChange}
-          placeholder="Price Cost"
-          className="w-full border p-2 rounded"
-        />
-        <input
-          name="priceWolesale"
-          value={formData.priceWolesale}
-          onChange={handleChange}
-          placeholder="Price Wholesale"
-          className="w-full border p-2 rounded"
-        />
+            <FormInput
+              id="category"
+              name="category"
+              label="التصنيف"
+              value={formData.category}
+              onChange={handleChange}
+              placeholder="مثال: إلكترونيات"
+            />
+          </div>
 
-        <input
-          name="category"
-          value={formData.category}
-          onChange={handleChange}
-          placeholder="Category"
-          className="w-full border p-2 rounded"
-        />
+          <FormInput
+            id="imageUrl"
+            name="imageUrl"
+            label="رابط الصورة"
+            value={formData.imageUrl}
+            onChange={handleChange}
+            placeholder="https://example.com/image.jpg"
+            type="url"
+            inputMode="url"
+          />
 
-        <input
-          name="stock"
-          value={formData.stock}
-          onChange={handleChange}
-          placeholder="Stock"
-          className="w-full border p-2 rounded"
-        />
+          {formData.imageUrl ? (
+            <div className="rounded-lg border bg-muted/30 p-2">
+              <img
+                src={formData.imageUrl}
+                alt={formData.name || "Product preview"}
+                className="h-28 w-full rounded object-cover"
+              />
+            </div>
+          ) : null}
+        </div>
 
-        <input
-          name="imageUrl"
-          value={formData.imageUrl}
-          onChange={handleChange}
-          placeholder="Image URL"
-          className="w-full border p-2 rounded"
-        />
+        <div className="rounded-xl border bg-background/70 p-4 space-y-3">
+          <h3 className="text-sm font-semibold text-muted-foreground">الأسعار والمخزون</h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <FormInput
+              id="price"
+              name="price"
+              label="سعر البيع"
+              value={formData.price}
+              onChange={handleChange}
+              type="number"
+              step="0.01"
+              min="0"
+              inputMode="decimal"
+              placeholder="0.00"
+            />
+            <FormInput
+              id="priceCost"
+              name="priceCost"
+              label="سعر الشراء"
+              value={formData.priceCost}
+              onChange={handleChange}
+              type="number"
+              step="0.01"
+              min="0"
+              inputMode="decimal"
+              placeholder="0.00"
+            />
+            <FormInput
+              id="priceWolesale"
+              name="priceWolesale"
+              label="سعر الجملة"
+              value={formData.priceWolesale}
+              onChange={handleChange}
+              type="number"
+              step="0.01"
+              min="0"
+              inputMode="decimal"
+              placeholder="0.00"
+            />
 
-        <textarea
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          placeholder="Description"
-          className="w-full border p-2 rounded"
-        />
+            <FormInput
+              id="stock"
+              name="stock"
+              label="الكمية"
+              value={formData.stock}
+              onChange={handleChange}
+              type="number"
+              min="0"
+              inputMode="numeric"
+              placeholder="0"
+            />
+          </div>
+        </div>
 
-        <Button disabled={loading} className="w-full">
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            "حفظ التعديلات"
-          )}
-        </Button>
-        
+        <div className="rounded-xl border bg-background/70 p-4 space-y-2">
+          <label htmlFor="description" className="block text-sm font-medium text-right text-gray-700">
+            الوصف
+          </label>
+          <Textarea
+            id="description"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            placeholder="اكتب وصفًا مختصرًا يساعد على فهم المنتج"
+            className="min-h-[110px] text-right"
+          />
+        </div>
+
+        <div className="pt-1 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+            إلغاء
+          </Button>
+          <Button type="submit" disabled={loading} className="min-w-[150px]">
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                جاري الحفظ...
+              </>
+            ) : (
+              "حفظ التعديلات"
+            )}
+          </Button>
+        </div>
       </form>
     </PopupForm>
   );
