@@ -180,10 +180,10 @@ const navigationGroups = [
         name: "Employees",
         href: "/employees",
         icon: Users,
-        allowed: ["admin", "employee"],
+        allowed: ["admin"],
       },
     ],
-    allowed: ["admin", "employee"],
+    allowed: ["admin"],
   },
 ];
 
