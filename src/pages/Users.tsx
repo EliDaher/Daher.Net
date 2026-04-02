@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import getWifiCustomers, { deleteCustomer } from "@/services/wifi";
 import {
   Users as UsersIcon,
@@ -164,11 +159,11 @@ export default function Users() {
       setSelectedDealer(daherUser.username);
     }
   }, []);
-  
+
   // const customer = customers.find(
   //   c => c.id === customerToDelete?.id
   // );
-    /* ================= WHATSAPP ================= */
+  /* ================= WHATSAPP ================= */
 
   const handleWhatsApp = (customer) => {
     if (!customer?.Contact) {
@@ -182,20 +177,17 @@ export default function Users() {
     }
 
     const phone = customer.Contact.replace(/\D/g, "");
-const message = `عزيزي المشترك ${customer.Name}،
+    const message = `عزيزي المشترك ${customer.Name}، قيمة فاتورتك الحالية هي: ${
+      customer.Balance * -1
+    } دولار.
+يرجى التسديد قبل تاريخ 8-4-2026 لضمان استمرار الخدمة دون انقطاع.
+شكرًا لثقتك بخدماتنا.`;
 
-نحيطكم علمًا بأن قيمة فاتورتكم الحالية هي: ${customer.Balance * -1} دولار.
-
-وبمناسبة حلول شهر رمضان المبارك، وحرصًا منا على راحتكم، تم تأجيل القطع المالي إلى ما بعد انتهاء شهر رمضان الكريم، وذلك تقديرًا لعملائنا الكرام.
-
-نسأل الله أن يعيده عليكم بالخير واليمن والبركات، وأن يتقبل منكم الصيام والقيام.  
-كل عام وأنتم بخير، وشكرًا لثقتكم الدائمة بخدماتنا.`;
     window.open(
       `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
       "_blank",
     );
   };
-
 
   return (
     <DashboardLayout>
@@ -500,29 +492,29 @@ const message = `عزيزي المشترك ${customer.Name}،
                           </p>
                         )}
                       </CardContent>
-                      {daherUser.username == "elidaher" || daherUser.username == "andreh" && (
-                        <>
-                        <Button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setCustomerToDelete(customer);
-                            setDeleteIsOpen(true);
-                          }}
-                          variant="destructive"
-                          className="w-full rounded-t-none rounded-b-lg"
-                        >
-                          حذف
-                        </Button>
+                      {(['elidaher', 'andreh'].includes(daherUser.username) && (
+                          <>
+                            <Button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setCustomerToDelete(customer);
+                                setDeleteIsOpen(true);
+                              }}
+                              variant="destructive"
+                              className="w-full rounded-t-none rounded-b-lg"
+                            >
+                              حذف
+                            </Button>
 
-               <Button 
-               variant="outline" 
-               className="w-full bg-green-500"
-               onClick={() => handleWhatsApp(customer)}>
-            واتساب
-          </Button>
-                        </>
-                        
-                      )}
+                            <Button
+                              variant="outline"
+                              className="w-full bg-green-500"
+                              onClick={() => handleWhatsApp(customer)}
+                            >
+                              واتساب
+                            </Button>
+                          </>
+                        ))}
                     </Card>
                   ))}
                 </div>
