@@ -31,7 +31,7 @@ type InvoiceItem = {
   quantity: number;
 };
 
-const apiBase = "https://paynet-1.onrender.com";
+const apiBase = "https://paynet-0dzj.onrender.com";
 
 export default function ViewProduct() {
   const [products, setProducts] = useState<Product[]>([]);

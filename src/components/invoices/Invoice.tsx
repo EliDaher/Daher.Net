@@ -63,7 +63,7 @@ export default function Invoice({ items, setItems }) {
     setLoading(true);
     console.log({items , total , customerName , customerPhone});
     try {
-      const res = await axios.post("https://paynet-1.onrender.com/api/invoice/create-invoice", {
+      const res = await axios.post("https://paynet-0dzj.onrender.com/api/invoice/create-invoice", {
         items: items,
         total: total,
         customerName: customerName,

@@ -60,7 +60,7 @@ export default function AddPosProduct({
     try {
       setUploading(true);
 
-      const apiBase = "https://paynet-1.onrender.com";
+      const apiBase = "https://paynet-0dzj.onrender.com";
 
       await axios.post(`${apiBase}/api/product/add`, {
         name: data.name,

@@ -62,7 +62,7 @@ export default function ViewBillsDetails() {
 
     const fetchBillDetails = async () => {
         try {
-            const res = await axios.get(`https://paynet-1.onrender.com/api/invoice/viewBills/${id}`);
+            const res = await axios.get(`https://paynet-0dzj.onrender.com/api/invoice/viewBills/${id}`);
             setBill(res.data);
             setItems(res.data.items);
             setPayments(res.data.payments || []);
@@ -74,7 +74,7 @@ export default function ViewBillsDetails() {
         try {
             const isConfirm = window.confirm('هل انت متاكد من حذف الفاتورة؟');
             if (!isConfirm) return;
-            await axios.delete(`https://paynet-1.onrender.com/api/invoice/delete-bill-items/${id}/delete-item/${itemId}`);
+            await axios.delete(`https://paynet-0dzj.onrender.com/api/invoice/delete-bill-items/${id}/delete-item/${itemId}`);
             toast.success('تم حذف الفاتورة بنجاح');
             setItems(prev => prev.filter(item => item._id !== itemId));
         } catch (err) {
@@ -86,7 +86,7 @@ export default function ViewBillsDetails() {
         fetchBillDetails();
     }, [id]);
 
-    const apiBase = "https://paynet-1.onrender.com";
+    const apiBase = "https://paynet-0dzj.onrender.com";
 
     const fetchProduct = async () => {
         try {
@@ -104,7 +104,7 @@ export default function ViewBillsDetails() {
         e.preventDefault();
         try {
             setLoading(true);
-            await axios.post(`https://paynet-1.onrender.com/api/invoice/new-payment/${id}`, {
+            await axios.post(`https://paynet-0dzj.onrender.com/api/invoice/new-payment/${id}`, {
                 amount: paymentValue,
                 date: paymentDate,
                 details: paymentDetails,
@@ -128,7 +128,7 @@ export default function ViewBillsDetails() {
         try {
             const isConfirm = window.confirm('هل انت متاكد من حذف الدفعة؟');
             if (!isConfirm) return;
-            await axios.delete(`https://paynet-1.onrender.com/api/invoice/delete-payment/${id}/delete-payment/${paymentId}`);
+            await axios.delete(`https://paynet-0dzj.onrender.com/api/invoice/delete-payment/${id}/delete-payment/${paymentId}`);
             toast.success('تم حذف الدفعة بنجاح');
             setPayments(prev => prev.filter(payment => payment._id !== paymentId));
         } catch (err) {
