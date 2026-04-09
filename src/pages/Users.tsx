@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import getWifiCustomers, { deleteCustomer } from "@/services/wifi";
@@ -8,10 +8,12 @@ import {
   LayoutGrid,
   Plus,
   Loader2,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -27,11 +29,28 @@ import { socket } from "@/contexts/socket";
 import UsersPopForm from "@/components/customers/UsersPopForm";
 import { toast } from "sonner";
 
+type BulkStateResultItem = {
+  ok?: boolean;
+  username?: string;
+  message?: string;
+};
+
+type BulkStateResult = {
+  ok?: boolean;
+  requestId?: string;
+  message?: string;
+  requested_count?: number;
+  success_count?: number;
+  failed_count?: number;
+  results?: BulkStateResultItem[];
+};
+
 export default function Users() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const daherUser = JSON.parse(localStorage.getItem("DaherUser"));
+  const daherUser = JSON.parse(localStorage.getItem("DaherUser") || "null");
+  const isAdmin = (daherUser?.role as string)?.includes("admin");
 
   const [error, setError] = useState("");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
@@ -51,19 +70,173 @@ export default function Users() {
   const queryClient = useQueryClient();
 
   const [activeData, setActiveData] = useState([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedUsernames, setSelectedUsernames] = useState<Set<string>>(
+    new Set(),
+  );
+  const [isSubmittingDeactivate, setIsSubmittingDeactivate] = useState(false);
+  const [pendingRequestId, setPendingRequestId] = useState<string | null>(null);
+
+  const submitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRequestIdRef = useRef<string | null>(null);
+
+  const requestActiveUsers = () => {
+    socket.emit("getActive");
+  };
+
+  const clearSubmitTimeout = () => {
+    if (submitTimeoutRef.current) {
+      clearTimeout(submitTimeoutRef.current);
+      submitTimeoutRef.current = null;
+    }
+  };
+
+  const getPPPUsername = (customer: any) => (customer?.UserName || "").trim();
+
+  const toggleSelectedUsername = (username: string) => {
+    if (!username) return;
+
+    setSelectedUsernames((prev) => {
+      const next = new Set(prev);
+      if (next.has(username)) {
+        next.delete(username);
+      } else {
+        next.add(username);
+      }
+      return next;
+    });
+  };
+
+  const startSelectionMode = () => {
+    if (viewMode !== "cards") {
+      toast.info("Please switch to cards view first.");
+      return;
+    }
+
+    setIsSelectionMode(true);
+  };
+
+  const cancelSelectionMode = () => {
+    if (isSubmittingDeactivate) return;
+
+    clearSubmitTimeout();
+    setIsSelectionMode(false);
+    setSelectedUsernames(new Set());
+    setIsSubmittingDeactivate(false);
+    setPendingRequestId(null);
+    pendingRequestIdRef.current = null;
+  };
+
+  const submitDeactivateSelection = () => {
+    if (!isAdmin) return;
+
+    const usernames = Array.from(selectedUsernames)
+      .map((name) => name.trim())
+      .filter(Boolean);
+
+    if (usernames.length === 0) {
+      toast.warning("Select at least one user.");
+      return;
+    }
+
+    const requestId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    setIsSubmittingDeactivate(true);
+    setPendingRequestId(requestId);
+    pendingRequestIdRef.current = requestId;
+
+    clearSubmitTimeout();
+    submitTimeoutRef.current = setTimeout(() => {
+      setIsSubmittingDeactivate(false);
+      setPendingRequestId(null);
+      pendingRequestIdRef.current = null;
+      toast.error("Deactivate request timed out. Please try again.");
+    }, 18000);
+
+    socket.emit("setPPPUsersState", {
+      requestId,
+      usernames,
+      desired_disabled: true,
+    });
+  };
 
   useEffect(() => {
-    socket.emit("getActive");
+    requestActiveUsers();
 
     const handleReturnActive = (data) => {
-      const parsedData = JSON.parse(data.ActivePPP.data);
-      setActiveData(parsedData);
+      try {
+        const parsedData = JSON.parse(data?.ActivePPP?.data || "[]");
+        setActiveData(Array.isArray(parsedData) ? parsedData : []);
+      } catch (_error) {
+        setActiveData([]);
+      }
     };
     socket.on("returnActivePPP", handleReturnActive);
 
     return () => {
       // فقط نفصل الحدث، لا نقطع الاتصال
       socket.off("returnActivePPP", handleReturnActive);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleSetStateResult = (result: BulkStateResult) => {
+      const activeRequestId = pendingRequestIdRef.current;
+      if (!activeRequestId) return;
+      if (result?.requestId !== activeRequestId) return;
+
+      clearSubmitTimeout();
+      setIsSubmittingDeactivate(false);
+      setPendingRequestId(null);
+      pendingRequestIdRef.current = null;
+
+      const results = result?.results || [];
+      const requestedCount = result?.requested_count ?? results.length;
+      const successCount =
+        result?.success_count ?? results.filter((item) => item?.ok).length;
+      const failedCount =
+        result?.failed_count ?? Math.max(requestedCount - successCount, 0);
+      const hasTopLevelError = result?.ok === false && failedCount === 0;
+
+      if (hasTopLevelError) {
+        toast.error(result?.message || "Deactivate request failed.");
+        return;
+      } else if (failedCount > 0) {
+        const firstError = results.find((item) => !item?.ok)?.message;
+        toast.error(
+          `Deactivate finished with errors (${successCount}/${requestedCount}).${
+            firstError ? ` ${firstError}` : ""
+          }`,
+        );
+      } else {
+        toast.success(`Deactivated ${successCount} user(s) successfully.`);
+      }
+
+      const failedUsernames = new Set(
+        results
+          .filter((item) => !item?.ok && item?.username)
+          .map((item) => String(item.username).trim())
+          .filter(Boolean),
+      );
+
+      if (failedUsernames.size > 0) {
+        setSelectedUsernames(failedUsernames);
+      } else {
+        setSelectedUsernames(new Set());
+        setIsSelectionMode(false);
+      }
+
+      requestActiveUsers();
+    };
+
+    socket.on("setPPPUsersStateResult", handleSetStateResult);
+
+    return () => {
+      socket.off("setPPPUsersStateResult", handleSetStateResult);
+      clearSubmitTimeout();
     };
   }, []);
 
@@ -155,7 +328,7 @@ export default function Users() {
   };
 
   useEffect(() => {
-    if (daherUser.role == "dealer") {
+    if (daherUser?.role == "dealer") {
       setSelectedDealer(daherUser.username);
     }
   }, []);
@@ -250,25 +423,66 @@ export default function Users() {
               </Button>
               <Button
                 variant={viewMode === "table" ? "default" : "outline"}
-                onClick={() => setViewMode("table")}
+                onClick={() => {
+                  if (isSelectionMode) {
+                    toast.info(
+                      "Cancel selection mode before switching to table view.",
+                    );
+                    return;
+                  }
+                  setViewMode("table");
+                }}
               >
                 <Table className="w-4 h-4 mr-2" />
                 عرض كجدول
               </Button>
 
-              {(daherUser?.role as string).includes("admin") && (
-                <UsersPopForm
-                  userList={activeData?.filter((p) => {
-                    const pUser = (p.name as string)
-                      .split("@")[0]
-                      .trim()
-                      .toLowerCase();
+              {isAdmin && (
+                <>
+                  {!isSelectionMode ? (
+                    <Button variant="destructive" onClick={startSelectionMode}>
+                      ابدا اختيار المستخدمين لايقافهم
+                    </Button>
+                  ) : (
+                    <>
+                      <span className="inline-flex items-center rounded-md border border-destructive/40 px-3 text-sm">
+                        Selected: {selectedUsernames.size}
+                        {pendingRequestId ? " | pending" : ""}
+                      </span>
+                      <Button
+                        variant="destructive"
+                        onClick={submitDeactivateSelection}
+                        disabled={
+                          isSubmittingDeactivate || selectedUsernames.size === 0
+                        }
+                      >
+                        {isSubmittingDeactivate
+                          ? "جاري التأكيد..."
+                          : "تأكيد إيقاف المستخدمين المحددين"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={cancelSelectionMode}
+                        disabled={isSubmittingDeactivate}
+                      >
+                        إلغاء
+                      </Button>
+                    </>
+                  )}
 
-                    return !customers.some(
-                      (c) => c.UserName.trim().toLowerCase() === pUser,
-                    );
-                  })}
-                />
+                  <UsersPopForm
+                    userList={activeData?.filter((p) => {
+                      const pUser = (p.name as string)
+                        .split("@")[0]
+                        .trim()
+                        .toLowerCase();
+
+                      return !customers?.some(
+                        (c) => c.UserName.trim().toLowerCase() === pUser,
+                      );
+                    })}
+                  />
+                </>
               )}
             </div>
           </div>
@@ -375,7 +589,7 @@ export default function Users() {
                   <label htmlFor="">البائع</label>
                   {/* السرعة */}
                   <Select
-                    disabled={daherUser.role == "dealer" ? true : false}
+                    disabled={daherUser?.role == "dealer" ? true : false}
                     value={selectedDealer}
                     onValueChange={setSelectedDealer}
                   >
@@ -439,7 +653,15 @@ export default function Users() {
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
                 >
                   {currentItems?.map((customer) => (
-                    <Card key={customer.id} className="shadow-sm">
+                    <Card
+                      key={customer.id}
+                      className={`shadow-sm ${
+                        isSelectionMode &&
+                        selectedUsernames.has(getPPPUsername(customer))
+                          ? "ring-2 ring-destructive/70"
+                          : ""
+                      }`}
+                    >
                       <CardContent
                         className={`p-4 space-y-1 ${
                           activeData?.some((ppp) =>
@@ -449,6 +671,11 @@ export default function Users() {
                             : ""
                         }`}
                         onClick={() => {
+                          if (isSelectionMode) {
+                            toggleSelectedUsername(getPPPUsername(customer));
+                            return;
+                          }
+
                           navigate(`/CustomerDetails/${customer.id}`, {
                             state:
                               activeData?.find((ppp) => {
@@ -464,6 +691,31 @@ export default function Users() {
                           });
                         }}
                       >
+                        {isSelectionMode && (
+                          <div className="mb-2 flex items-center justify-between rounded-md border border-dashed px-2 py-1">
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                checked={selectedUsernames.has(
+                                  getPPPUsername(customer),
+                                )}
+                                onCheckedChange={() =>
+                                  toggleSelectedUsername(getPPPUsername(customer))
+                                }
+                                onClick={(event) => event.stopPropagation()}
+                              />
+                              <span className="text-xs text-muted-foreground">
+                                {selectedUsernames.has(
+                                  getPPPUsername(customer),
+                                )
+                                  ? "Selected"
+                                  : "Click to select"}
+                              </span>
+                            </div>
+                            {selectedUsernames.has(getPPPUsername(customer)) && (
+                              <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            )}
+                          </div>
+                        )}
                         <p>
                           <strong>الاسم:</strong> {customer.Name}
                         </p>
@@ -492,7 +744,7 @@ export default function Users() {
                           </p>
                         )}
                       </CardContent>
-                      {(['elidaher', 'andreh'].includes(daherUser.username) && (
+                      {(['elidaher', 'andreh'].includes(daherUser?.username) && (
                           <>
                             <Button
                               onClick={(e) => {
