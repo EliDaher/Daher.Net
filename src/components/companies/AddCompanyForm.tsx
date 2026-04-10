@@ -13,9 +13,14 @@ type AddCompanyFormValues = {
   balanceLimit: number;
 };
 
-export default function AddCompanyForm({ isOpen, setIsOpen }) {
-  const queryClient = useQueryClient();
+type Props = {
+  isOpen: boolean;
+  setIsOpen: (value: boolean) => void;
+  trigger?: React.ReactNode;
+};
 
+export default function AddCompanyForm({ isOpen, setIsOpen, trigger }: Props) {
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -33,7 +38,7 @@ export default function AddCompanyForm({ isOpen, setIsOpen }) {
   const addCompanyMutation = useMutation({
     mutationFn: (data: AddCompanyFormValues) => addCompany(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["company-table"] });
+      queryClient.invalidateQueries({ queryKey: ["companies-table"] });
       reset();
       setIsOpen(false);
     },
@@ -48,14 +53,14 @@ export default function AddCompanyForm({ isOpen, setIsOpen }) {
 
   return (
     <PopupForm
-      trigger={<Button
-        className="absolute right-5 bottom-5 z-50"
-      >
-        اضافة شركة جديدة
-      </Button>}
+      trigger={
+        trigger ?? (
+          <Button className="fixed bottom-5 right-5 z-50">إضافة شركة جديدة</Button>
+        )
+      }
       isOpen={isOpen}
       setIsOpen={setIsOpen}
-      title="اضافة شركة جديدة"
+      title="إضافة شركة جديدة"
     >
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="flex flex-col gap-4">

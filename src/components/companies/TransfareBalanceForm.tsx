@@ -62,7 +62,7 @@ export default function TransfareBalanceForm({
         amount: data.amount,
         reason: data.reason || "تحويل رصيد",
         company: companyName,
-        number: 56315, // يمكنك لاحقًا تمريرها من props
+        number: 56315,
         companyId,
         port: daherUser?.username || "",
       };
@@ -71,7 +71,7 @@ export default function TransfareBalanceForm({
     },
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["company-table"] });
+      queryClient.invalidateQueries({ queryKey: ["companies-table"] });
       reset();
       setIsOpen(false);
     },
@@ -88,7 +88,7 @@ export default function TransfareBalanceForm({
   return (
     <PopupForm
       title={`تحويل رصيد ${companyName}`}
-      trigger={<Button>تحويل رصيد</Button>}
+      trigger={<Button className="w-full">تحويل رصيد</Button>}
       isOpen={isOpen}
       setIsOpen={setIsOpen}
     >

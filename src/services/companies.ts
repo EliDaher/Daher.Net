@@ -12,6 +12,52 @@ interface BalancePayload {
   paymentNote?: string;
 }
 
+export interface CompanyDetailsResponse {
+  company: {
+    id: string;
+    name: string;
+    balance: number;
+    balanceLimit: number;
+    createdAt: string | null;
+    lastUpdate: string | null;
+  };
+  month: string;
+  summary: {
+    totalSpentAmount: number;
+    operationsCount: number;
+    averageDailySpent: number;
+  };
+  dailyUsage: Array<{
+    date: string;
+    amount: number;
+    count: number;
+  }>;
+  recentUsageLogs: Array<{
+    id: string;
+    dateKey: string;
+    date?: string;
+    amount: number;
+    type: string;
+    reason?: string;
+    number?: string;
+    port?: string;
+    beforeBalance?: number;
+    afterBalance?: number;
+  }>;
+  recentIncreaseLogs: Array<{
+    id: string;
+    dateKey: string;
+    date?: string;
+    amount: number;
+    type: string;
+    reason?: string;
+    number?: string;
+    port?: string;
+    beforeBalance?: number;
+    afterBalance?: number;
+  }>;
+}
+
 function getErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError(error)) {
     return error.response?.data?.message || error.message || fallback;
@@ -121,5 +167,20 @@ export async function getCompaniesLogs({
     return Object.values(response.data.logs);
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to get company logs"));
+  }
+}
+
+export async function getCompanyDetails(
+  companyId: string,
+  month: string,
+): Promise<CompanyDetailsResponse> {
+  try {
+    const response = await apiClient.get(`/api/company/${companyId}/details`, {
+      params: { month },
+    });
+
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to get company details"));
   }
 }

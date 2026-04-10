@@ -5,6 +5,7 @@ import UpdatePriceDetails from "./pages/UpdatePriceDetails";
 
 const POSUsers = lazy(() => import("@/pages/POSUsers"));
 const Companies = lazy(() => import("@/pages/Companies"));
+const CompanyDetails = lazy(() => import("@/pages/CompanyDetails"));
 const CompaniesLogs = lazy(() => import("@/pages/CompaniesLogs"));
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Analytics = lazy(() => import("@/pages/Analytics"));
@@ -129,6 +130,10 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/companies/logs",
     element: withPrivateRoute(<CompaniesLogs />, ["admin", "employee"]),
+  },
+  {
+    path: "/companies/:companyId",
+    element: withPrivateRoute(<CompanyDetails />, ["admin", "employee"]),
   },
   {
     path: "/companies",

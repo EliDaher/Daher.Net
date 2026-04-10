@@ -33,7 +33,6 @@ export default function CompanyIncreaseForm({
 }: Props) {
   const queryClient = useQueryClient();
 
-  // ✅ Safe localStorage access
   const daherUser = useMemo(() => {
     if (typeof window === "undefined") return null;
     const user = localStorage.getItem("DaherUser");
@@ -59,7 +58,6 @@ export default function CompanyIncreaseForm({
     },
   });
 
-  // ✅ Update form when company changes
   useEffect(() => {
     if (!companyId) return;
 
@@ -70,7 +68,7 @@ export default function CompanyIncreaseForm({
   const increaseBalanceMutation = useMutation({
     mutationFn: (data: CompanyIncreaseFormValues) => increaseBalance(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["company-table"] });
+      queryClient.invalidateQueries({ queryKey: ["companies-table"] });
       reset();
       setIsOpen(false);
     },
@@ -85,11 +83,11 @@ export default function CompanyIncreaseForm({
 
   return (
     <PopupForm
-      trigger=<>
-        <Button variant="outline">
+      trigger={
+        <Button variant="outline" className="w-full">
           زيادة رصيد شركة
         </Button>
-      </>
+      }
       isOpen={isOpen}
       setIsOpen={setIsOpen}
       title="زيادة رصيد شركة"
