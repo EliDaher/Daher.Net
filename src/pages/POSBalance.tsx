@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, RefreshCw, Scale, ShieldAlert, Wallet, Users } from "lucide-react";
+import { AlertTriangle, RefreshCw, Scale, ShieldAlert, TrendingUp, Wallet, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { DataTable } from "@/components/dashboard/DataTable";
@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { getStoredUser } from "@/lib/auth";
 import getPOSUsers, { addPOSPayment, endPOSDebt, getPOSDebt } from "@/services/pos";
 import { buildPosKey, getPOSLimits, type PosLimitRecord, upsertPOSLimit } from "@/services/posLimits";
+import { getPosProfitLogs } from "@/services/profitLogs";
 
 type PosUser = {
   _id: string;
@@ -46,6 +47,7 @@ type StatusFilter = "all" | "low";
 const USERS_QUERY_KEY = ["POSBalance-users"];
 const DEBTS_QUERY_KEY = ["POSBalance-debts"];
 const LIMITS_QUERY_KEY = ["POSBalance-limits"];
+const PROFIT_LOGS_QUERY_KEY = ["POSBalance-profit-logs"];
 
 function toNumber(value: unknown) {
   const normalized = Number(value);
@@ -105,6 +107,12 @@ export default function POSBalance() {
   const posLimitsQuery = useQuery({
     queryKey: LIMITS_QUERY_KEY,
     queryFn: getPOSLimits,
+    refetchInterval: 10_000,
+  });
+
+  const profitLogsQuery = useQuery({
+    queryKey: PROFIT_LOGS_QUERY_KEY,
+    queryFn: getPosProfitLogs,
     refetchInterval: 10_000,
   });
 
@@ -269,23 +277,55 @@ export default function POSBalance() {
     [rows],
   );
 
+  const profitLogsRows = useMemo(() => {
+    return (profitLogsQuery.data?.logs || []).map((log) => ({
+      _id: log.id,
+      invoiceId: log.invoiceId,
+      amount: Number(log.amount || 0),
+      profitAmount: Number(log.profitAmount || 0),
+      company: log.company || "-",
+      email: log.email || "-",
+      operator: log.operator || "-",
+      createdAt: log.createdAt,
+    }));
+  }, [profitLogsQuery.data?.logs]);
+
+  const totalProfitAmount = useMemo(
+    () => Number(profitLogsQuery.data?.summary?.totalProfitAmount || 0),
+    [profitLogsQuery.data?.summary?.totalProfitAmount],
+  );
+
   const latestRefresh = useMemo(() => {
     return Math.max(
       posUsersQuery.dataUpdatedAt || 0,
       posDebtsQuery.dataUpdatedAt || 0,
       posLimitsQuery.dataUpdatedAt || 0,
+      profitLogsQuery.dataUpdatedAt || 0,
     );
-  }, [posDebtsQuery.dataUpdatedAt, posLimitsQuery.dataUpdatedAt, posUsersQuery.dataUpdatedAt]);
+  }, [
+    posDebtsQuery.dataUpdatedAt,
+    posLimitsQuery.dataUpdatedAt,
+    posUsersQuery.dataUpdatedAt,
+    profitLogsQuery.dataUpdatedAt,
+  ]);
 
-  const isLoading = posUsersQuery.isLoading || posDebtsQuery.isLoading || posLimitsQuery.isLoading;
+  const isLoading =
+    posUsersQuery.isLoading ||
+    posDebtsQuery.isLoading ||
+    posLimitsQuery.isLoading ||
+    profitLogsQuery.isLoading;
   const isRefreshing =
-    posUsersQuery.isFetching || posDebtsQuery.isFetching || posLimitsQuery.isFetching;
+    posUsersQuery.isFetching ||
+    posDebtsQuery.isFetching ||
+    posLimitsQuery.isFetching ||
+    profitLogsQuery.isFetching;
 
   const handleManualRefresh = async () => {
     await Promise.all([
       posUsersQuery.refetch(),
       posDebtsQuery.refetch(),
       posLimitsQuery.refetch(),
+      profitLogsQuery.refetch(),
     ]);
     toast.success("POS balance data refreshed.");
   };
@@ -337,7 +377,7 @@ export default function POSBalance() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Total POS Users</CardDescription>
@@ -375,6 +415,16 @@ export default function POSBalance() {
             </CardHeader>
             <CardContent className="pt-0 text-muted-foreground">
               <Scale className="h-4 w-4" />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total POS Profit</CardDescription>
+              <CardTitle className="text-2xl">{formatNumber(totalProfitAmount)}</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 text-emerald-600">
+              <TrendingUp className="h-4 w-4" />
             </CardContent>
           </Card>
         </div>
@@ -543,6 +593,22 @@ export default function POSBalance() {
               </div>
             );
           }}
+        />
+
+        <DataTable
+          title="POS Profit Logs"
+          description={`Logs: ${profitLogsQuery.data?.summary?.count || 0}`}
+          columns={[
+            { key: "invoiceId", label: "Invoice ID", sortable: true },
+            { key: "amount", label: "Amount", sortable: true },
+            { key: "profitAmount", label: "Profit", sortable: true },
+            { key: "company", label: "Company", sortable: true },
+            { key: "email", label: "Email", sortable: true },
+            { key: "operator", label: "Operator", sortable: true },
+            { key: "createdAt", label: "Created At", sortable: true },
+          ]}
+          data={profitLogsRows}
+          isLoading={profitLogsQuery.isLoading}
         />
 
         {lowBalanceCount > 0 && (

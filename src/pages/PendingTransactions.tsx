@@ -16,6 +16,7 @@ import getPendingInvoices, {
   rejectInvoice,
   startPayment,
 } from "@/services/invoices";
+import { createPosProfitLog } from "@/services/profitLogs";
 
 interface PendingTransaction {
   _id: string;
@@ -48,6 +49,11 @@ interface DecreaseBalancePayload {
   number: string;
   companyId: string;
   port: string;
+}
+
+interface ConfirmInvoiceMutationPayload {
+  id: string;
+  row: PendingTransaction;
 }
 
 const REJECTION_FORM_TITLE = "سبب الغاء العملية";
@@ -98,9 +104,23 @@ export default function PendingTransactions() {
   }, [error, isError, navigate]);
 
   const confirmMutation = useMutation({
-    mutationFn: confirmInvoice,
-    onSuccess: () => {
+    mutationFn: ({ id }: ConfirmInvoiceMutationPayload) => confirmInvoice(id),
+    onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: ["pending-table"] });
+
+      const row = variables.row;
+
+      void createPosProfitLog({
+        invoiceId: row._id,
+        amount: Number(row.amount || 0),
+        company: row.company,
+        email: row.email,
+        number: row.landline || row.number || "",
+        operator: currentUser?.username || "",
+        source: "pending_transactions",
+      }).catch((error) => {
+        console.error("POS profit log failed:", error);
+      });
     },
   });
 
@@ -156,7 +176,7 @@ export default function PendingTransactions() {
       return;
     }
 
-    confirmMutation.mutate(row._id);
+    confirmMutation.mutate({ id: row._id, row });
     decreaseBalanceMutation.mutate({
       amount: row.amount,
       reason: "",
