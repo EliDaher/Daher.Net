@@ -230,7 +230,7 @@ export default function Companies() {
             </CardContent>
           </Card>
 
-          {/* <Card>
+          <Card>
             <CardHeader className="pb-2">
               <CardDescription>مجموع الأرصدة</CardDescription>
               <CardTitle className="text-2xl">{formatNumber(totalBalance)}</CardTitle>
@@ -241,7 +241,7 @@ export default function Companies() {
                 رصيد تراكمي لكل الشركات
               </div>
             </CardContent>
-          </Card> */}
+          </Card>
 
           <Card>
             <CardHeader className="pb-2">

@@ -110,6 +110,12 @@ const navigationGroups = [
         icon: ArrowDownCircle,
         allowed: ["admin", "employee"],
       },
+      // {
+      //   name: "POS Balance",
+      //   href: "/POSBalance",
+      //   icon: WalletIcon,
+      //   allowed: ["admin"],
+      // },
       {
         name: "Update Prices",
         href: "/UpdatePrices",

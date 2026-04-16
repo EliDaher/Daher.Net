@@ -10,7 +10,7 @@ interface PendingPayment {
 
 const PENDING_PAYMENTS_QUERY_KEY = ["pending-table"];
 const PAYMENTS_SOCKET_URL =
-  import.meta.env.VITE_INVOICE_SOCKET_URL || "https://paynet-0dzj.onrender.com";
+  import.meta.env.VITE_INVOICE_SOCKET_URL || "https://paynet-1.onrender.com";
 
 function requestNotificationPermission() {
   if (!("Notification" in window) || Notification.permission !== "default") {

@@ -22,6 +22,7 @@ const MyBalance = lazy(() => import("@/pages/MyBalance"));
 const PendingTransactions = lazy(() => import("@/pages/PendingTransactions"));
 const DoneTransactions = lazy(() => import("@/pages/DoneTransactions"));
 const POSPayments = lazy(() => import("@/pages/POSPayments"));
+const POSBalance = lazy(() => import("@/pages/POSBalance"));
 const BillBalance = lazy(() => import("@/pages/BillBalance"));
 const ViewProduct = lazy(() => import("@/pages/ViewProduct"));
 const InquiryLogs = lazy(() => import("@/pages/InquiryLogs"));
@@ -102,6 +103,10 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/POSPayments",
     element: withPrivateRoute(<POSPayments />, ["admin", "employee"]),
+  },
+  {
+    path: "/POSBalance",
+    element: withPrivateRoute(<POSBalance />, ["admin"]),
   },
   {
     path: "/UpdatePrices",
