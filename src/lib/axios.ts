@@ -1,4 +1,5 @@
 import axios from "axios";
+import { logoutClientSession } from "@/lib/auth";
 
 // Create axios instance with default config
 export const apiClient = axios.create({
@@ -53,7 +54,7 @@ invoiceClient.interceptors.response.use(
     // Handle common errors
     if (error.response?.status === 401) {
       // Handle unauthorized access
-      localStorage.removeItem("auth_token");
+      logoutClientSession({ broadcast: true });
       window.location.href = "/Daher.Net/#/login";
     }
 

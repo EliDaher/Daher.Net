@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { routesConfig } from "./RoutesConfig";
 import { CompaniesProvider } from "./contexts/CompaniesProvider";
 import { Toaster } from "sonner";
+import { SessionIdleManager } from "@/components/auth/SessionIdleManager";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,6 +24,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster richColors position="bottom-right" duration={2500} />
           <HashRouter>
+            <SessionIdleManager />
             <Suspense
               fallback={<div className="p-10 text-center">Loading...</div>}
             >

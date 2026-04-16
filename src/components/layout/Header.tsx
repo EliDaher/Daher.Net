@@ -11,7 +11,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useNavigate } from "react-router-dom";
-import { clearStoredUser, getStoredUser } from "@/lib/auth";
+import { getStoredUser, logoutClientSession } from "@/lib/auth";
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -66,7 +66,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
                 <DropdownMenuItem>Settings</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={()=>{
-                  clearStoredUser();
+                  logoutClientSession({ broadcast: true });
                   navigate('/login')
                 }}>Log out</DropdownMenuItem>
               </DropdownMenuContent>
