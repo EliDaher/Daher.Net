@@ -9,6 +9,7 @@ type CreatePosProfitLogPayload = {
   number?: string;
   operator?: string;
   source: "pending_transactions";
+  operationState?: string;
 };
 
 export type PosProfitLogRecord = {
@@ -22,6 +23,7 @@ export type PosProfitLogRecord = {
   number?: string;
   operator?: string;
   source: "pending_transactions";
+  operationState?: string;
   createdAt: string;
   dateKey: string;
 };
@@ -33,6 +35,12 @@ type PosProfitLogsResponse = {
     totalAmount: number;
     count: number;
   };
+};
+
+type GetPosProfitLogsParams = {
+  fromDate?: string;
+  toDate?: string;
+  limit?: number;
 };
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -56,9 +64,9 @@ export async function createPosProfitLog(payload: CreatePosProfitLogPayload) {
   }
 }
 
-export async function getPosProfitLogs() {
+export async function getPosProfitLogs(params: GetPosProfitLogsParams = {}) {
   try {
-    const response = await apiClient.get("/api/profit-logs/pos");
+    const response = await apiClient.get("/api/profit-logs/pos", { params });
     return (response.data?.data || {
       logs: [],
       summary: { totalProfitAmount: 0, totalAmount: 0, count: 0 },

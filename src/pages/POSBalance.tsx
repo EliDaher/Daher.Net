@@ -1,6 +1,14 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, RefreshCw, Scale, ShieldAlert, TrendingUp, Wallet, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  RefreshCw,
+  Scale,
+  ShieldAlert,
+  TrendingUp,
+  Wallet,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { DataTable } from "@/components/dashboard/DataTable";
@@ -8,10 +16,20 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import PopupForm from "@/components/ui/custom/PopupForm";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { getStoredUser } from "@/lib/auth";
-import getPOSUsers, { addPOSPayment, endPOSDebt, getPOSDebt } from "@/services/pos";
-import { buildPosKey, getPOSLimits, type PosLimitRecord, upsertPOSLimit } from "@/services/posLimits";
+import getPOSUsers, {
+  addPOSPayment,
+  endPOSDebt,
+  getPOSBalanceReport,
+  getPOSDebt,
+} from "@/services/pos";
 import { getPosProfitLogs } from "@/services/profitLogs";
 
 type PosUser = {
@@ -19,6 +37,19 @@ type PosUser = {
   name?: string;
   email?: string;
   balance?: number | string;
+};
+
+type PosReport = {
+  _id?: string;
+  name?: string;
+  email?: string;
+  confirmedDeposits?: number | string;
+  expensesPaid?: number | string;
+  totalExpenses?: number | string;
+  expensesUnpaid?: number | string;
+  expensesInProgress?: number | string;
+  netBalance?: number | string;
+  POSbalance?: number | string;
 };
 
 type PosDebt = {
@@ -34,20 +65,22 @@ type PosBalanceRow = {
   name: string;
   email: string;
   balance: number;
-  minLimit: number;
+  confirmedDeposits: number;
+  expensesPaid: number;
+  netBalance: number;
+  difference: number;
+  isMatched: boolean;
   debtCount: number;
   debtTotal: number;
-  posKey: string;
-  limitUpdatedBy: string;
-  limitUpdatedAt: string;
 };
 
-type StatusFilter = "all" | "low";
+type StatusFilter = "all" | "mismatch";
 
 const USERS_QUERY_KEY = ["POSBalance-users"];
+const REPORT_QUERY_KEY = ["POSBalance-report"];
 const DEBTS_QUERY_KEY = ["POSBalance-debts"];
-const LIMITS_QUERY_KEY = ["POSBalance-limits"];
 const PROFIT_LOGS_QUERY_KEY = ["POSBalance-profit-logs"];
+const RECON_TOLERANCE = 0.01;
 
 function toNumber(value: unknown) {
   const normalized = Number(value);
@@ -70,8 +103,47 @@ function formatDateTime(timestamp: number) {
   return new Date(timestamp).toLocaleString("en-GB");
 }
 
-function isBelowLimit(balance: number, minLimit: number) {
-  return minLimit > 0 && balance < minLimit;
+function isMatchedDifference(difference: number) {
+  return Math.abs(difference) <= RECON_TOLERANCE;
+}
+
+function pickBestExpensesValue({
+  confirmedDeposits,
+  netBalance,
+  expensesPaid,
+  totalExpenses,
+  expensesUnpaid,
+  expensesInProgress,
+}: {
+  confirmedDeposits: number;
+  netBalance: number;
+  expensesPaid: number;
+  totalExpenses: number;
+  expensesUnpaid: number;
+  expensesInProgress: number;
+}) {
+  const candidates = Array.from(
+    new Set([
+      Math.max(expensesPaid, 0),
+      Math.max(totalExpenses - expensesUnpaid, 0),
+      Math.max(totalExpenses, 0),
+      Math.max(expensesPaid + expensesUnpaid, 0),
+      Math.max(expensesPaid + expensesInProgress, 0),
+    ]),
+  );
+
+  let best = candidates[0] ?? 0;
+  let bestDiff = Math.abs(confirmedDeposits - best - netBalance);
+
+  for (const candidate of candidates) {
+    const diff = Math.abs(confirmedDeposits - candidate - netBalance);
+    if (diff < bestDiff) {
+      best = candidate;
+      bestDiff = diff;
+    }
+  }
+
+  return best;
 }
 
 export default function POSBalance() {
@@ -80,17 +152,29 @@ export default function POSBalance() {
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [openTopupId, setOpenTopupId] = useState<string | null>(null);
-  const [openLimitId, setOpenLimitId] = useState<string | null>(null);
   const [openDebtId, setOpenDebtId] = useState<string | null>(null);
   const [topupAmount, setTopupAmount] = useState<number>(0);
-  const [limitAmount, setLimitAmount] = useState<number>(0);
   const [selectedDebtId, setSelectedDebtId] = useState<string>("");
+  const [profitFromDate, setProfitFromDate] = useState<string>("");
+  const [profitToDate, setProfitToDate] = useState<string>("");
+
+  const isProfitDateRangeValid =
+    !profitFromDate || !profitToDate || profitFromDate <= profitToDate;
 
   const posUsersQuery = useQuery({
     queryKey: USERS_QUERY_KEY,
     queryFn: async () => {
       const data = await getPOSUsers();
       return Array.isArray(data) ? (data as PosUser[]) : [];
+    },
+    refetchInterval: 10_000,
+  });
+
+  const posReportQuery = useQuery({
+    queryKey: REPORT_QUERY_KEY,
+    queryFn: async () => {
+      const data = await getPOSBalanceReport();
+      return Array.isArray(data) ? (data as PosReport[]) : [];
     },
     refetchInterval: 10_000,
   });
@@ -104,16 +188,16 @@ export default function POSBalance() {
     refetchInterval: 10_000,
   });
 
-  const posLimitsQuery = useQuery({
-    queryKey: LIMITS_QUERY_KEY,
-    queryFn: getPOSLimits,
-    refetchInterval: 10_000,
-  });
-
   const profitLogsQuery = useQuery({
-    queryKey: PROFIT_LOGS_QUERY_KEY,
-    queryFn: getPosProfitLogs,
+    queryKey: [...PROFIT_LOGS_QUERY_KEY, profitFromDate, profitToDate],
+    queryFn: () =>
+      getPosProfitLogs({
+        fromDate: profitFromDate || undefined,
+        toDate: profitToDate || undefined,
+        limit: 2000,
+      }),
     refetchInterval: 10_000,
+    enabled: isProfitDateRangeValid,
   });
 
   const topupMutation = useMutation({
@@ -132,6 +216,7 @@ export default function POSBalance() {
       setTopupAmount(0);
       setOpenTopupId(null);
       void queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: REPORT_QUERY_KEY });
       void queryClient.invalidateQueries({ queryKey: DEBTS_QUERY_KEY });
     },
     onError: (error) => {
@@ -159,54 +244,11 @@ export default function POSBalance() {
       setOpenDebtId(null);
       setSelectedDebtId("");
       void queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: REPORT_QUERY_KEY });
       void queryClient.invalidateQueries({ queryKey: DEBTS_QUERY_KEY });
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Failed to settle debt.");
-    },
-  });
-
-  const limitMutation = useMutation({
-    mutationFn: ({
-      posKey,
-      minBalance,
-      updatedBy,
-    }: {
-      posKey: string;
-      minBalance: number;
-      updatedBy: string;
-    }) => upsertPOSLimit({ posKey, minBalance, updatedBy }),
-    onMutate: async ({ posKey, minBalance, updatedBy }) => {
-      await queryClient.cancelQueries({ queryKey: LIMITS_QUERY_KEY });
-      const previousLimits = queryClient.getQueryData<PosLimitRecord[]>(LIMITS_QUERY_KEY) || [];
-
-      const optimisticRecord: PosLimitRecord = {
-        posKey,
-        minBalance,
-        updatedBy,
-        updatedAt: new Date().toISOString(),
-      };
-
-      queryClient.setQueryData<PosLimitRecord[]>(LIMITS_QUERY_KEY, (old = []) => {
-        const withoutCurrent = old.filter((item) => item.posKey !== posKey);
-        return [optimisticRecord, ...withoutCurrent];
-      });
-
-      return { previousLimits };
-    },
-    onSuccess: () => {
-      toast.success("Minimum limit updated.");
-      setOpenLimitId(null);
-    },
-    onError: (error, _variables, context) => {
-      if (context?.previousLimits) {
-        queryClient.setQueryData(LIMITS_QUERY_KEY, context.previousLimits);
-      }
-
-      toast.error(error instanceof Error ? error.message : "Failed to update limit.");
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: LIMITS_QUERY_KEY });
     },
   });
 
@@ -225,55 +267,98 @@ export default function POSBalance() {
     return output;
   }, [posDebtsQuery.data]);
 
-  const limitsByKey = useMemo(() => {
-    const output = new Map<string, PosLimitRecord>();
-    (posLimitsQuery.data || []).forEach((item) => {
-      output.set(item.posKey, item);
+  const usersByKey = useMemo(() => {
+    const output = new Map<string, PosUser>();
+    (posUsersQuery.data || []).forEach((user) => {
+      const emailKey = normalizeEmail(user.email);
+      const idKey = String(user._id || "");
+      const key = emailKey || idKey;
+      if (key) output.set(key, user);
     });
     return output;
-  }, [posLimitsQuery.data]);
+  }, [posUsersQuery.data]);
+
+  const reportByKey = useMemo(() => {
+    const output = new Map<string, PosReport>();
+    (posReportQuery.data || []).forEach((row) => {
+      const emailKey = normalizeEmail(row.email);
+      const idKey = String(row._id || "");
+      const key = emailKey || idKey;
+      if (key) output.set(key, row);
+    });
+    return output;
+  }, [posReportQuery.data]);
 
   const rows = useMemo<PosBalanceRow[]>(() => {
-    return (posUsersQuery.data || []).map((user) => {
-      const email = normalizeEmail(user.email);
-      const posKey = buildPosKey({ email, id: String(user._id || "") });
-      const matchingLimit = limitsByKey.get(posKey);
+    const allKeys = new Set<string>([...usersByKey.keys(), ...reportByKey.keys()]);
+
+    return [...allKeys].map((key) => {
+      const user = usersByKey.get(key);
+      const report = reportByKey.get(key);
+      const email = normalizeEmail(user?.email || report?.email);
       const userDebts = debtByEmail.get(email) || [];
       const debtTotal = userDebts.reduce((sum, debt) => sum + toNumber(debt.amount), 0);
-      const balance = toNumber(user.balance);
+
+      const confirmedDeposits = toNumber(report?.confirmedDeposits);
+      const rawExpensesPaid = toNumber(report?.expensesPaid);
+      const totalExpenses = toNumber(report?.totalExpenses);
+      const expensesUnpaid = toNumber(report?.expensesUnpaid);
+      const expensesInProgress = toNumber(report?.expensesInProgress);
+      const netBalance = toNumber(report?.netBalance);
+      const expensesPaid = pickBestExpensesValue({
+        confirmedDeposits,
+        netBalance,
+        expensesPaid: rawExpensesPaid,
+        totalExpenses,
+        expensesUnpaid,
+        expensesInProgress,
+      });
+      let difference = confirmedDeposits - expensesPaid - netBalance;
+
+      // If there are no successful operations yet, do not flag mismatch based on carry/opening/refund balance.
+      if (confirmedDeposits === 0 && expensesPaid === 0) {
+        difference = 0;
+      }
 
       return {
-        _id: String(user._id || ""),
-        name: String(user.name || "-"),
+        _id: String(user?._id || report?._id || key),
+        name: String(user?.name || report?.name || "-"),
         email: email || "-",
-        balance,
-        minLimit: toNumber(matchingLimit?.minBalance),
+        balance: netBalance,
+        confirmedDeposits,
+        expensesPaid,
+        netBalance,
+        difference,
+        isMatched: isMatchedDifference(difference),
         debtCount: userDebts.length,
         debtTotal,
-        posKey,
-        limitUpdatedBy: matchingLimit?.updatedBy || "-",
-        limitUpdatedAt: matchingLimit?.updatedAt
-          ? new Date(matchingLimit.updatedAt).toLocaleString("en-GB")
-          : "-",
       };
     });
-  }, [debtByEmail, limitsByKey, posUsersQuery.data]);
+  }, [debtByEmail, reportByKey, usersByKey]);
 
   const filteredRows = useMemo(() => {
     if (statusFilter === "all") {
       return rows;
     }
 
-    return rows.filter((row) => isBelowLimit(row.balance, row.minLimit));
+    return rows.filter((row) => !row.isMatched);
   }, [rows, statusFilter]);
 
   const totalBalance = useMemo(
-    () => rows.reduce((sum, row) => sum + row.balance, 0),
+    () => rows.reduce((sum, row) => sum + row.netBalance, 0),
     [rows],
   );
 
-  const lowBalanceCount = useMemo(
-    () => rows.filter((row) => isBelowLimit(row.balance, row.minLimit)).length,
+  const mismatchCount = useMemo(
+    () => rows.filter((row) => !row.isMatched).length,
+    [rows],
+  );
+
+  const mismatchAmount = useMemo(
+    () =>
+      rows
+        .filter((row) => !row.isMatched)
+        .reduce((sum, row) => sum + Math.abs(row.difference), 0),
     [rows],
   );
 
@@ -290,6 +375,38 @@ export default function POSBalance() {
     }));
   }, [profitLogsQuery.data?.logs]);
 
+  const profitByDayRows = useMemo(() => {
+    const grouped = new Map<
+      string,
+      { dateKey: string; logsCount: number; totalAmount: number; totalProfit: number }
+    >();
+
+    (profitLogsQuery.data?.logs || []).forEach((log) => {
+      const key = String(log.dateKey || "").trim() || String(log.createdAt || "").slice(0, 10);
+      if (!key) return;
+
+      const current = grouped.get(key) || {
+        dateKey: key,
+        logsCount: 0,
+        totalAmount: 0,
+        totalProfit: 0,
+      };
+
+      current.logsCount += 1;
+      current.totalAmount += Number(log.amount || 0);
+      current.totalProfit += Number(log.profitAmount || 0);
+      grouped.set(key, current);
+    });
+
+    return [...grouped.values()]
+      .sort((a, b) => b.dateKey.localeCompare(a.dateKey))
+      .map((row) => ({
+        ...row,
+        totalAmount: Number(row.totalAmount.toFixed(2)),
+        totalProfit: Number(row.totalProfit.toFixed(2)),
+      }));
+  }, [profitLogsQuery.data?.logs]);
+
   const totalProfitAmount = useMemo(
     () => Number(profitLogsQuery.data?.summary?.totalProfitAmount || 0),
     [profitLogsQuery.data?.summary?.totalProfitAmount],
@@ -298,37 +415,46 @@ export default function POSBalance() {
   const latestRefresh = useMemo(() => {
     return Math.max(
       posUsersQuery.dataUpdatedAt || 0,
+      posReportQuery.dataUpdatedAt || 0,
       posDebtsQuery.dataUpdatedAt || 0,
-      posLimitsQuery.dataUpdatedAt || 0,
       profitLogsQuery.dataUpdatedAt || 0,
     );
   }, [
-    posDebtsQuery.dataUpdatedAt,
-    posLimitsQuery.dataUpdatedAt,
     posUsersQuery.dataUpdatedAt,
+    posReportQuery.dataUpdatedAt,
+    posDebtsQuery.dataUpdatedAt,
     profitLogsQuery.dataUpdatedAt,
   ]);
 
   const isLoading =
     posUsersQuery.isLoading ||
+    posReportQuery.isLoading ||
     posDebtsQuery.isLoading ||
-    posLimitsQuery.isLoading ||
     profitLogsQuery.isLoading;
   const isRefreshing =
     posUsersQuery.isFetching ||
+    posReportQuery.isFetching ||
     posDebtsQuery.isFetching ||
-    posLimitsQuery.isFetching ||
     profitLogsQuery.isFetching;
 
   const handleManualRefresh = async () => {
     await Promise.all([
       posUsersQuery.refetch(),
+      posReportQuery.refetch(),
       posDebtsQuery.refetch(),
-      posLimitsQuery.refetch(),
       profitLogsQuery.refetch(),
     ]);
     toast.success("POS balance data refreshed.");
   };
+
+  const selectedProfitRangeText =
+    profitFromDate && profitToDate
+      ? `From ${profitFromDate} to ${profitToDate}`
+      : profitFromDate
+        ? `From ${profitFromDate}`
+        : profitToDate
+          ? `Until ${profitToDate}`
+          : "All dates";
 
   if (currentUser?.role !== "admin") {
     return (
@@ -345,10 +471,7 @@ export default function POSBalance() {
       <div dir="rtl" className="space-y-6">
         <div className="flex flex-col gap-3 rounded-xl border bg-background p-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold">POS Balance</h1>
-            <p className="text-sm text-muted-foreground">
-              Live watch and control center for POS balances and debt-based deductions.
-            </p>
+            <h1 className="text-3xl font-bold">رصيد نقاط البيع</h1>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -356,13 +479,13 @@ export default function POSBalance() {
               variant={statusFilter === "all" ? "default" : "outline"}
               onClick={() => setStatusFilter("all")}
             >
-              All POS
+              كل نقاط البيع
             </Button>
             <Button
-              variant={statusFilter === "low" ? "destructive" : "outline"}
-              onClick={() => setStatusFilter("low")}
+              variant={statusFilter === "mismatch" ? "destructive" : "outline"}
+              onClick={() => setStatusFilter("mismatch")}
             >
-              Below Limit
+              النقاط الخاطئة فقط
             </Button>
             <Button
               variant="outline"
@@ -372,15 +495,15 @@ export default function POSBalance() {
               disabled={isRefreshing}
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-              Refresh
+              تحديث البيانات
             </Button>
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>Total POS Users</CardDescription>
+              <CardDescription>عدد مستخدمي نقاط البيع</CardDescription>
               <CardTitle className="text-2xl">{rows.length}</CardTitle>
             </CardHeader>
             <CardContent className="pt-0 text-muted-foreground">
@@ -390,7 +513,7 @@ export default function POSBalance() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>Total Balance</CardDescription>
+              <CardDescription>إجمالي الرصيد</CardDescription>
               <CardTitle className="text-2xl">{formatNumber(totalBalance)}</CardTitle>
             </CardHeader>
             <CardContent className="pt-0 text-muted-foreground">
@@ -400,8 +523,8 @@ export default function POSBalance() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>Below Limit</CardDescription>
-              <CardTitle className="text-2xl">{lowBalanceCount}</CardTitle>
+              <CardDescription>الصفوف الخاطئة</CardDescription>
+              <CardTitle className="text-2xl">{mismatchCount}</CardTitle>
             </CardHeader>
             <CardContent className="pt-0 text-destructive">
               <ShieldAlert className="h-4 w-4" />
@@ -410,7 +533,17 @@ export default function POSBalance() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>Last Refresh</CardDescription>
+              <CardDescription>مبلغ عدم التوافق</CardDescription>
+              <CardTitle className="text-2xl">{formatNumber(mismatchAmount)}</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 text-destructive">
+              <AlertTriangle className="h-4 w-4" />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>اخر تحديث</CardDescription>
               <CardTitle className="text-sm">{formatDateTime(latestRefresh)}</CardTitle>
             </CardHeader>
             <CardContent className="pt-0 text-muted-foreground">
@@ -420,7 +553,7 @@ export default function POSBalance() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>Total POS Profit</CardDescription>
+              <CardDescription>إجمالي ربح نقاط البيع</CardDescription>
               <CardTitle className="text-2xl">{formatNumber(totalProfitAmount)}</CardTitle>
             </CardHeader>
             <CardContent className="pt-0 text-emerald-600">
@@ -430,193 +563,98 @@ export default function POSBalance() {
         </div>
 
         <DataTable
-          title="POS Balance Watch"
+          title="POS Reconciliation"
           description={`Rows: ${filteredRows.length}`}
           columns={[
-            { key: "name", label: "Name", sortable: true },
-            { key: "email", label: "Email", sortable: true },
-            { key: "balance", label: "Balance", sortable: true },
-            { key: "minLimit", label: "Min Limit", sortable: true },
-            { key: "debtTotal", label: "Debt Total", sortable: true },
-            { key: "debtCount", label: "Debt Count", sortable: true },
-            { key: "limitUpdatedBy", label: "Limit Updated By", sortable: true },
-            { key: "limitUpdatedAt", label: "Limit Updated At", sortable: true },
+            { key: "name", label: "الاسم", sortable: true },
+            { key: "email", label: "الحساب", sortable: true },
+            { key: "confirmedDeposits", label: "المدفوعات الناجحة", sortable: true },
+            { key: "expensesPaid", label: "الفواتير الناجحة", sortable: true },
+            { key: "netBalance", label: "الرصيد الحالي", sortable: true },
+            { key: "difference", label: "الفرق", sortable: true },
+            { key: "status", label: "الحالة", sortable: true },
+            { key: "debtTotal", label: "إجمالي الدين", sortable: true },
+            { key: "debtCount", label: "عدد الديون", sortable: true },
           ]}
-          data={filteredRows}
+          data={filteredRows.map((row) => ({
+            ...row,
+            status: row.isMatched ? "Matched" : "Mismatch",
+          }))}
           isLoading={isLoading}
           getRowClassName={(row) =>
-            isBelowLimit(Number(row.balance), Number(row.minLimit))
+            Math.abs(Number(row.difference || 0)) > RECON_TOLERANCE
               ? "bg-destructive/10 hover:bg-destructive/20"
               : ""
           }
-          renderRowActions={(row: PosBalanceRow) => {
-            const userDebts = debtByEmail.get(normalizeEmail(row.email)) || [];
-
-            return (
-              <div className="flex flex-wrap gap-2">
-                <PopupForm
-                  title="Top-up POS Balance"
-                  trigger={<Button size="sm">Top-up</Button>}
-                  isOpen={openTopupId === row._id}
-                  setIsOpen={(open) => {
-                    if (open) {
-                      setTopupAmount(0);
-                      setOpenTopupId(row._id);
-                    } else {
-                      setOpenTopupId(null);
-                    }
-                  }}
-                >
-                  <form
-                    className="space-y-3"
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      topupMutation.mutate({ id: row._id, amount: toNumber(topupAmount) });
-                    }}
-                  >
-                    <Input readOnly value={`${row.name} (${row.email})`} />
-                    <Input
-                      type="number"
-                      min={0}
-                      value={topupAmount}
-                      onChange={(event) => setTopupAmount(toNumber(event.target.value))}
-                      placeholder="Amount"
-                    />
-                    <Button type="submit" disabled={topupMutation.isPending}>
-                      {topupMutation.isPending ? "Saving..." : "Confirm Top-up"}
-                    </Button>
-                  </form>
-                </PopupForm>
-
-                <PopupForm
-                  title="Debt-based Deduction"
-                  trigger={
-                    <Button size="sm" variant="outline" disabled={userDebts.length === 0}>
-                      Deduct (Debt)
-                    </Button>
-                  }
-                  isOpen={openDebtId === row._id}
-                  setIsOpen={(open) => {
-                    if (open) {
-                      if (userDebts.length === 0) {
-                        return;
-                      }
-                      setOpenDebtId(row._id);
-                      setSelectedDebtId(userDebts[0]?._id || "");
-                    } else {
-                      setOpenDebtId(null);
-                    }
-                  }}
-                >
-                  {userDebts.length === 0 ? (
-                    <div className="text-sm text-muted-foreground">No pending debts for this POS user.</div>
-                  ) : (
-                    <form
-                      className="space-y-3"
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        const selectedDebt = userDebts.find((item) => item._id === selectedDebtId);
-                        if (!selectedDebt) {
-                          toast.error("Select a debt item first.");
-                          return;
-                        }
-
-                        settleDebtMutation.mutate({
-                          id: String(selectedDebt._id),
-                          email: String(selectedDebt.email || row.email),
-                          amount: toNumber(selectedDebt.amount),
-                        });
-                      }}
-                    >
-                      <select
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        value={selectedDebtId}
-                        onChange={(event) => setSelectedDebtId(event.target.value)}
-                      >
-                        {userDebts.map((debt) => (
-                          <option key={debt._id} value={debt._id}>
-                            {`${formatNumber(toNumber(debt.amount))} - ${debt.number || "-"} - ${
-                              debt.date || "-"
-                            }`}
-                          </option>
-                        ))}
-                      </select>
-                      <Button type="submit" disabled={settleDebtMutation.isPending}>
-                        {settleDebtMutation.isPending ? "Processing..." : "Settle Selected Debt"}
-                      </Button>
-                    </form>
-                  )}
-                </PopupForm>
-
-                <PopupForm
-                  title="Edit Minimum Limit"
-                  trigger={<Button size="sm" variant="secondary">Edit Limit</Button>}
-                  isOpen={openLimitId === row._id}
-                  setIsOpen={(open) => {
-                    if (open) {
-                      setLimitAmount(row.minLimit);
-                      setOpenLimitId(row._id);
-                    } else {
-                      setOpenLimitId(null);
-                    }
-                  }}
-                >
-                  <form
-                    className="space-y-3"
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      const nextValue = toNumber(limitAmount);
-                      if (nextValue < 0) {
-                        toast.error("Minimum limit cannot be negative.");
-                        return;
-                      }
-
-                      limitMutation.mutate({
-                        posKey: row.posKey,
-                        minBalance: nextValue,
-                        updatedBy: currentUser.username,
-                      });
-                    }}
-                  >
-                    <Input readOnly value={`${row.name} (${row.email})`} />
-                    <Input
-                      type="number"
-                      min={0}
-                      value={limitAmount}
-                      onChange={(event) => setLimitAmount(toNumber(event.target.value))}
-                    />
-                    <Button type="submit" disabled={limitMutation.isPending}>
-                      {limitMutation.isPending ? "Saving..." : "Save Limit"}
-                    </Button>
-                  </form>
-                </PopupForm>
-              </div>
-            );
-          }}
         />
 
         <DataTable
           title="POS Profit Logs"
-          description={`Logs: ${profitLogsQuery.data?.summary?.count || 0}`}
+          description={`Logs: ${profitLogsQuery.data?.summary?.count || 0} • ${selectedProfitRangeText}`}
           columns={[
-            { key: "invoiceId", label: "Invoice ID", sortable: true },
-            { key: "amount", label: "Amount", sortable: true },
-            { key: "profitAmount", label: "Profit", sortable: true },
-            { key: "company", label: "Company", sortable: true },
-            { key: "email", label: "Email", sortable: true },
-            { key: "operator", label: "Operator", sortable: true },
-            { key: "createdAt", label: "Created At", sortable: true },
+            { key: "invoiceId", label: "رقم الفاتورة", sortable: true },
+            { key: "amount", label: "المبلغ", sortable: true },
+            { key: "profitAmount", label: "الربح", sortable: true },
+            { key: "company", label: "الشركة", sortable: true },
+            { key: "email", label: "البريد الإلكتروني", sortable: true },
+            { key: "operator", label: "المشغل", sortable: true },
+            { key: "createdAt", label: "تاريخ الإنشاء", sortable: true },
           ]}
           data={profitLogsRows}
           isLoading={profitLogsQuery.isLoading}
         />
 
-        {lowBalanceCount > 0 && (
-          <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            <AlertTriangle className="h-4 w-4" />
-            {lowBalanceCount} POS users are currently below their configured minimum limits.
-          </div>
-        )}
+        <Card>
+          <CardHeader>
+            <CardTitle>المرابح حسب التاريخ</CardTitle>
+            <CardDescription>اختر التاريخ البداية والنهاية حسب الحاجة.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 md:grid-cols-4">
+              <Input
+                type="date"
+                value={profitFromDate}
+                onChange={(event) => setProfitFromDate(event.target.value)}
+              />
+              <Input
+                type="date"
+                value={profitToDate}
+                onChange={(event) => setProfitToDate(event.target.value)}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setProfitFromDate("");
+                  setProfitToDate("");
+                }}
+              >
+                مسح الفلاتر
+              </Button>
+              <div className="flex items-center text-sm text-muted-foreground">
+                {selectedProfitRangeText}
+              </div>
+            </div>
+            {!isProfitDateRangeValid && (
+              <p className="mt-3 text-sm text-destructive">
+                يرجى التأكد من أن تاريخ البداية أصغر من تاريخ النهاية.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <DataTable
+          title="POS Profit By Day"
+          description={`Days: ${profitByDayRows.length} • ${selectedProfitRangeText}`}
+          columns={[
+            { key: "dateKey", label: "التاريخ", sortable: true },
+            { key: "logsCount", label: "العمليات", sortable: true },
+            { key: "totalAmount", label: "المبلغ الإجمالي", sortable: true },
+            { key: "totalProfit", label: "الربح الإجمالي", sortable: true },
+          ]}
+          data={profitByDayRows}
+          isLoading={profitLogsQuery.isLoading}
+        />
       </div>
     </DashboardLayout>
   );

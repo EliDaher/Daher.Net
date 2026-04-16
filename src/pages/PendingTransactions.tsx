@@ -118,6 +118,7 @@ export default function PendingTransactions() {
         number: row.landline || row.number || "",
         operator: currentUser?.username || "",
         source: "pending_transactions",
+        operationState: "تم التسديد",
       }).catch((error) => {
         console.error("POS profit log failed:", error);
       });
