@@ -144,6 +144,42 @@ const navigationGroups = [
     allowed: ["admin", "employee"],
   },
   {
+    title: "Store",
+    items: [
+      {
+        name: "Store Products",
+        href: "/store/products",
+        icon: Boxes,
+        allowed: ["admin", "employee"],
+      },
+      {
+        name: "Store Offers",
+        href: "/store/offers",
+        icon: FileText,
+        allowed: ["admin", "employee"],
+      },
+      {
+        name: "Store Categories",
+        href: "/store/categories",
+        icon: Table2Icon,
+        allowed: ["admin", "employee"],
+      },
+      {
+        name: "Store Brands",
+        href: "/store/brands",
+        icon: Building2,
+        allowed: ["admin", "employee"],
+      },
+      {
+        name: "Store Banners",
+        href: "/store/banners",
+        icon: Table,
+        allowed: ["admin", "employee"],
+      },
+    ],
+    allowed: ["admin", "employee"],
+  },
+  {
     title: "Analytics",
     items: [
       {

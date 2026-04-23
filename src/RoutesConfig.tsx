@@ -30,6 +30,11 @@ const ViewBills = lazy(() => import("@/pages/ViewBills"));
 const ViewBillsDetails = lazy(() => import("@/pages/ViewBillsDetails"));
 const FinancialStatement = lazy(() => import("@/pages/FinancialStatement"));
 const Employees = lazy(() => import("@/pages/Employees"));
+const StoreProducts = lazy(() => import("@/pages/store/StoreProducts"));
+const StoreOffers = lazy(() => import("@/pages/store/StoreOffers"));
+const StoreCategories = lazy(() => import("@/pages/store/StoreCategories"));
+const StoreBrands = lazy(() => import("@/pages/store/StoreBrands"));
+const StoreBanners = lazy(() => import("@/pages/store/StoreBanners"));
 
 interface AppRoute {
   path: string;
@@ -143,6 +148,26 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/companies",
     element: withPrivateRoute(<Companies />, ["admin", "employee"]),
+  },
+  {
+    path: "/store/products",
+    element: withPrivateRoute(<StoreProducts />, ["admin", "employee"]),
+  },
+  {
+    path: "/store/offers",
+    element: withPrivateRoute(<StoreOffers />, ["admin", "employee"]),
+  },
+  {
+    path: "/store/categories",
+    element: withPrivateRoute(<StoreCategories />, ["admin", "employee"]),
+  },
+  {
+    path: "/store/brands",
+    element: withPrivateRoute(<StoreBrands />, ["admin", "employee"]),
+  },
+  {
+    path: "/store/banners",
+    element: withPrivateRoute(<StoreBanners />, ["admin", "employee"]),
   },
   { path: "*", element: <NotFound /> },
 ];
