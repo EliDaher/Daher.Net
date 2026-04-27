@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, Trash2 } from "lucide-react";
 import SendToPay from "@/components/companies/SendToPay";
 import { DataTable } from "@/components/dashboard/DataTable";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -17,6 +18,12 @@ import getPendingInvoices, {
   startPayment,
 } from "@/services/invoices";
 import { createPosProfitLog } from "@/services/profitLogs";
+import {
+  createReportedTransaction,
+  deleteReportedTransaction,
+  getReportedTransactions,
+  type ReportedTransaction,
+} from "@/services/reportedTransactions";
 
 interface PendingTransaction {
   _id: string;
@@ -57,6 +64,31 @@ interface ConfirmInvoiceMutationPayload {
 }
 
 const REJECTION_FORM_TITLE = "سبب الغاء العملية";
+const REPORTED_FORM_TITLE = "تسجيل عملية مبلغ عنها";
+
+function getPendingTransactionNumber(row: PendingTransaction) {
+  return row.extra?.playerId || row.landline || row.number || "";
+}
+
+function normalizeNumberForReportedMatch(number?: string) {
+  const trimmed = String(number || "").trim();
+
+  if (trimmed.startsWith("013") || trimmed.startsWith("033")) {
+    return trimmed.slice(3);
+  }
+
+  if (trimmed.startsWith("13") || trimmed.startsWith("33")) {
+    return trimmed.slice(2);
+  }
+
+  return trimmed;
+}
+
+function buildReportedMatchKey(number?: string, company?: string) {
+  return `${String(number || "").trim()}::${String(company || "")
+    .trim()
+    .toLowerCase()}`;
+}
 
 function normalizeLandlineForClipboard(number?: string) {
   if (!number) {
@@ -84,6 +116,10 @@ export default function PendingTransactions() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedRow, setSelectedRow] = useState<PendingTransaction | null>(null);
   const [sendToPayOpen, setSendToPayOpen] = useState(false);
+  const [reportedDialogOpen, setReportedDialogOpen] = useState(false);
+  const [reportedNumber, setReportedNumber] = useState("");
+  const [reportedCompany, setReportedCompany] = useState("");
+  const [reportedNote, setReportedNote] = useState("");
 
   usePendingPaymentsRealtime();
 
@@ -95,6 +131,14 @@ export default function PendingTransactions() {
   } = useQuery<PendingTransaction[]>({
     queryKey: ["pending-table"],
     queryFn: getPendingInvoices,
+  });
+
+  const {
+    data: reportedTransactions = [],
+    isLoading: reportedLoading,
+  } = useQuery<ReportedTransaction[]>({
+    queryKey: ["reported-transactions"],
+    queryFn: getReportedTransactions,
   });
 
   useEffect(() => {
@@ -146,6 +190,24 @@ export default function PendingTransactions() {
     },
   });
 
+  const createReportedMutation = useMutation({
+    mutationFn: createReportedTransaction,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["reported-transactions"] });
+      setReportedDialogOpen(false);
+      setReportedNumber("");
+      setReportedCompany("");
+      setReportedNote("");
+    },
+  });
+
+  const deleteReportedMutation = useMutation({
+    mutationFn: deleteReportedTransaction,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["reported-transactions"] });
+    },
+  });
+
   const companyIdByName = useMemo(
     () =>
       new Map(
@@ -171,6 +233,41 @@ export default function PendingTransactions() {
     ],
     [],
   );
+
+  const reportedColumns = useMemo(
+    () => [
+      { key: "number", label: "الرقم", sortable: true },
+      { key: "company", label: "الشركة", sortable: true },
+      { key: "note", label: "ملاحظة" },
+      { key: "createdBy", label: "المستخدم", sortable: true },
+      { key: "createdAt", label: "الوقت", sortable: true },
+    ],
+    [],
+  );
+
+  const reportedMatchKeys = useMemo(
+    () =>
+      new Set(
+        reportedTransactions.map((transaction) =>
+          buildReportedMatchKey(
+            normalizeNumberForReportedMatch(transaction.number),
+            transaction.company,
+          ),
+        ),
+      ),
+    [reportedTransactions],
+  );
+
+  const getPendingRowClassName = (row: PendingTransaction) => {
+    const key = buildReportedMatchKey(
+      normalizeNumberForReportedMatch(getPendingTransactionNumber(row)),
+      row.company,
+    );
+
+    return reportedMatchKeys.has(key)
+      ? "bg-purple-100 text-purple-950 hover:bg-purple-200 dark:bg-purple-950/50 dark:text-purple-50 dark:hover:bg-purple-900/60"
+      : "";
+  };
 
   const handleConfirm = (row: PendingTransaction) => {
     if (!window.confirm("هل انت متأكد من انهاء العملية")) {
@@ -219,6 +316,17 @@ export default function PendingTransactions() {
     startMutation.mutate(row._id);
   };
 
+  const handleReportedSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    createReportedMutation.mutate({
+      number: reportedNumber,
+      company: reportedCompany,
+      note: reportedNote,
+      createdBy: currentUser?.username || "",
+    });
+  };
+
   return (
     <DashboardLayout>
       <SendToPay isOpen={sendToPayOpen} setIsOpen={setSendToPayOpen} />
@@ -244,7 +352,77 @@ export default function PendingTransactions() {
         </div>
       </PopupForm>
 
+      <PopupForm
+        isOpen={reportedDialogOpen}
+        setIsOpen={setReportedDialogOpen}
+        title={REPORTED_FORM_TITLE}
+        trigger={<></>}
+      >
+        <form onSubmit={handleReportedSubmit} className="space-y-4" dir="rtl">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">الرقم</label>
+            <Input
+              value={reportedNumber}
+              onChange={(event) => setReportedNumber(event.target.value)}
+              type="text"
+              placeholder="أدخل الرقم"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">الشركة</label>
+            <select
+              value={reportedCompany}
+              onChange={(event) => setReportedCompany(event.target.value)}
+              className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              required
+            >
+              <option value="">اختر الشركة</option>
+              {companies.map((company: any) => (
+                <option key={company.id || company.name} value={company.name}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">ملاحظة</label>
+            <Input
+              value={reportedNote}
+              onChange={(event) => setReportedNote(event.target.value)}
+              type="text"
+              placeholder="أدخل ملاحظة اختيارية"
+            />
+          </div>
+
+          {createReportedMutation.isError && (
+            <p className="text-sm text-destructive">
+              {createReportedMutation.error instanceof Error
+                ? createReportedMutation.error.message
+                : "فشل تسجيل العملية"}
+            </p>
+          )}
+
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={createReportedMutation.isPending}
+          >
+            {createReportedMutation.isPending ? "..." : "حفظ"}
+          </Button>
+        </form>
+      </PopupForm>
+
       <div dir="rtl" className="space-y-6">
+        <div className="flex justify-end">
+          <Button onClick={() => setReportedDialogOpen(true)}>
+            <Plus className="h-4 w-4" />
+            إضافة عملية مبلغ عنها
+          </Button>
+        </div>
+
         <DataTable
           amountBold
           title="تسديدات معلقة"
@@ -253,6 +431,7 @@ export default function PendingTransactions() {
           columns={invoicesColumns}
           data={pendingData}
           isLoading={pendingLoading}
+          getRowClassName={getPendingRowClassName}
           renderRowActions={(row: PendingTransaction) =>
             row.status !== "جاري التسديد" ? (
               <div className="flex gap-2">
@@ -290,6 +469,25 @@ export default function PendingTransactions() {
               </Button>
             )
           }
+        />
+
+        <DataTable
+          title="العمليات المبلغ عنها"
+          description=""
+          columns={reportedColumns}
+          data={reportedTransactions}
+          isLoading={reportedLoading}
+          renderRowActions={(row: ReportedTransaction) => (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => deleteReportedMutation.mutate(row.id)}
+              disabled={deleteReportedMutation.isPending}
+            >
+              <Trash2 className="h-4 w-4" />
+              {deleteReportedMutation.isPending ? "..." : "حذف"}
+            </Button>
+          )}
         />
       </div>
     </DashboardLayout>
