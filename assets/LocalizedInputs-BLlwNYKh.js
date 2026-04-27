@@ -1,0 +1,1 @@
+import{j as a,F as s}from"./index-CHrOuSrk.js";function i({labelAr:n,labelEn:l,value:e,onChange:r}){return a.jsxs("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2",children:[a.jsx(s,{label:n,type:"text",value:e.ar,onChange:t=>r({...e,ar:t.target.value})}),a.jsx(s,{label:l,type:"text",value:e.en,onChange:t=>r({...e,en:t.target.value})})]})}export{i as L};
