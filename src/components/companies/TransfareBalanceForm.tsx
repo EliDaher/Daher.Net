@@ -1,11 +1,13 @@
 import React from "react";
-import PopupForm from "../ui/custom/PopupForm";
-import { Button } from "../ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowRightLeft } from "lucide-react";
 import { useForm } from "react-hook-form";
-import decreaseBalance from "@/services/companies";
-import FormInput from "../ui/custom/FormInput";
 import { toast } from "sonner";
+
+import decreaseBalance from "@/services/companies";
+import { Button } from "../ui/button";
+import FormInput from "../ui/custom/FormInput";
+import PopupForm from "../ui/custom/PopupForm";
 
 type TransferFormValues = {
   reason: string;
@@ -56,7 +58,7 @@ export default function TransfareBalanceForm({
     },
   });
 
-  const TransfarBalanceMutation = useMutation({
+  const transferBalanceMutation = useMutation({
     mutationFn: (data: TransferFormValues) => {
       const payload: DecreaseBalancePayload = {
         amount: data.amount,
@@ -82,48 +84,63 @@ export default function TransfareBalanceForm({
   });
 
   const onSubmit = (data: TransferFormValues) => {
-    TransfarBalanceMutation.mutate(data);
+    transferBalanceMutation.mutate(data);
   };
 
   return (
     <PopupForm
       title={`تحويل رصيد ${companyName}`}
-      trigger={<Button className="w-full">تحويل رصيد</Button>}
+      description="تسجيل عملية تحويل من رصيد الشركة مع توضيح الوجهة أو سبب التحويل."
+      trigger={
+        <Button className="w-full justify-center gap-2">
+          <ArrowRightLeft className="h-4 w-4" />
+          تحويل رصيد
+        </Button>
+      }
       isOpen={isOpen}
       setIsOpen={setIsOpen}
+      contentClassName="sm:max-w-xl"
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <FormInput
-          id="amount"
-          label="المبلغ"
-          type="number"
-          {...register("amount", {
-            valueAsNumber: true,
-            required: "المبلغ مطلوب",
-            min: { value: 1, message: "يجب أن يكون أكبر من صفر" },
-          })}
-          error={errors.amount?.message}
-        />
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div className="grid gap-4">
+          <FormInput
+            id="transfer-amount"
+            label="المبلغ"
+            type="number"
+            {...register("amount", {
+              valueAsNumber: true,
+              required: "المبلغ مطلوب",
+              min: { value: 1, message: "يجب أن يكون أكبر من صفر" },
+            })}
+            error={errors.amount?.message}
+          />
 
-        <FormInput
-          id="reason"
-          label="ملاحظات + الوجهة"
-          type="text"
-          {...register("reason", {
-            required: "مطلوب",
-          })}
-          error={errors.reason?.message}
-        />
+          <FormInput
+            id="transfer-reason"
+            label="ملاحظات + الوجهة"
+            type="text"
+            {...register("reason", {
+              required: "مطلوب",
+            })}
+            error={errors.reason?.message}
+          />
+        </div>
 
-        <Button
-          type="submit"
-          disabled={TransfarBalanceMutation.isPending}
-          className="w-full"
-        >
-          {TransfarBalanceMutation.isPending
-            ? "جارٍ التحويل..."
-            : "تأكيد التحويل"}
-        </Button>
+        <div className="flex flex-col-reverse gap-2 border-t pt-5 sm:flex-row sm:justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsOpen(false)}
+            disabled={transferBalanceMutation.isPending}
+          >
+            إلغاء
+          </Button>
+          <Button type="submit" disabled={transferBalanceMutation.isPending}>
+            {transferBalanceMutation.isPending
+              ? "جارٍ التحويل..."
+              : "تأكيد التحويل"}
+          </Button>
+        </div>
       </form>
     </PopupForm>
   );

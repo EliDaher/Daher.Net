@@ -1,6 +1,14 @@
-import { ReactNode } from "react";
-import { X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Fragment, ReactNode, isValidElement } from "react";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 type PopupFormProps = {
   title?: string;
@@ -8,6 +16,8 @@ type PopupFormProps = {
   children: ReactNode;
   isOpen: boolean;
   setIsOpen: (value: boolean) => void;
+  description?: ReactNode;
+  contentClassName?: string;
 };
 
 export default function PopupForm({
@@ -16,66 +26,42 @@ export default function PopupForm({
   children,
   isOpen,
   setIsOpen,
+  description,
+  contentClassName,
 }: PopupFormProps) {
+  const canUseTriggerAsChild =
+    isValidElement(trigger) && trigger.type !== Fragment;
+
   return (
-    <>
-      {/* الزر المحفز */}
-      <div
-        onClick={() => setIsOpen(true)}
-        className="inline-block cursor-pointer"
-      >
-        {trigger}
-      </div>
-
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* الخلفية */}
-            <motion.div
-              className="fixed inset-0 bg-black/50 z-50"
-              onClick={() => setIsOpen(false)}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            />
-
-            {/* محتوى البوب أب */}
-            <motion.div
-              className="fixed inset-0 z-50 flex items-center justify-center px-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <motion.div
-                className="bg-gradient-to-bl from-primary-50 to-background w-full max-w-lg rounded-2xl shadow-xl p-6 relative"
-                initial={{ scale: 0.9, y: 40, opacity: 0 }}
-                animate={{ scale: 1, y: 0, opacity: 1 }}
-                exit={{ scale: 0.9, y: 40, opacity: 0 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex flex-row-reverse justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold text-foreground">
-                    {title}
-                  </h2>
-                  <button
-                    onClick={() => setIsOpen(false)}
-                    className="text-gray-400 hover:text-red-500 transition"
-                    aria-label="إغلاق"
-                  >
-                    <X size={24} />
-                  </button>
-                </div>
-
-                {/* المحتوى */}
-                <div className="space-y-4 p-1 max-h-[80vh] overflow-y-auto">
-                  {children}
-                </div>
-              </motion.div>
-            </motion.div>
-          </>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        {canUseTriggerAsChild ? (
+          trigger
+        ) : (
+          <span className="inline-flex cursor-pointer">{trigger}</span>
         )}
-      </AnimatePresence>
-    </>
+      </DialogTrigger>
+
+      <DialogContent
+        dir="rtl"
+        className={cn(
+          "max-h-[calc(100vh-2rem)] overflow-hidden rounded-xl border bg-background p-0 shadow-2xl [&>button]:left-4 [&>button]:right-auto sm:max-w-lg",
+          contentClassName,
+        )}
+      >
+        <DialogHeader className="border-b bg-muted/30 px-6 py-5 text-right sm:text-right">
+          <DialogTitle className="text-xl leading-7">{title}</DialogTitle>
+          {description && (
+            <DialogDescription className="leading-6">
+              {description}
+            </DialogDescription>
+          )}
+        </DialogHeader>
+
+        <div className="max-h-[calc(100vh-11rem)] overflow-y-auto px-6 py-5">
+          {children}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

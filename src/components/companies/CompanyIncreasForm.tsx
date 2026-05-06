@@ -1,11 +1,13 @@
-import React, { useEffect, useMemo } from "react";
-import PopupForm from "../ui/custom/PopupForm";
-import { Button } from "../ui/button";
+import { useEffect, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { increaseBalance } from "@/services/companies";
-import FormInput from "../ui/custom/FormInput";
+import { Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+
+import { increaseBalance } from "@/services/companies";
+import { Button } from "../ui/button";
+import FormInput from "../ui/custom/FormInput";
+import PopupForm from "../ui/custom/PopupForm";
 
 type CompanyIncreaseFormValues = {
   companyId: string;
@@ -35,8 +37,13 @@ export default function CompanyIncreaseForm({
 
   const daherUser = useMemo(() => {
     if (typeof window === "undefined") return null;
-    const user = localStorage.getItem("DaherUser");
-    return user ? JSON.parse(user) : null;
+
+    try {
+      const user = localStorage.getItem("DaherUser");
+      return user ? JSON.parse(user) : null;
+    } catch {
+      return null;
+    }
   }, []);
 
   const {
@@ -59,11 +66,12 @@ export default function CompanyIncreaseForm({
   });
 
   useEffect(() => {
-    if (!companyId) return;
+    if (!isOpen || !companyId) return;
 
     setValue("companyId", companyId);
     setValue("company", companyName);
-  }, [companyId, companyName, setValue]);
+    setValue("port", daherUser?.username || "");
+  }, [companyId, companyName, daherUser?.username, isOpen, setValue]);
 
   const increaseBalanceMutation = useMutation({
     mutationFn: (data: CompanyIncreaseFormValues) => increaseBalance(data),
@@ -84,30 +92,53 @@ export default function CompanyIncreaseForm({
   return (
     <PopupForm
       trigger={
-        <Button variant="outline" className="w-full">
-          زيادة رصيد شركة
+        <Button variant="outline" className="w-full justify-center gap-2">
+          <Plus className="h-4 w-4" />
+          زيادة رصيد
         </Button>
       }
       isOpen={isOpen}
       setIsOpen={setIsOpen}
       title="زيادة رصيد شركة"
+      description={
+        companyName
+          ? `إضافة رصيد جديد إلى حساب ${companyName}.`
+          : "إضافة رصيد جديد إلى حساب الشركة المحددة."
+      }
+      contentClassName="sm:max-w-2xl"
     >
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div className="grid gap-4 md:grid-cols-2">
           <FormInput
+            id="increase-company-id"
             label="معرف الشركة"
             {...register("companyId", { required: "معرف الشركة مطلوب" })}
             error={errors.companyId?.message}
             disabled
           />
 
-          <FormInput label="اسم الشركة" {...register("company")} disabled />
-
-          <FormInput label="رقم الاشعار اذا وجد" {...register("number")} />
-
-          <FormInput label="المنفذ" {...register("port")} disabled />
+          <FormInput
+            id="increase-company-name"
+            label="اسم الشركة"
+            {...register("company")}
+            disabled
+          />
 
           <FormInput
+            id="increase-number"
+            label="رقم الإشعار إذا وجد"
+            {...register("number")}
+          />
+
+          <FormInput
+            id="increase-port"
+            label="المنفذ"
+            {...register("port")}
+            disabled
+          />
+
+          <FormInput
+            id="increase-amount"
             label="قيمة الزيادة"
             type="number"
             {...register("amount", {
@@ -118,15 +149,30 @@ export default function CompanyIncreaseForm({
           />
 
           <FormInput
+            id="increase-paid-amount"
             label="المبلغ المدفوع"
             type="number"
             {...register("paidAmount", { valueAsNumber: true })}
           />
+        </div>
 
-          <FormInput label="ملاحظة الدفع" {...register("reason")} />
+        <FormInput
+          id="increase-reason"
+          label="ملاحظة الدفع"
+          {...register("reason")}
+        />
 
+        <div className="flex flex-col-reverse gap-2 border-t pt-5 sm:flex-row sm:justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsOpen(false)}
+            disabled={increaseBalanceMutation.isPending}
+          >
+            إلغاء
+          </Button>
           <Button type="submit" disabled={increaseBalanceMutation.isPending}>
-            {increaseBalanceMutation.isPending ? "جاري الحفظ..." : "حفظ"}
+            {increaseBalanceMutation.isPending ? "جاري الحفظ..." : "حفظ الزيادة"}
           </Button>
         </div>
       </form>
