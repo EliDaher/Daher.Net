@@ -22,11 +22,13 @@ import {
   Building2,
   CalendarClock,
   LayoutGrid,
+  Printer,
   Search,
   Table,
   Wallet,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useReactToPrint } from "react-to-print";
 import { useNavigate } from "react-router-dom";
 
 type StatusFilter = "all" | "low" | "healthy";
@@ -62,9 +64,25 @@ function formatLastUpdate(value?: string | null) {
   return date.toLocaleString("en-GB");
 }
 
+function getCurrentDateTime(): string {
+  const now = new Date();
+  const options: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  };
+
+  return now.toLocaleDateString("en-GB", options);
+}
+
 export default function Companies() {
   const { data: companies, isLoading } = useCompaniesContext();
   const navigate = useNavigate();
+  const printRef = useRef<HTMLDivElement>(null);
 
   const [openTransferId, setOpenTransferId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -136,9 +154,119 @@ export default function Companies() {
     },
   ];
 
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    pageStyle: `
+      @page {
+        size: 80mm auto;
+        margin: 0;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+      }
+
+      td, th {
+        border: 1px solid black;
+        padding: 2px;
+        font-weight: bold;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        text-align: center;
+        max-width: 120px;
+        height: auto;
+      }
+
+      .companies-balance-print {
+        position: static !important;
+        left: auto !important;
+        top: auto !important;
+        width: 80mm !important;
+        max-width: 80mm !important;
+      }
+
+      .totalValue {
+        font-weight: bold;
+        font-size: 20px;
+      }
+
+      @media print {
+        body, table, th, td {
+          color: black !important;
+        }
+
+        body {
+          width: 80mm;
+          height: auto;
+          margin: 0;
+          padding-bottom: 20px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: flex-start;
+          font-family: Arial, sans-serif;
+          font-size: 14px;
+        }
+
+        .header {
+          text-align: center;
+          font-size: 16px;
+          margin-bottom: 10px;
+          margin-top: 10px;
+          font-weight: 900;
+        }
+
+        .header span {
+          display: block;
+          margin-bottom: 2px;
+        }
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+      }
+    `,
+  });
+
   return (
     <DashboardLayout>
       <div dir="rtl" className="space-y-6 pb-6">
+        <div
+          ref={printRef}
+          className="companies-balance-print fixed left-[-10000px] top-0 bg-white p-3 text-gray-950"
+          dir="rtl"
+        >
+          <div className="header text-center font-bold">
+            <span className="block text-lg">Daher.Net</span>
+            <span className="block text-sm">{getCurrentDateTime()}</span>
+          </div>
+
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr>
+                <th className="px-2 py-2">الشركة</th>
+                <th className="px-2 py-2">الرصيد</th>
+              </tr>
+            </thead>
+            <tbody>
+              {normalizedCompanies.map((company) => (
+                <tr key={company.id}>
+                  <td className="px-2 py-2">{company.name}</td>
+                  <td className="px-2 py-2">{formatNumber(company.balance)}</td>
+                </tr>
+              ))}
+            </tbody>
+            {/* <tfoot>
+              <tr className="totalValue">
+                <td className="px-2 py-2">المجموع</td>
+                <td className="px-2 py-2">{formatNumber(totalBalance)}</td>
+              </tr>
+            </tfoot> */}
+          </table>
+        </div>
+
         <div className="rounded-2xl border bg-gradient-to-l from-primary-50/40 via-background to-accent-900/10 p-5 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-1">
@@ -156,6 +284,14 @@ export default function Companies() {
               />
 
               <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handlePrint}
+                  disabled={isLoading || normalizedCompanies.length === 0}
+                >
+                  <Printer className="mr-2 h-4 w-4" />
+                  Print
+                </Button>
                 <Button
                   variant={viewMode === "cards" ? "default" : "outline"}
                   onClick={() => setViewMode("cards")}
