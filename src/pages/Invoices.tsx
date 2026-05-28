@@ -243,7 +243,21 @@ function Invoice(){
                     <div className="w-80 m-auto rounded-lg px-6 py-3">
                         <FinalTableCom finalTable={finalTable}></FinalTableCom>
                     </div>
-                    <ConfirmInvForm setTotalInvoices={setTotalInvoices} clearAllTables={clearAllTables} TotalInvoices={TotalInvoices} finalTable={finalTable} isOpen={isOpen} onClose={closeModal} onSubmit={handleFormSubmit} />
+                    <ConfirmInvForm
+                        setTotalInvoices={setTotalInvoices}
+                        clearAllTables={clearAllTables}
+                        TotalInvoices={TotalInvoices}
+                        finalTable={finalTable}
+                        isOpen={isOpen}
+                        onClose={closeModal}
+                        onSubmit={handleFormSubmit}
+                        categoryTotals={{
+                            internetTotal,
+                            elecTotal,
+                            waterTotal,
+                            phoneTotal,
+                        }}
+                    />
                 </div>
             
             </div>

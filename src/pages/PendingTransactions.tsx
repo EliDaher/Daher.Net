@@ -65,6 +65,7 @@ interface ConfirmInvoiceMutationPayload {
 
 const REJECTION_FORM_TITLE = "سبب الغاء العملية";
 const REPORTED_FORM_TITLE = "تسجيل عملية مبلغ عنها";
+const STARTED_TRANSACTION_FORM_TITLE = "تفاصيل العملية";
 
 function getPendingTransactionNumber(row: PendingTransaction) {
   return row.extra?.playerId || row.landline || row.number || "";
@@ -120,6 +121,11 @@ export default function PendingTransactions() {
   const [reportedNumber, setReportedNumber] = useState("");
   const [reportedCompany, setReportedCompany] = useState("");
   const [reportedNote, setReportedNote] = useState("");
+  const [startedTransactionOpen, setStartedTransactionOpen] = useState(false);
+  const [startedTransaction, setStartedTransaction] =
+    useState<PendingTransaction | null>(null);
+  const [startedRejectReason, setStartedRejectReason] = useState("");
+  const [showStartedRejectForm, setShowStartedRejectForm] = useState(false);
 
   usePendingPaymentsRealtime();
 
@@ -265,13 +271,30 @@ export default function PendingTransactions() {
     );
 
     return reportedMatchKeys.has(key)
-      ? "bg-purple-100 text-purple-950 hover:bg-purple-200 dark:bg-purple-950/50 dark:text-purple-50 dark:hover:bg-purple-900/60"
+      ? "bg-yellow-200 text-yellow-900 hover:bg-yellow-300 dark:bg-yellow-900/50 dark:text-yellow-100 dark:hover:bg-yellow-800/60"
       : "";
+  };
+
+  const resetStartedTransactionPopup = () => {
+    setStartedTransactionOpen(false);
+    setStartedTransaction(null);
+    setStartedRejectReason("");
+    setShowStartedRejectForm(false);
+  };
+
+  const handleStartedTransactionOpenChange = (open: boolean) => {
+    setStartedTransactionOpen(open);
+
+    if (!open) {
+      setStartedTransaction(null);
+      setStartedRejectReason("");
+      setShowStartedRejectForm(false);
+    }
   };
 
   const handleConfirm = (row: PendingTransaction) => {
     if (!window.confirm("هل انت متأكد من انهاء العملية")) {
-      return;
+      return false;
     }
 
     confirmMutation.mutate({ id: row._id, row });
@@ -283,6 +306,18 @@ export default function PendingTransactions() {
       companyId: companyIdByName.get(row.company) || "",
       port: currentUser?.username || "",
     });
+
+    return true;
+  };
+
+  const handleStartedTransactionConfirm = () => {
+    if (!startedTransaction) {
+      return;
+    }
+
+    if (handleConfirm(startedTransaction)) {
+      resetStartedTransactionPopup();
+    }
   };
 
   const handleRejectSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -314,6 +349,10 @@ export default function PendingTransactions() {
     }
 
     startMutation.mutate(row._id);
+    setStartedTransaction(row);
+    setStartedRejectReason("");
+    setShowStartedRejectForm(false);
+    setStartedTransactionOpen(true);
   };
 
   const handleReportedSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -326,6 +365,48 @@ export default function PendingTransactions() {
       createdBy: currentUser?.username || "",
     });
   };
+
+  const handleStartedRejectSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!startedTransaction) {
+      return;
+    }
+
+    rejectMutation.mutate({
+      payment: {
+        id: startedTransaction._id,
+        email: startedTransaction.email,
+        amount: startedTransaction.amount,
+      },
+      reason: startedRejectReason,
+    });
+
+    resetStartedTransactionPopup();
+  };
+
+  const startedTransactionDetails = startedTransaction
+    ? [
+        {
+          label: "الرقم / ID",
+          value: getPendingTransactionNumber(startedTransaction) || "-",
+        },
+        { label: "الشركة", value: startedTransaction.company || "-" },
+        { label: "السرعة", value: startedTransaction.speed || "-" },
+        {
+          label: "الحساب المرسل",
+          value: startedTransaction.email || "-",
+        },
+        { label: "المبلغ", value: startedTransaction.amount || "-" },
+        { label: "الحالة", value: startedTransaction.status || "-" },
+        {
+          label: "الوقت",
+          value: startedTransaction.createdAt
+            ? new Date(startedTransaction.createdAt).toLocaleString("en-GB")
+            : "-",
+        },
+      ]
+    : [];
 
   return (
     <DashboardLayout>
@@ -350,6 +431,81 @@ export default function PendingTransactions() {
             <Button type="submit">تأكيد الرفض</Button>
           </form>
         </div>
+      </PopupForm>
+
+      <PopupForm
+        isOpen={startedTransactionOpen}
+        setIsOpen={handleStartedTransactionOpenChange}
+        title={STARTED_TRANSACTION_FORM_TITLE}
+        trigger={<></>}
+      >
+        {startedTransaction && (
+          <div className="space-y-5" dir="rtl">
+            <div className="grid gap-3 rounded-md border bg-muted/20 p-4 sm:grid-cols-2">
+              {startedTransactionDetails.map((detail) => (
+                <div key={detail.label} className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {detail.label}
+                  </p>
+                  <p className="break-words text-sm font-semibold">
+                    {detail.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {showStartedRejectForm && (
+              <form onSubmit={handleStartedRejectSubmit} className="space-y-3">
+                <Input
+                  value={startedRejectReason}
+                  onChange={(event) =>
+                    setStartedRejectReason(event.target.value)
+                  }
+                  type="text"
+                  placeholder="سبب الرفض (مثال: لا يوجد رصيد)"
+                  required
+                />
+                <Button
+                  type="submit"
+                  variant="destructive"
+                  className="w-full"
+                  disabled={rejectMutation.isPending}
+                >
+                  {rejectMutation.isPending ? "..." : "تأكيد الرفض"}
+                </Button>
+              </form>
+            )}
+
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={resetStartedTransactionPopup}
+              >
+                إخفاء
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setShowStartedRejectForm(true)}
+                disabled={rejectMutation.isPending}
+              >
+                رفض
+              </Button>
+              <Button
+                type="button"
+                onClick={handleStartedTransactionConfirm}
+                disabled={
+                  confirmMutation.isPending || decreaseBalanceMutation.isPending
+                }
+              >
+                {confirmMutation.isPending || decreaseBalanceMutation.isPending
+                  ? "..."
+                  : "تأكيد"}
+              </Button>
+            </div>
+          </div>
+        )}
       </PopupForm>
 
       <PopupForm
