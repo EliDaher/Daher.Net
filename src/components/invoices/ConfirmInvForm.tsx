@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Plus, Printer, Save, Trash2, X } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 import { addBillInvoice, type BillCategoryTotals } from "@/services/balance";
+import billManualRowShortcuts from "@/data/billManualRowShortcuts.json";
 
 type CategoryKey = keyof BillCategoryTotals;
 type ManualCategoryValue = CategoryKey | "";
@@ -39,6 +40,13 @@ type ManualInvoiceRow = InvoiceRow & {
   invoiceValue: number;
 };
 
+type ManualRowShortcut = {
+  label: string;
+  category: CategoryKey;
+  value: number;
+  details: string;
+};
+
 const categoryOptions: Array<{ value: CategoryKey; label: string; color: string }> = [
   {
     value: "internetTotal",
@@ -61,6 +69,8 @@ const categoryOptions: Array<{ value: CategoryKey; label: string; color: string 
     color: "border-orange-200 bg-orange-50 text-orange-800",
   },
 ];
+
+const manualRowShortcuts = billManualRowShortcuts as ManualRowShortcut[];
 
 const emptyManualForm = {
   category: "" as ManualCategoryValue,
@@ -102,6 +112,7 @@ function ConfirmInvForm({
   const printFinalizePendingRef = useRef(false);
   const [loadingMode, setLoadingMode] = useState<SaveMode | null>(null);
   const [manualForm, setManualForm] = useState(emptyManualForm);
+  const [selectedShortcut, setSelectedShortcut] = useState("");
   const [manualRows, setManualRows] = useState<ManualInvoiceRow[]>([]);
   const [manualFormError, setManualFormError] = useState("");
   const [saveError, setSaveError] = useState("");
@@ -141,15 +152,18 @@ function ConfirmInvForm({
     [finalTable, manualRows],
   );
 
+  const manualValue = Number(manualForm.value);
   const canAddManualRow =
     Boolean(manualForm.category) &&
     Boolean(manualForm.details.trim()) &&
-    Number(manualForm.value) > 0;
+    Number.isFinite(manualValue) &&
+    manualValue !== 0;
   const isSaving = loadingMode !== null;
 
   const resetManualRows = () => {
     setManualRows([]);
     setManualForm(emptyManualForm);
+    setSelectedShortcut("");
     setManualFormError("");
     setSaveError("");
   };
@@ -308,7 +322,7 @@ function ConfirmInvForm({
       (option) => option.value === manualForm.category,
     );
 
-    if (!category || !details || !Number.isFinite(value) || value <= 0) {
+    if (!category || !details || !Number.isFinite(value) || value === 0) {
       setManualFormError("اختر التصنيف وأدخل القيمة والتفاصيل");
       return;
     }
@@ -327,6 +341,39 @@ function ConfirmInvForm({
       },
     ]);
     setManualForm(emptyManualForm);
+  };
+
+  const handleShortcutChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const nextShortcut = event.target.value;
+    setSelectedShortcut(nextShortcut);
+
+    const shortcut = manualRowShortcuts[Number(nextShortcut)];
+    const value = Number(shortcut?.value);
+    const details = String(shortcut?.details || "").trim();
+    const category = categoryOptions.find(
+      (option) => option.value === shortcut?.category,
+    );
+
+    if (!shortcut || !category || !details || !Number.isFinite(value) || value === 0) {
+      setManualFormError("اختر التصنيف وأدخل القيمة والتفاصيل");
+      setSelectedShortcut("");
+      return;
+    }
+
+    setManualFormError("");
+    setManualRows((rows: any) => [
+      ...rows,
+      {
+        id: `${Date.now()}-${rows.length}`,
+        category: category.value,
+        customerDetails: category.label,
+        customerName: details,
+        customerNumber: "يدوي",
+        invoiceNumber: "-",
+        invoiceValue: value,
+      },
+    ]);
+    setSelectedShortcut("");
   };
 
   const handleRemoveManualRow = (id: string) => {
@@ -460,6 +507,24 @@ function ConfirmInvForm({
                   <div className="space-y-3">
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-muted-foreground">
+                        اختصار جاهز
+                      </label>
+                      <select
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={selectedShortcut}
+                        onChange={handleShortcutChange}
+                      >
+                        <option value="">اختر اختصار للإضافة السريعة</option>
+                        {manualRowShortcuts.map((shortcut, index) => (
+                          <option key={`${shortcut.label}-${index}`} value={index}>
+                            {shortcut.label} - {formatAmount(shortcut.value)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground">
                         التصنيف
                       </label>
                       <select
@@ -487,7 +552,6 @@ function ConfirmInvForm({
                       </label>
                       <input
                         className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        min="1"
                         onChange={(event) =>
                           setManualForm((prev) => ({
                             ...prev,

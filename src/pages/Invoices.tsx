@@ -170,8 +170,8 @@ function Invoice(){
                         <div className="flex shadow-[0px_0px_4px] shadow-accent-400 mr-5 rounded-lg text-text-950">
                             <button 
                                 onClick={()=>{
+                                    openModalPay()
                                     if(finalTable.length > 0){
-                                        openModalPay()
                                     }
                                 }}
                                 className="text-center text-lg p-2 border-r rounded-l-lg border-text-950 bg-accent-200 hover:bg-accent-300 text-accent-foreground font-bold">

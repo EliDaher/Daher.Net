@@ -1,0 +1,62 @@
+[
+  {
+    "label": "حسم 500",
+    "category": "internetTotal",
+    "value": -500,
+    "details": "Discount"
+  },
+  {
+    "label": "بخشيش 500",
+    "category": "phoneTotal",
+    "value": 500,
+    "details": "زيادة"
+  },
+  {
+    "label": "باقة 5", 
+    "category": "phoneTotal",
+    "value": 3000, 
+    "details": "باقة 5" 
+  },
+  {
+    "label": "باقة 10", 
+    "category": "phoneTotal",
+    "value": 5000, 
+    "details": "باقة 10" 
+  },
+  {
+    "label": "باقة 20",
+    "category": "phoneTotal",
+    "value": 7500,
+    "details": "باقة 20"
+  },
+  {
+    "label": "باقة 30",
+    "category": "phoneTotal",
+    "value": 10000,
+    "details": "باقة 30"
+  },
+  {
+    "label": "باقة 50",
+    "category": "phoneTotal",
+    "value": 14000,
+    "details": "باقة 50"
+  },
+  {
+    "label": "باقة 75",
+    "category": "phoneTotal",
+    "value": 17000,
+    "details": "باقة 75"
+  },
+  {
+    "label": "باقة 100",
+    "category": "phoneTotal",
+    "value": 23000,
+    "details": "باقة 100"
+  },
+  {
+    "label": "باقة 200",
+    "category": "phoneTotal",
+    "value": 42000,
+    "details": "باقة 200"
+  }
+]
