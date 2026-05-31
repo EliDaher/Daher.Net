@@ -77,6 +77,20 @@ export async function addInvoice(data: {
   }
 }
 
+export async function createMonthlyInvoices(data: {
+  month: number;
+  year?: number;
+  force?: boolean;
+}) {
+  try {
+    const response = await apiClient.post("/api/wifi/createMonthlyInvoices", data);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating monthly invoices:", error);
+    return { success: false, error };
+  }
+}
+
 export async function updateCustomer(id: string, newData: any) {
   try {
     const response = await apiClient.put(`/api/wifi/updateCustomer/${id}`, {

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import getWifiCustomers, { deleteCustomer } from "@/services/wifi";
+import { createMonthlyInvoices } from "@/services/wifi";
 import {
   Users as UsersIcon,
   Table,
@@ -9,6 +10,7 @@ import {
   Plus,
   Loader2,
   CheckCircle2,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -45,6 +47,14 @@ type BulkStateResult = {
   results?: BulkStateResultItem[];
 };
 
+const invoiceMonths = Array.from({ length: 12 }, (_, index) => {
+  const month = index + 1;
+  return {
+    value: String(month),
+    label: String(month).padStart(2, "0"),
+  };
+});
+
 export default function Users() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -63,6 +73,9 @@ export default function Users() {
   const [selectedSpeed, setSelectedSpeed] = useState("all");
   const [selectedDealer, setSelectedDealer] = useState("all");
   const [selectedBalance, setSelectedBalance] = useState("all");
+  const [selectedInvoiceMonth, setSelectedInvoiceMonth] = useState(
+    String(new Date().getMonth() + 1),
+  );
 
   const [isOpen, setIsOpen] = useState(false);
   const [deleteIsOpen, setDeleteIsOpen] = useState(false);
@@ -257,6 +270,29 @@ export default function Users() {
     },
   });
 
+  const createMonthlyInvoicesMutation = useMutation({
+    mutationFn: () =>
+      createMonthlyInvoices({ month: Number(selectedInvoiceMonth) }),
+    onSuccess: (data) => {
+      if (!data?.success) {
+        toast.error("Failed to create monthly invoices.");
+        return;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["customers-table"] });
+      toast.success(
+        `Created ${data.createdCount || 0} invoices for month ${
+          data.period || selectedInvoiceMonth
+        }. Skipped ${data.skippedCount || 0}. Fixed ${
+          data.balanceFixedCount || 0
+        } balances.`,
+      );
+    },
+    onError: () => {
+      toast.error("Failed to create monthly invoices.");
+    },
+  });
+
   useEffect(() => {
     if (location.state == "unpaid") {
       setSelectedBalance("noBalance");
@@ -327,6 +363,16 @@ export default function Users() {
     setSelectedBalance("all");
   };
 
+  const handleCreateMonthlyInvoices = () => {
+    const confirmed = window.confirm(
+      `Create monthly invoices for all users for month ${selectedInvoiceMonth}?`,
+    );
+
+    if (!confirmed) return;
+
+    createMonthlyInvoicesMutation.mutate();
+  };
+
   useEffect(() => {
     if (daherUser?.role == "dealer") {
       setSelectedDealer(daherUser.username);
@@ -353,7 +399,7 @@ export default function Users() {
     const message = `عزيزي المشترك ${customer.Name}، قيمة فاتورتك الحالية هي: ${
       customer.Balance * -1
     } دولار.
-يرجى التسديد قبل تاريخ 5-5-2026 لضمان استمرار الخدمة دون انقطاع.
+يرجى التسديد قبل تاريخ 2-6-2026 لضمان استمرار الخدمة دون انقطاع.
 شكرًا لثقتك بخدماتنا.`;
 
     window.open(
@@ -482,6 +528,48 @@ export default function Users() {
                       );
                     })}
                   />
+                  {daherUser?.username == "elidaher" && (
+                    <>
+                      <div className="flex items-end gap-2">
+                        <div>
+                          <label className="text-xs text-muted-foreground">
+                            Invoice month
+                          </label>
+                          <Select
+                            value={selectedInvoiceMonth}
+                            onValueChange={setSelectedInvoiceMonth}
+                          >
+                            <SelectTrigger className="w-24">
+                              <SelectValue placeholder="Month" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {invoiceMonths.map((month) => (
+                                <SelectItem
+                                  key={month.value}
+                                  value={month.value}
+                                >
+                                  {month.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          onClick={handleCreateMonthlyInvoices}
+                          disabled={createMonthlyInvoicesMutation.isPending}
+                        >
+                          {createMonthlyInvoicesMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <FileText className="w-4 h-4 mr-2" />
+                          )}
+                          Create invoices
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -699,19 +787,21 @@ export default function Users() {
                                   getPPPUsername(customer),
                                 )}
                                 onCheckedChange={() =>
-                                  toggleSelectedUsername(getPPPUsername(customer))
+                                  toggleSelectedUsername(
+                                    getPPPUsername(customer),
+                                  )
                                 }
                                 onClick={(event) => event.stopPropagation()}
                               />
                               <span className="text-xs text-muted-foreground">
-                                {selectedUsernames.has(
-                                  getPPPUsername(customer),
-                                )
+                                {selectedUsernames.has(getPPPUsername(customer))
                                   ? "Selected"
                                   : "Click to select"}
                               </span>
                             </div>
-                            {selectedUsernames.has(getPPPUsername(customer)) && (
+                            {selectedUsernames.has(
+                              getPPPUsername(customer),
+                            ) && (
                               <CheckCircle2 className="h-4 w-4 text-green-600" />
                             )}
                           </div>
@@ -744,29 +834,29 @@ export default function Users() {
                           </p>
                         )}
                       </CardContent>
-                      {(['elidaher', 'andreh'].includes(daherUser?.username) && (
-                          <>
-                            <Button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setCustomerToDelete(customer);
-                                setDeleteIsOpen(true);
-                              }}
-                              variant="destructive"
-                              className="w-full rounded-t-none rounded-b-lg"
-                            >
-                              حذف
-                            </Button>
+                      {["elidaher", "andreh"].includes(daherUser?.username) && (
+                        <>
+                          <Button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setCustomerToDelete(customer);
+                              setDeleteIsOpen(true);
+                            }}
+                            variant="destructive"
+                            className="w-full rounded-t-none rounded-b-lg"
+                          >
+                            حذف
+                          </Button>
 
-                            <Button
-                              variant="outline"
-                              className="w-full bg-green-500"
-                              onClick={() => handleWhatsApp(customer)}
-                            >
-                              واتساب
-                            </Button>
-                          </>
-                        ))}
+                          <Button
+                            variant="outline"
+                            className="w-full bg-green-500"
+                            onClick={() => handleWhatsApp(customer)}
+                          >
+                            واتساب
+                          </Button>
+                        </>
+                      )}
                     </Card>
                   ))}
                 </div>
