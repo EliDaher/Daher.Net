@@ -100,6 +100,42 @@ function sumTotals(totals: BillCategoryTotals) {
   );
 }
 
+function isCategoryKey(value: unknown): value is CategoryKey {
+  return categoryOptions.some((option) => option.value === value);
+}
+
+function inferRowCategory(row: InvoiceRow): CategoryKey | undefined {
+  if (isCategoryKey(row.category)) {
+    return row.category;
+  }
+
+  const details = String(row.customerDetails || "").toLowerCase();
+
+  if (details.includes("ÙƒÙ‡Ø±Ø¨") || details.includes("كهرب")) {
+    return "elecTotal";
+  }
+
+  if (details.includes("Ù…ÙŠØ§") || details.includes("ميا")) {
+    return "waterTotal";
+  }
+
+  if (
+    details.includes("Ø§Ø±Ø¶") ||
+    details.includes("ارضي") ||
+    details.includes("أرضي")
+  ) {
+    return "phoneTotal";
+  }
+
+  return undefined;
+}
+
+function normalizeInvoiceRow(row: InvoiceRow): InvoiceRow {
+  const category = inferRowCategory(row);
+
+  return category ? { ...row, category } : row;
+}
+
 function ConfirmInvForm({
   clearAllTables,
   finalTable,
@@ -148,7 +184,7 @@ function ConfirmInvForm({
 
   const categorizedTotal = sumTotals(adjustedCategoryTotals);
   const combinedFinalTable = useMemo(
-    () => [...finalTable, ...manualRows],
+    () => [...finalTable, ...manualRows].map(normalizeInvoiceRow),
     [finalTable, manualRows],
   );
 

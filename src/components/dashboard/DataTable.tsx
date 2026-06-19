@@ -34,6 +34,14 @@ interface TableData {
   [key: string]: any;
 }
 
+type ServerPaginationConfig = {
+  page: number;
+  pageSize: number;
+  total: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
+};
+
 interface DataTableProps {
   title: string;
   totalPend?: boolean;
@@ -48,6 +56,7 @@ interface DataTableProps {
   renderRowActions?: (row: TableData) => ReactNode;
   amountBold?: boolean;
   isLoading?: boolean;
+  serverPagination?: ServerPaginationConfig;
 }
 
 function stringifyTableValue(value: unknown): string {
@@ -128,6 +137,7 @@ export function DataTable({
   renderRowActions,
   amountBold = false,
   isLoading = false,
+  serverPagination,
 }: DataTableProps) {
   const daherUser = getStoredUser();
   const [searchTerm, setSearchTerm] = useState("");
@@ -137,6 +147,8 @@ export function DataTable({
   } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(defaultPageSize);
+  const activePage = serverPagination?.page ?? currentPage;
+  const activePageSize = serverPagination?.pageSize ?? pageSize;
 
   const normalizedSearchTerm = searchTerm.trim().toLowerCase();
 
@@ -179,15 +191,21 @@ export function DataTable({
     });
   }, [filteredData, sortConfig]);
 
-  const totalPages = Math.ceil(sortedData.length / pageSize);
+  const totalRows = serverPagination?.total ?? sortedData.length;
+  const totalPages = Math.ceil(totalRows / activePageSize);
 
   const paginatedData = useMemo(
-    () =>
-      sortedData.slice(
-        (currentPage - 1) * pageSize,
-        currentPage * pageSize,
-      ),
-    [currentPage, pageSize, sortedData],
+    () => {
+      if (serverPagination) {
+        return sortedData;
+      }
+
+      return sortedData.slice(
+        (activePage - 1) * activePageSize,
+        activePage * activePageSize,
+      );
+    },
+    [activePage, activePageSize, serverPagination, sortedData],
   );
 
   const totalPendValue = useMemo(
@@ -195,7 +213,10 @@ export function DataTable({
     [filteredData],
   );
 
-  const skeletonRows = useMemo(() => Array.from({ length: pageSize }), [pageSize]);
+  const skeletonRows = useMemo(
+    () => Array.from({ length: activePageSize }),
+    [activePageSize],
+  );
 
   const handleSort = (key: string) => {
     let direction: "asc" | "desc" = "asc";
@@ -205,6 +226,27 @@ export function DataTable({
     }
 
     setSortConfig({ key, direction });
+  };
+
+  const handlePageChange = (nextPage: number) => {
+    const safePage = Math.min(Math.max(nextPage, 1), totalPages || 1);
+
+    if (serverPagination) {
+      serverPagination.onPageChange(safePage);
+      return;
+    }
+
+    setCurrentPage(safePage);
+  };
+
+  const handlePageSizeChange = (nextPageSize: number) => {
+    if (serverPagination) {
+      serverPagination.onPageSizeChange(nextPageSize);
+      return;
+    }
+
+    setPageSize(nextPageSize);
+    setCurrentPage(1);
   };
 
   const renderCellContent = (value: any, key: string) => {
@@ -320,7 +362,7 @@ export function DataTable({
                   value={searchTerm}
                   onChange={(event) => {
                     setSearchTerm(event.target.value);
-                    setCurrentPage(1);
+                    handlePageChange(1);
                   }}
                   className="pl-8"
                 />
@@ -409,7 +451,7 @@ export function DataTable({
 
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <span className="text-sm text-muted-foreground">
-            عدد الاسطر : {filteredData.length || 0}
+            عدد الاسطر : {totalRows || 0}
           </span>
           <div className="flex items-center space-x-2">
             <span className="text-sm text-muted-foreground">
@@ -417,11 +459,8 @@ export function DataTable({
             </span>
             <select
               className="rounded border px-2 py-1 text-sm"
-              value={pageSize}
-              onChange={(event) => {
-                setPageSize(Number(event.target.value));
-                setCurrentPage(1);
-              }}
+              value={activePageSize}
+              onChange={(event) => handlePageSizeChange(Number(event.target.value))}
             >
               {pageSizeOptions.map((size) => (
                 <option key={size} value={size}>
@@ -434,21 +473,19 @@ export function DataTable({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
+              onClick={() => handlePageChange(activePage - 1)}
+              disabled={activePage === 1}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
             <span className="text-sm">
-              Page {currentPage} of {totalPages || 1}
+              Page {activePage} of {totalPages || 1}
             </span>
             <Button
               variant="outline"
               size="sm"
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
-              disabled={currentPage === totalPages || totalPages === 0}
+              onClick={() => handlePageChange(activePage + 1)}
+              disabled={activePage === totalPages || totalPages === 0}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>

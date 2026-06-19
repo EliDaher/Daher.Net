@@ -17,6 +17,7 @@ import {
   Boxes,
   Table2Icon,
   Building2,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -73,6 +74,12 @@ const navigationGroups = [
         href: "/BillBalance",
         icon: Wallet,
         allowed: ["admin"],
+      },
+      {
+        name: "Electricity Transactions",
+        href: "/ElectricityTransactions",
+        icon: Zap,
+        allowed: ["admin", "employee"],
       },
       {
         name: "Financial Statement",

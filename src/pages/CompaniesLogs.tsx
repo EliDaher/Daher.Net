@@ -27,7 +27,6 @@ export default function CompaniesLogs() {
 
   // 🔹 فلاتر الفرونت فقط
   const [selectedCompany, setSelectedCompany] = useState<string>("all");
-  const [selectedEmail, setSelectedEmail] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState<string>("");
 
@@ -69,10 +68,9 @@ export default function CompaniesLogs() {
         selectedCompany === "all" ? true : item.company === selectedCompany,
       )
       .filter((item: any) =>
-        selectedStatus === "all" ? true : item.status === selectedStatus,
-      )
-      .filter((item: any) =>
-        selectedEmail === "all" ? true : item.email === selectedEmail,
+        selectedStatus === "all"
+          ? true
+          : Math.abs(item.amountGap) != Math.abs(item.amount),
       )
       .filter((item: any) => {
         if (!searchTerm) return true;
@@ -83,7 +81,7 @@ export default function CompaniesLogs() {
           item.note?.toLowerCase().includes(term)
         );
       });
-  }, [doneData, selectedCompany, selectedEmail, selectedStatus, searchTerm]);
+  }, [doneData, selectedCompany, selectedStatus, searchTerm]);
 
   const columns = [
     { key: "id", label: "المعرف", sortable: true, hidden: true },
@@ -92,6 +90,7 @@ export default function CompaniesLogs() {
     { key: "amount", label: "المبلغ المسدد", sortable: true },
     { key: "beforeBalance", label: "الرصيد قبل العملية", sortable: true },
     { key: "afterBalance", label: "الرصيد بعد العملية", sortable: true },
+    { key: "amountGap", label: "الفارق في المبلغ", sortable: true },
     { key: "date", label: "تاريخ العملية", sortable: true },
     { key: "port", label: "المنفذ", sortable: true },
     { key: "reason", label: "ملاحظات", sortable: true },
@@ -170,21 +169,6 @@ export default function CompaniesLogs() {
               </SelectContent>
             </Select>
 
-            {/* البريد الإلكتروني */}
-            <Select value={selectedEmail} onValueChange={setSelectedEmail}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="الشركة" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">الكل</SelectItem>
-                {posList.map((email) => (
-                  <SelectItem key={email} value={email}>
-                    {email}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
             {/* الحالة */}
             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
               <SelectTrigger className="w-40">
@@ -192,9 +176,7 @@ export default function CompaniesLogs() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">الكل</SelectItem>
-                <SelectItem value="تم التسديد">تم التسديد</SelectItem>
-                <SelectItem value="غير مسددة">غير مسددة</SelectItem>
-                <SelectItem value="مرفوضة">مرفوضة</SelectItem>
+                <SelectItem value="غير مطابق">غير مطابق</SelectItem>
               </SelectContent>
             </Select>
 
@@ -224,9 +206,15 @@ export default function CompaniesLogs() {
         <DataTable
           title="المبالغ المسددة للشركات"
           columns={columns}
-          data={filteredData}
+          data={filteredData.map((item: any) => ({
+            ...item,
+            amountGap: item.beforeBalance - item.afterBalance,
+          }))}
           description={`عدد العمليات ${filteredData.length}`}
           totalPend
+          getRowClassName={(row) =>
+            Math.abs(row.amountGap) != Math.abs(row.amount) ? "bg-red-200" : ""
+          }
           pageSizeOptions={[10, 20, 50, 100, 200]}
         />
       </div>

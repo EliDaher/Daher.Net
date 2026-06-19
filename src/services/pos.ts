@@ -1,11 +1,131 @@
 import { invoiceClient } from "@/lib/axios";
 import { toast } from "sonner";
 
-export default async function getPOSUsers() {
-  try {
-    const res = await invoiceClient.get("/api/admin/all-user");
+export type PaginationParams = {
+  page?: number;
+  limit?: number;
+};
 
-    return res.data;
+export type PaginatedResponse<T> = {
+  data: T[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+export type POSUserRow = {
+  _id: string;
+  name?: string;
+  email?: string;
+  password?: string;
+  role?: string;
+  balance?: number | string;
+  number?: string;
+  [key: string]: unknown;
+};
+
+export type POSDebtRow = {
+  _id: string;
+  destination?: string;
+  name?: string;
+  email?: string;
+  number?: string;
+  operator?: string;
+  amount?: number | string;
+  date?: string;
+  [key: string]: unknown;
+};
+
+export type POSBalanceReportRow = {
+  _id?: string;
+  name?: string;
+  email?: string;
+  confirmedDeposits?: number | string;
+  expensesPaid?: number | string;
+  netBalance?: number | string;
+  balance?: number | string;
+  expensesInProgress?: number | string;
+  totalDeposits?: number | string;
+  finalBalance?: number | string;
+  unconfirmedDeposits?: number | string;
+  expensesUnpaid?: number | string;
+  totalExpenses?: number | string;
+  [key: string]: unknown;
+};
+
+function toPositiveNumber(value: unknown, fallback: number) {
+  const parsedValue = Number(value);
+
+  return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : fallback;
+}
+
+function normalizePaginatedResponse<T>(
+  payload: unknown,
+  params: PaginationParams = {},
+): PaginatedResponse<T> {
+  const response = (payload ?? {}) as Record<string, any>;
+  const nestedData = response.data as unknown;
+  const body = (
+    nestedData && !Array.isArray(nestedData) ? nestedData : response
+  ) as Record<string, any>;
+  const pagination = (body.pagination ?? response.pagination ?? body.meta ?? response.meta ?? {}) as Record<
+    string,
+    any
+  >;
+
+  const dataSource = Array.isArray(nestedData)
+    ? nestedData
+    : Array.isArray(body.data)
+      ? body.data
+      : Array.isArray(body.users)
+        ? body.users
+        : Array.isArray(body.debts)
+          ? body.debts
+          : Array.isArray(body.report)
+            ? body.report
+            : Array.isArray(payload)
+              ? payload
+              : [];
+
+  const page = toPositiveNumber(
+    body.page ?? pagination.page ?? response.page ?? params.page,
+    params.page ?? 1,
+  );
+  const limit = toPositiveNumber(
+    body.limit ?? pagination.limit ?? response.limit ?? params.limit,
+    (params.limit ?? dataSource.length) || 10,
+  );
+  const total = toPositiveNumber(
+    body.total ??
+      pagination.total ??
+      body.count ??
+      pagination.count ??
+      response.total ??
+      dataSource.length,
+    dataSource.length,
+  );
+  const totalPages = toPositiveNumber(
+    body.totalPages ?? pagination.totalPages ?? pagination.pages ?? response.totalPages,
+    Math.max(1, Math.ceil(total / limit)),
+  );
+
+  return {
+    data: dataSource as T[],
+    page,
+    limit,
+    total,
+    totalPages,
+  };
+}
+
+export default async function getPOSUsers(
+  params: PaginationParams = {},
+): Promise<PaginatedResponse<POSUserRow>> {
+  try {
+    const res = await invoiceClient.get("/api/admin/all-user", { params });
+
+    return normalizePaginatedResponse<POSUserRow>(res.data, params);
   } catch (error) {
     console.error("Error getting invoices:", error);
     throw new Error("Error getting invoices");
@@ -29,27 +149,30 @@ export  async function deleteUser({id}) {
   
 }
 
-export async function getPOSBalanceReport() {
+export async function getPOSBalanceReport(
+  params: PaginationParams = {},
+): Promise<PaginatedResponse<POSBalanceReportRow>> {
   try {
-    const res = await invoiceClient.get(
-      "/api/admin/getPOSBalanceReport",
-    );
+    const res = await invoiceClient.get("/api/admin/getPOSBalanceReport", {
+      params,
+    });
 
-    console.log(res.data)
-    return res.data;
+    return normalizePaginatedResponse<POSBalanceReportRow>(res.data, params);
   } catch (error) {
     console.error("Error getting invoices:", error);
     throw new Error("Error getting invoices");
   }
 }
 
-export async function getPOSDebt() {
+export async function getPOSDebt(
+  params: PaginationParams = {},
+): Promise<PaginatedResponse<POSDebtRow>> {
   try {
-    const res = await invoiceClient.get("/api/admin/daen");
-    return res.data;
+    const res = await invoiceClient.get("/api/admin/daen", { params });
+    return normalizePaginatedResponse<POSDebtRow>(res.data, params);
   } catch (error) {
     console.error("Error getting invoices:", error);
-    return { success: false, error };
+    throw new Error("Error getting POS debts");
   }
 }
 

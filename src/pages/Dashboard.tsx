@@ -261,6 +261,7 @@ export default function Dashboard() {
     [debtCustomers],
   );
 
+  console.log(pendingData) 
   const recentPendingPayments = useMemo(
     () =>
       [...pendingData]

@@ -164,8 +164,8 @@ export default function POSBalance() {
   const posUsersQuery = useQuery({
     queryKey: USERS_QUERY_KEY,
     queryFn: async () => {
-      const data = await getPOSUsers();
-      return Array.isArray(data) ? (data as PosUser[]) : [];
+      const response = await getPOSUsers({ page: 1, limit: 5000 });
+      return response.data as PosUser[];
     },
     refetchInterval: 10_000,
   });
@@ -173,8 +173,8 @@ export default function POSBalance() {
   const posReportQuery = useQuery({
     queryKey: REPORT_QUERY_KEY,
     queryFn: async () => {
-      const data = await getPOSBalanceReport();
-      return Array.isArray(data) ? (data as PosReport[]) : [];
+      const response = await getPOSBalanceReport({ page: 1, limit: 5000 });
+      return response.data as PosReport[];
     },
     refetchInterval: 10_000,
   });
@@ -182,8 +182,8 @@ export default function POSBalance() {
   const posDebtsQuery = useQuery({
     queryKey: DEBTS_QUERY_KEY,
     queryFn: async () => {
-      const data = await getPOSDebt();
-      return Array.isArray(data) ? (data as PosDebt[]) : [];
+      const response = await getPOSDebt({ page: 1, limit: 5000 });
+      return response.data as PosDebt[];
     },
     refetchInterval: 10_000,
   });

@@ -1,6 +1,24 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
+function getUtilityCategory(details) {
+    const value = String(details || "").toLowerCase();
+
+    if (value.includes("ÙƒÙ‡Ø±Ø¨") || value.includes("كهرب")) {
+        return "elecTotal";
+    }
+
+    if (value.includes("Ù…ÙŠØ§") || value.includes("ميا")) {
+        return "waterTotal";
+    }
+
+    if (value.includes("Ø§Ø±Ø¶") || value.includes("ارضي") || value.includes("أرضي")) {
+        return "phoneTotal";
+    }
+
+    return "elecTotal";
+}
+
 export default function ElecTable({ loading, elecMatchingRows, elecOriginalRows, finalTable, setFinalTable, searchText, work, setWork, elecTotal, phoneTotal, waterTotal, setElecTotal, setPhoneTotal, setWaterTotal }) {
     const [invoicesData, setInvoicesData] = useState([]);
     const [originalRows, setOriginalRows] = useState([]);
@@ -165,6 +183,7 @@ export default function ElecTable({ loading, elecMatchingRows, elecOriginalRows,
                                                                   updateElec(updateRow, updateCol, updateVal);
                                                                 }
                                                                 const deletedInvoice = {
+                                                                    category: getUtilityCategory((invoice)[1]),
                                                                     customerName:(invoice)[1],
                                                                     customerNumber:(invoice)[3],
                                                                     customerDetails:(invoice)[2],
@@ -205,6 +224,7 @@ export default function ElecTable({ loading, elecMatchingRows, elecOriginalRows,
                                                                   updateElec(updateRow, updateCol, updateVal);
                                                                 }
                                                                 const newInvoice = {
+                                                                    category: getUtilityCategory((invoice)[1]),
                                                                     customerName:(invoice)[2],
                                                                     customerNumber:(invoice)[3],
                                                                     customerDetails:(invoice)[1],

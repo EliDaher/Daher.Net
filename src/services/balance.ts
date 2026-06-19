@@ -13,6 +13,34 @@ export type BillCategoryTotalsFilters = {
   category?: string;
 };
 
+export type ElectricityTransaction = {
+  id: string;
+  invoiceId?: string;
+  employee: string;
+  date: string;
+  createdAt: string;
+  reviewed: boolean;
+  reviewedAt?: string;
+  category: "elecTotal";
+  customerName: string;
+  customerNumber: string;
+  customerDetails: string;
+  invoiceNumber: string;
+  invoiceValue: number;
+};
+
+export type ElectricityTransactionFilters = {
+  date?: string;
+  employee?: string;
+  reviewed?: string;
+};
+
+export type UpdateElectricityTransactionReviewedPayload = {
+  id: string;
+  date: string;
+  reviewed: boolean;
+};
+
 export type AddBillInvoicePayload = {
   amount: number;
   employee: string;
@@ -102,6 +130,41 @@ export async function getBillCategoryTotals({
     return response.data;
   } catch (err) {
     console.error("خطأ في جلب إجماليات الفواتير المصنفة:", err);
+    throw err;
+  }
+}
+
+export async function getElectricityTransactions({
+  date,
+  employee = "all",
+  reviewed = "all",
+}: ElectricityTransactionFilters = {}) {
+  try {
+    const response = await apiClient.get("/api/balance/electricityTransactions", {
+      params: { date, employee, reviewed },
+    });
+
+    return response.data;
+  } catch (err) {
+    console.error("Ø®Ø·Ø£ ÙÙŠ Ø¬Ù„Ø¨ Ø­Ø±ÙƒØ§Øª Ø§Ù„ÙƒÙ‡Ø±Ø¨Ø§Ø¡:", err);
+    throw err;
+  }
+}
+
+export async function updateElectricityTransactionReviewed({
+  id,
+  date,
+  reviewed,
+}: UpdateElectricityTransactionReviewedPayload) {
+  try {
+    const response = await apiClient.patch(
+      `/api/balance/electricityTransactions/${id}`,
+      { date, reviewed },
+    );
+
+    return response.data;
+  } catch (err) {
+    console.error("Ø®Ø·Ø£ ÙÙŠ ØªØ­Ø¯ÙŠØ« Ø­Ø§Ù„Ø© Ø­Ø±ÙƒØ© Ø§Ù„ÙƒÙ‡Ø±Ø¨Ø§Ø¡:", err);
     throw err;
   }
 }

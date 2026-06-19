@@ -164,6 +164,7 @@ export default function InternetInvoiceTable({ loading, internetMatchingRows, in
                                                                   updateInternet(updateRow, updateCol, updateVal);
                                                                 }
                                                                 const deletedInvoice = {
+                                                                    category: "internetTotal",
                                                                     customerName:(invoice)[2],
                                                                     customerNumber:(invoice)[1],
                                                                     customerDetails:(invoice)[3],
@@ -202,6 +203,7 @@ export default function InternetInvoiceTable({ loading, internetMatchingRows, in
                                                                   updateInternet(updateRow, updateCol, updateVal);
                                                                 }
                                                                 const newInvoice = {
+                                                                    category: "internetTotal",
                                                                     customerName:(invoice)[2],
                                                                     customerNumber:(invoice)[1],
                                                                     customerDetails:(invoice)[3],
