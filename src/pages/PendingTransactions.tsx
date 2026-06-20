@@ -236,6 +236,12 @@ export default function PendingTransactions() {
       { key: "amount", label: "المبلغ الواجب دفعه", sortable: true },
       { key: "status", label: "حالة العملية", sortable: true },
       { key: "createdAt", label: "الوقت", sortable: true },
+      {
+        key: "extra",
+        label: "معلومات إضافية",
+        accessor: (row: PendingTransaction) => row.extra?.playerId || "-",
+      },
+      
     ],
     [],
   );
@@ -405,6 +411,7 @@ export default function PendingTransactions() {
             ? new Date(startedTransaction.createdAt).toLocaleString("en-GB")
             : "-",
         },
+        { label: "معلومات اضافية", value: startedTransaction.extra?.playerId || "-" },
       ]
     : [];
 
