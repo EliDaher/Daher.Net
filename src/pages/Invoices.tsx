@@ -119,7 +119,7 @@ function Invoice(){
 
                 <div className="flex-col w-full">
                     <div className="sticky top-0 z-30 py-3 shadow bg-foreground/10 flex flex-wrap justify-center mt-4 select-none">
-                        <div className="flex gap-3 px-2 mr-10">
+                        {/* <div className="flex gap-3 px-2 mr-10">
                             <button onClick={()=>{
                                 setPayOrInv("pay")
                                 openAddBalanceForm()
@@ -166,7 +166,7 @@ function Invoice(){
                                     <Button className="w-full" type="submit" disabled={mofMutation.isPending}>تأكيد</Button>
                                 </form>
                             </PopupForm>
-                        </div>
+                        </div> */}
                         <div className="flex shadow-[0px_0px_4px] shadow-accent-400 mr-5 rounded-lg text-text-950">
                             <button 
                                 onClick={()=>{
