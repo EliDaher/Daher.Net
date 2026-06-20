@@ -76,12 +76,6 @@ const navigationGroups = [
         allowed: ["admin"],
       },
       {
-        name: "Electricity Transactions",
-        href: "/ElectricityTransactions",
-        icon: Zap,
-        allowed: ["admin", "employee"],
-      },
-      {
         name: "Financial Statement",
         href: "/FinancialStatement",
         icon: Table2Icon,
@@ -234,6 +228,19 @@ const navigationGroups = [
     ],
     allowed: ["admin"],
   },
+
+  // {
+  //   title: "Services",
+  //   items: [
+  //     {
+  //       name: "Electricity Transactions",
+  //       href: "/ElectricityTransactions",
+  //       icon: Zap,
+  //       allowed: ["admin", "employee"],
+  //     },
+  //   ],
+  //   allowed: ["admin", "employee"],
+  // },
 ];
 
 interface SidebarProps {

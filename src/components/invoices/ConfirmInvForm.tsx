@@ -47,6 +47,13 @@ type ManualRowShortcut = {
   details: string;
 };
 
+type ReceiptGroup = {
+  key: string;
+  customerName: string;
+  customerNumber: string;
+  rows: InvoiceRow[];
+};
+
 const categoryOptions: Array<{ value: CategoryKey; label: string; color: string }> = [
   {
     value: "internetTotal",
@@ -145,6 +152,7 @@ function ConfirmInvForm({
   categoryTotals,
 }: ConfirmInvFormProps) {
   const tableRef = useRef<HTMLDivElement>(null);
+  const printRef = useRef<HTMLDivElement>(null);
   const printFinalizePendingRef = useRef(false);
   const [loadingMode, setLoadingMode] = useState<SaveMode | null>(null);
   const [manualForm, setManualForm] = useState(emptyManualForm);
@@ -187,6 +195,30 @@ function ConfirmInvForm({
     () => [...finalTable, ...manualRows].map(normalizeInvoiceRow),
     [finalTable, manualRows],
   );
+  const receiptGroups = useMemo<ReceiptGroup[]>(() => {
+    const groups = new Map<string, ReceiptGroup>();
+
+    combinedFinalTable.forEach((invoice, index) => {
+      const customerName = String(invoice.customerName || "-");
+      const customerNumber = String(invoice.customerNumber || "-");
+      const key = `${customerName}::${customerNumber}`;
+      const existingGroup = groups.get(key);
+
+      if (existingGroup) {
+        existingGroup.rows.push(invoice);
+        return;
+      }
+
+      groups.set(key, {
+        key: `${key}::${index}`,
+        customerName,
+        customerNumber,
+        rows: [invoice],
+      });
+    });
+
+    return Array.from(groups.values());
+  }, [combinedFinalTable]);
 
   const manualValue = Number(manualForm.value);
   const canAddManualRow =
@@ -250,76 +282,145 @@ function ConfirmInvForm({
   };
 
   const handlePrint = useReactToPrint({
-    contentRef: tableRef,
+    contentRef: printRef,
     pageStyle: `
-      @page {
-        size: 80mm auto;
-        margin: 0;
-      }
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
 
-      body {
-        font-family: Arial, sans-serif;
-      }
+  * {
+    box-sizing: border-box;
+  }
 
-      td, th {
-        border: 1px solid black;
-        padding: 2px;
-        font-weight: bold;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        white-space: normal;
-        text-align: center;
-        max-width: 65px;
-        width: 65px;
-        height: auto;
-      }
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    overflow: hidden !important;
+    font-family: Arial, sans-serif;
+    color: black !important;
+    background: white !important;
+  }
 
-      .no-print {
-        display: none;
-      }
+  @media print {
+    body {
+      width: 80mm !important;
+      max-width: 80mm !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      font-size: 12px;
+    }
 
-      .totalValue {
-        font-weight: bold;
-        font-size: 24px;
-      }
+    .receipt-print {
+      position: static !important;
+      left: auto !important;
+      top: auto !important;
+      direction: rtl;
+      width: 74mm !important;
+      max-width: 74mm !important;
+      margin: 0 auto !important;
+      padding: 3mm 0 4mm !important;
+      color: black !important;
+      background: white !important;
+      font-family: Arial, sans-serif;
+      line-height: 1.35;
+      overflow: visible !important;
+    }
 
-      @media print {
-        body, table, th, td {
-          color: black !important;
-        }
+    .receipt-header {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 900;
+      margin: 0 0 8px 0;
+    }
 
-        body {
-          width: 80mm;
-          height: auto;
-          margin: 0;
-          padding-bottom: 20px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: flex-start;
-          font-family: Arial, sans-serif;
-          font-size: 14px;
-        }
+    .receipt-header span {
+      display: block;
+      margin-bottom: 2px;
+    }
 
-        .header {
-          text-align: center;
-          font-size: 16px;
-          margin-bottom: 10px;
-          margin-top: 10px;
-          font-weight: 900;
-        }
+    .receipt-section {
+      border-top: 1px dashed black;
+      padding-top: 4px;
+      margin-top: 5px;
+    }
 
-        .header span {
-          display: block;
-          margin-bottom: 2px;
-        }
+    .receipt-group {
+      break-inside: avoid;
+      border-bottom: 1px dashed black;
+      padding: 4px 0;
+    }
 
-        table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-      }
-    `,
+    .receipt-customer {
+      display: flex;
+      justify-content: space-between;
+      gap: 5px;
+      margin-bottom: 2px;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .receipt-customer span {
+      min-width: 0;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    .receipt-customer-number {
+      flex: 0 0 auto;
+      text-align: left;
+    }
+
+    .receipt-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 15mm 18mm;
+      align-items: start;
+      gap: 3px;
+      padding: 1px 0;
+      font-size: 10.5px;
+      font-weight: 700;
+    }
+
+    .receipt-row span {
+      min-width: 0;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    .receipt-cycle,
+    .receipt-amount {
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .receipt-amount {
+      font-weight: 900;
+    }
+
+    .receipt-total-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .receipt-grand-total {
+      border-top: 2px solid black;
+      margin-top: 8px;
+      padding-top: 7px;
+      font-weight: 900;
+      font-size: 19px;
+    }
+
+    .no-print {
+      display: none !important;
+    }
+  }
+`,
     onAfterPrint: () => {
       if (printFinalizePendingRef.current) {
         void finalizeInvoice("print");
@@ -504,6 +605,63 @@ function ConfirmInvForm({
                 </div>
 
                 <div className="totalValue mt-4 flex items-center justify-between border-t pt-3">
+                  <span>المجموع</span>
+                  <span>{formatAmount(categorizedTotal)}</span>
+                </div>
+              </div>
+              <div
+                ref={printRef}
+                className="receipt-print fixed left-[-10000px] top-0 bg-white text-gray-950"
+                dir="rtl"
+              >
+                <div className="receipt-header">
+                  <span>Daher.Net</span>
+                  <span>{getCurrentDateTime()}</span>
+                </div>
+
+                <div className="receipt-section">
+                  {receiptGroups.length > 0 ? (
+                    receiptGroups.map((group) => (
+                      <div className="receipt-group" key={group.key}>
+                        <div className="receipt-customer">
+                          <span>{group.customerName}</span>
+                          <span className="receipt-customer-number">
+                            {group.customerNumber}
+                          </span>
+                        </div>
+                        {group.rows.map((invoice, index) => (
+                          <div
+                            className="receipt-row"
+                            key={`${invoice.id || invoice.invoiceNumber || "print-row"}-${index}`}
+                          >
+                            <span>{invoice.customerDetails || "-"}</span>
+                            <span className="receipt-cycle">
+                              {invoice.invoiceNumber || "-"}
+                            </span>
+                            <span className="receipt-amount">
+                              {formatAmount(invoice.invoiceValue)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="receipt-row text-center font-bold">
+                      Ù„Ø§ ØªÙˆØ¬Ø¯ ÙÙˆØ§ØªÙŠØ± Ù…Ø­Ø¯Ø¯Ø©
+                    </div>
+                  )}
+                </div>
+
+                <div className="receipt-section">
+                  {categoryOptions.map((category) => (
+                    <div className="receipt-total-line" key={category.value}>
+                      <span>{category.label}</span>
+                      <span>{formatAmount(adjustedCategoryTotals[category.value])}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="receipt-total-line receipt-grand-total">
                   <span>المجموع</span>
                   <span>{formatAmount(categorizedTotal)}</span>
                 </div>
