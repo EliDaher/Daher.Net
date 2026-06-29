@@ -214,7 +214,18 @@ export async function addPOSUser({ formData, email }) {
     return { success: false, error };
   }
 }
-export async function sendInvoice({ formData }) {
+type SendInvoiceFormData = {
+  landline: string;
+  selectedCompany: string;
+  selectedSpeed: string;
+  amountToPay: number;
+  paymentType: string;
+  email: string;
+  playerId?: string;
+  extra?: Record<string, unknown>;
+};
+
+export async function sendInvoice({ formData }: { formData: SendInvoiceFormData }) {
   try {
     const {
       landline,
@@ -223,7 +234,13 @@ export async function sendInvoice({ formData }) {
       amountToPay,
       paymentType,
       email,
+      playerId,
+      extra,
     } = formData;
+    const paymentExtra = {
+      ...extra,
+      ...(playerId?.trim() ? { playerId: playerId.trim() } : {}),
+    };
 
     console.log({
         landline,
@@ -236,7 +253,7 @@ export async function sendInvoice({ formData }) {
     })
 
     const res = await invoiceClient.post(
-      "https://paynet-1.onrender.com/api/payment/adminPayInternet",
+      "/api/payment/adminPayInternet",
       {
         landline,
         company: selectedCompany,
@@ -244,6 +261,7 @@ export async function sendInvoice({ formData }) {
         amount: Number(amountToPay),
         email: email,
         paymentType,
+        extra: Object.keys(paymentExtra).length > 0 ? paymentExtra : undefined,
       },
     );
 

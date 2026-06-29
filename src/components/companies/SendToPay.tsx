@@ -13,6 +13,7 @@ type SendToPayForm = {
   amountToPay: number;
   paymentType: string;
   email: string;
+  playerId?: string;
 };
 
 type Props = {
@@ -84,6 +85,7 @@ export default function SendToPay({ isOpen, setIsOpen }: Props) {
       amountToPay: 0,
       paymentType: "cash",
       email: daherUser.username + "Ddaheradmin",
+      playerId: "",
     },
   });
 
@@ -126,6 +128,13 @@ export default function SendToPay({ isOpen, setIsOpen }: Props) {
             required: "الرقم مطلوب",
           })}
           error={errors.landline?.message}
+        />
+
+        <FormInput
+          id="playerId"
+          label="معرف اللاعب / معلومات إضافية"
+          {...register("playerId")}
+          error={errors.playerId?.message}
         />
 
         {/* الشركة */}
