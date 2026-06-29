@@ -423,7 +423,7 @@ function ConfirmInvForm({
 `,
     onAfterPrint: () => {
       if (printFinalizePendingRef.current) {
-        void finalizeInvoice("print");
+        //void finalizeInvoice("print");
       }
     },
   });
