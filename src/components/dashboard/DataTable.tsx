@@ -57,6 +57,7 @@ interface DataTableProps {
   amountBold?: boolean;
   isLoading?: boolean;
   serverPagination?: ServerPaginationConfig;
+  pagination?: boolean;
 }
 
 function stringifyTableValue(value: unknown): string {
@@ -138,6 +139,7 @@ export function DataTable({
   amountBold = false,
   isLoading = false,
   serverPagination,
+  pagination = true,
 }: DataTableProps) {
   const daherUser = getStoredUser();
   const [searchTerm, setSearchTerm] = useState("");
@@ -147,6 +149,7 @@ export function DataTable({
   } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(defaultPageSize);
+  const isPaginationEnabled = Boolean(serverPagination) || pagination;
   const activePage = serverPagination?.page ?? currentPage;
   const activePageSize = serverPagination?.pageSize ?? pageSize;
 
@@ -196,6 +199,10 @@ export function DataTable({
 
   const paginatedData = useMemo(
     () => {
+      if (!isPaginationEnabled) {
+        return sortedData;
+      }
+
       if (serverPagination) {
         return sortedData;
       }
@@ -205,7 +212,7 @@ export function DataTable({
         activePage * activePageSize,
       );
     },
-    [activePage, activePageSize, serverPagination, sortedData],
+    [activePage, activePageSize, isPaginationEnabled, serverPagination, sortedData],
   );
 
   const totalPendValue = useMemo(
@@ -453,7 +460,11 @@ export function DataTable({
           <span className="text-sm text-muted-foreground">
             عدد الاسطر : {totalRows || 0}
           </span>
-          <div className="flex items-center space-x-2">
+          <div
+            className={
+              isPaginationEnabled ? "flex items-center space-x-2" : "hidden"
+            }
+          >
             <span className="text-sm text-muted-foreground">
               عدد الاسطر في الصفحة :
             </span>
@@ -469,7 +480,11 @@ export function DataTable({
               ))}
             </select>
           </div>
-          <div className="flex items-center space-x-2">
+          <div
+            className={
+              isPaginationEnabled ? "flex items-center space-x-2" : "hidden"
+            }
+          >
             <Button
               variant="outline"
               size="sm"
