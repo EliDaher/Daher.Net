@@ -13,7 +13,9 @@ export type BillCategoryTotalsFilters = {
   category?: string;
 };
 
-export type ElectricityTransaction = {
+export type BillTransactionCategory = "elecTotal" | "phoneTotal";
+
+export type BillTransaction = {
   id: string;
   invoiceId?: string;
   employee: string;
@@ -21,7 +23,7 @@ export type ElectricityTransaction = {
   createdAt: string;
   reviewed: boolean;
   reviewedAt?: string;
-  category: "elecTotal";
+  category: BillTransactionCategory;
   customerName: string;
   customerNumber: string;
   customerDetails: string;
@@ -29,17 +31,32 @@ export type ElectricityTransaction = {
   invoiceValue: number;
 };
 
-export type ElectricityTransactionFilters = {
+export type BillTransactionFilters = {
   date?: string;
+  fromDate?: string;
+  toDate?: string;
   employee?: string;
   reviewed?: string;
+  category?: BillTransactionCategory;
 };
 
-export type UpdateElectricityTransactionReviewedPayload = {
+export type BillTransactionsResponse = {
+  data: BillTransaction[];
+  [key: string]: unknown;
+};
+
+export type UpdateBillTransactionReviewedPayload = {
   id: string;
   date: string;
   reviewed: boolean;
+  category?: BillTransactionCategory;
 };
+
+export type ElectricityTransaction = BillTransaction & { category: "elecTotal" };
+export type ElectricityTransactionFilters = BillTransactionFilters;
+export type ElectricityTransactionsResponse = BillTransactionsResponse;
+export type UpdateElectricityTransactionReviewedPayload =
+  UpdateBillTransactionReviewedPayload;
 
 export type AddBillInvoicePayload = {
   amount: number;
@@ -134,14 +151,17 @@ export async function getBillCategoryTotals({
   }
 }
 
-export async function getElectricityTransactions({
+export async function getBillTransactions({
   date,
+  fromDate,
+  toDate,
   employee = "all",
   reviewed = "all",
-}: ElectricityTransactionFilters = {}) {
+  category = "elecTotal",
+}: BillTransactionFilters = {}) {
   try {
     const response = await apiClient.get("/api/balance/electricityTransactions", {
-      params: { date, employee, reviewed },
+      params: { date, fromDate, toDate, employee, reviewed, category },
     });
 
     return response.data;
@@ -151,15 +171,132 @@ export async function getElectricityTransactions({
   }
 }
 
-export async function updateElectricityTransactionReviewed({
+export async function getElectricityTransactions(
+  filters: ElectricityTransactionFilters = {},
+) {
+  return getBillTransactions({
+    ...filters,
+    category: "elecTotal",
+  });
+}
+
+function parseDateInput(date: string) {
+  const [year, month, day] = date.split("-").map(Number);
+
+  return new Date(year, month - 1, day);
+}
+
+function formatDateInput(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function getDatesInRange(fromDate: string, toDate: string) {
+  const dates: string[] = [];
+  const currentDate = parseDateInput(fromDate);
+  const lastDate = parseDateInput(toDate);
+
+  while (currentDate <= lastDate) {
+    dates.push(formatDateInput(currentDate));
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return dates;
+}
+
+function normalizeBillTransactionsResponse(
+  response: unknown,
+): BillTransactionsResponse {
+  if (Array.isArray(response)) {
+    return { data: response };
+  }
+
+  const payload = (response ?? {}) as Partial<BillTransactionsResponse>;
+
+  return {
+    ...payload,
+    data: Array.isArray(payload.data) ? payload.data : [],
+  };
+}
+
+function transactionMatchesCategory(
+  transaction: BillTransaction,
+  category: BillTransactionCategory,
+) {
+  if (transaction.category === category) {
+    return true;
+  }
+
+  const details = String(transaction.customerDetails || "").toLowerCase();
+
+  if (category === "phoneTotal") {
+    return (
+      details.includes("ارضي") ||
+      details.includes("أرضي") ||
+      details.includes("ارض")
+    );
+  }
+
+  return details.includes("كهرب");
+}
+
+export async function getBillTransactionsByDateRange({
+  fromDate,
+  toDate,
+  employee = "all",
+  reviewed = "all",
+  category = "elecTotal",
+}: Required<Pick<BillTransactionFilters, "fromDate" | "toDate">> &
+  Pick<BillTransactionFilters, "employee" | "reviewed" | "category">) {
+  const dates = getDatesInRange(fromDate, toDate);
+  const responses = await Promise.all(
+    dates.map((date) =>
+      getBillTransactions({
+        date,
+        employee,
+        reviewed,
+        category,
+      }),
+    ),
+  );
+  const data = responses
+    .flatMap((response) => normalizeBillTransactionsResponse(response).data)
+    .filter((transaction) => transactionMatchesCategory(transaction, category))
+    .map((transaction) => ({ ...transaction, category }));
+
+  return {
+    data: data.sort((first, second) => {
+      const firstDate = new Date(first.createdAt || first.date).getTime();
+      const secondDate = new Date(second.createdAt || second.date).getTime();
+
+      return secondDate - firstDate;
+    }),
+  };
+}
+
+export async function getElectricityTransactionsByDateRange(
+  filters: Required<Pick<ElectricityTransactionFilters, "fromDate" | "toDate">> &
+    Pick<ElectricityTransactionFilters, "employee" | "reviewed">,
+) {
+  return getBillTransactionsByDateRange({
+    ...filters,
+    category: "elecTotal",
+  });
+}
+
+export async function updateBillTransactionReviewed({
   id,
   date,
   reviewed,
-}: UpdateElectricityTransactionReviewedPayload) {
+  category = "elecTotal",
+}: UpdateBillTransactionReviewedPayload) {
   try {
     const response = await apiClient.patch(
       `/api/balance/electricityTransactions/${id}`,
-      { date, reviewed },
+      { date, reviewed, category },
     );
 
     return response.data;
@@ -167,4 +304,13 @@ export async function updateElectricityTransactionReviewed({
     console.error("Ø®Ø·Ø£ ÙÙŠ ØªØ­Ø¯ÙŠØ« Ø­Ø§Ù„Ø© Ø­Ø±ÙƒØ© Ø§Ù„ÙƒÙ‡Ø±Ø¨Ø§Ø¡:", err);
     throw err;
   }
+}
+
+export async function updateElectricityTransactionReviewed(
+  payload: UpdateElectricityTransactionReviewedPayload,
+) {
+  return updateBillTransactionReviewed({
+    ...payload,
+    category: "elecTotal",
+  });
 }

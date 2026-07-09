@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Circle, Search, Zap } from "lucide-react";
+import { CheckCircle2, Circle, Phone, Search } from "lucide-react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/dashboard/DataTable";
 import { StatsCard } from "@/components/dashboard/StatsCard";
@@ -22,7 +22,7 @@ function formatAmount(value: number | string | undefined) {
   });
 }
 
-export default function ElectricityTransactions() {
+export default function PhoneTransactions() {
   const queryClient = useQueryClient();
   const [fromDate, setFromDate] = useState(todayDate);
   const [toDate, setToDate] = useState(todayDate);
@@ -34,7 +34,7 @@ export default function ElectricityTransactions() {
   const [reviewedFilter, setReviewedFilter] = useState("all");
 
   const queryKey = [
-    "electricity-transactions",
+    "phone-transactions",
     appliedDateRange.fromDate,
     appliedDateRange.toDate,
     employeeFilter,
@@ -49,7 +49,7 @@ export default function ElectricityTransactions() {
         toDate: appliedDateRange.toDate,
         employee: employeeFilter,
         reviewed: reviewedFilter,
-        category: "elecTotal",
+        category: "phoneTotal",
       }),
   });
 
@@ -63,13 +63,13 @@ export default function ElectricityTransactions() {
     mutationFn: (payload: UpdateBillTransactionReviewedPayload) =>
       updateBillTransactionReviewed(payload),
     onSuccess: () => {
-      toast.success("Electricity transaction updated.");
+      toast.success("Phone transaction updated.");
       void queryClient.invalidateQueries({
-        queryKey: ["electricity-transactions"],
+        queryKey: ["phone-transactions"],
       });
     },
     onError: () => {
-      toast.error("Failed to update electricity transaction.");
+      toast.error("Failed to update phone transaction.");
     },
   });
 
@@ -134,10 +134,10 @@ export default function ElectricityTransactions() {
       <div className="space-y-6" dir="rtl">
         <div className="grid gap-4 md:grid-cols-3">
           <StatsCard
-            title="Electricity Total"
+            title="Phone Total"
             value={formatAmount(totalAmount)}
             description={appliedRangeLabel}
-            icon={Zap}
+            icon={Phone}
             loading={isLoading}
           />
           <StatsCard
@@ -218,7 +218,7 @@ export default function ElectricityTransactions() {
         </div>
 
         <DataTable
-          title="Electricity Transactions"
+          title="Phone Transactions"
           description={`${transactions.length} rows - total ${formatAmount(totalAmount)} - ${appliedRangeLabel}`}
           columns={columns}
           data={transactions}
@@ -236,7 +236,7 @@ export default function ElectricityTransactions() {
                     id: row.id,
                     date: row.date || appliedDateRange.fromDate,
                     reviewed: event.target.checked,
-                    category: "elecTotal",
+                    category: "phoneTotal",
                   })
                 }
                 type="checkbox"
