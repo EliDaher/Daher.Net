@@ -131,6 +131,7 @@ export default function CustomerDetails() {
         customer={{
           ...customer,
           address: pppData?.address || "",
+          dealer: customer?.dealer,
         }}
       />
 

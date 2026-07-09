@@ -843,19 +843,21 @@ export default function Users() {
                               setDeleteIsOpen(true);
                             }}
                             variant="destructive"
-                            className="w-full rounded-t-none rounded-b-lg"
+                            className="w-full rounded-none"
                           >
                             حذف
                           </Button>
-
-                          <Button
-                            variant="outline"
-                            className="w-full bg-green-500"
-                            onClick={() => handleWhatsApp(customer)}
-                          >
-                            واتساب
-                          </Button>
                         </>
+                      )}
+                      {
+                        ["admin", "employee"].includes(daherUser?.role) && (
+                        <Button
+                          variant="outline"
+                          className="w-full bg-green-500 rounded-t-none rounded-b-lg"
+                          onClick={() => handleWhatsApp(customer)}
+                        >
+                          واتساب
+                        </Button>
                       )}
                     </Card>
                   ))}
