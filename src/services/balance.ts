@@ -14,6 +14,15 @@ export type BillCategoryTotalsFilters = {
 };
 
 export type BillTransactionCategory = "elecTotal" | "phoneTotal";
+export type BillTransactionInvoiceGroup = "shopNumbers" | "otherNumbers";
+
+export const BILL_TRANSACTION_INVOICE_GROUP_LABELS: Record<
+  BillTransactionInvoiceGroup,
+  string
+> = {
+  shopNumbers: "من ارقام المحل",
+  otherNumbers: "ليس من ارقام المحل",
+};
 
 export type BillTransaction = {
   id: string;
@@ -29,6 +38,8 @@ export type BillTransaction = {
   customerDetails: string;
   invoiceNumber: string;
   invoiceValue: number;
+  invoiceGroup?: BillTransactionInvoiceGroup;
+  invoiceGroupLabel?: string;
 };
 
 export type BillTransactionFilters = {
@@ -38,6 +49,7 @@ export type BillTransactionFilters = {
   employee?: string;
   reviewed?: string;
   category?: BillTransactionCategory;
+  allDates?: boolean;
 };
 
 export type BillTransactionsResponse = {
@@ -64,6 +76,26 @@ export type AddBillInvoicePayload = {
   details: any[];
   categoryTotals: BillCategoryTotals;
 };
+
+export function getBillTransactionInvoiceGroup(
+  transaction: Pick<BillTransaction, "invoiceNumber">,
+): BillTransactionInvoiceGroup {
+  return String(transaction.invoiceNumber || "").trim()
+    ? "shopNumbers"
+    : "otherNumbers";
+}
+
+export function withBillTransactionInvoiceGroup(
+  transaction: BillTransaction,
+): BillTransaction {
+  const invoiceGroup = getBillTransactionInvoiceGroup(transaction);
+
+  return {
+    ...transaction,
+    invoiceGroup,
+    invoiceGroupLabel: BILL_TRANSACTION_INVOICE_GROUP_LABELS[invoiceGroup],
+  };
+}
 
 export default async function getTodyBalance(date?: string) {
   try {
@@ -158,10 +190,11 @@ export async function getBillTransactions({
   employee = "all",
   reviewed = "all",
   category = "elecTotal",
+  allDates,
 }: BillTransactionFilters = {}) {
   try {
     const response = await apiClient.get("/api/balance/electricityTransactions", {
-      params: { date, fromDate, toDate, employee, reviewed, category },
+      params: { date, fromDate, toDate, employee, reviewed, category, allDates },
     });
 
     return response.data;
@@ -249,8 +282,36 @@ export async function getBillTransactionsByDateRange({
   employee = "all",
   reviewed = "all",
   category = "elecTotal",
-}: Required<Pick<BillTransactionFilters, "fromDate" | "toDate">> &
-  Pick<BillTransactionFilters, "employee" | "reviewed" | "category">) {
+  allDates = false,
+}: Pick<BillTransactionFilters, "fromDate" | "toDate"> &
+  Pick<BillTransactionFilters, "employee" | "reviewed" | "category" | "allDates">) {
+  if (allDates) {
+    const response = await getBillTransactions({
+      employee,
+      reviewed,
+      category,
+      allDates: true,
+    });
+    const data = normalizeBillTransactionsResponse(response).data
+      .filter((transaction) => transactionMatchesCategory(transaction, category))
+      .map((transaction) =>
+        withBillTransactionInvoiceGroup({ ...transaction, category }),
+      );
+
+    return {
+      data: data.sort((first, second) => {
+        const firstDate = new Date(first.createdAt || first.date).getTime();
+        const secondDate = new Date(second.createdAt || second.date).getTime();
+
+        return secondDate - firstDate;
+      }),
+    };
+  }
+
+  if (!fromDate || !toDate) {
+    return { data: [] };
+  }
+
   const dates = getDatesInRange(fromDate, toDate);
   const responses = await Promise.all(
     dates.map((date) =>
@@ -265,7 +326,9 @@ export async function getBillTransactionsByDateRange({
   const data = responses
     .flatMap((response) => normalizeBillTransactionsResponse(response).data)
     .filter((transaction) => transactionMatchesCategory(transaction, category))
-    .map((transaction) => ({ ...transaction, category }));
+    .map((transaction) =>
+      withBillTransactionInvoiceGroup({ ...transaction, category }),
+    );
 
   return {
     data: data.sort((first, second) => {

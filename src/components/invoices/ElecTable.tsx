@@ -184,13 +184,13 @@ export default function ElecTable({ loading, elecMatchingRows, elecOriginalRows,
                                                                 }
                                                                 const deletedInvoice = {
                                                                     category: getUtilityCategory((invoice)[1]),
-                                                                    customerName:(invoice)[1],
+                                                                    customerName:(invoice)[2],
                                                                     customerNumber:(invoice)[3],
-                                                                    customerDetails:(invoice)[2],
+                                                                    customerDetails:(invoice)[1],
                                                                     invoiceNumber:(invoice)[cellIndex-3],
                                                                     invoiceValue:(invoice)[cellIndex-2],
                                                                 }
-                                                                setFinalTable(finalTable.filter(inv => 
+                                                                setFinalTable(current => current.filter(inv => 
                                                                     !(
                                                                         inv.customerName === deletedInvoice.customerName &&
                                                                         inv.customerNumber === deletedInvoice.customerNumber &&

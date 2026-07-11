@@ -140,7 +140,7 @@ export default function DoneTransactions() {
     { key: "amount", label: "المبلغ المسدد", sortable: true },
     { key: "status", label: "حالة العملية", sortable: true },
     // { key: "paymentMethod", label: "طريقة الدفع", sortable: true },
-    // { key: "note", label: "ملاحظات", sortable: true },
+    { key: "note", label: "ملاحظات", sortable: true },
     { key: "createdAt", label: "تاريخ العملية", sortable: true },
   ];
 

@@ -8,13 +8,17 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  BILL_TRANSACTION_INVOICE_GROUP_LABELS,
   getBillTransactionsByDateRange,
   updateBillTransactionReviewed,
   type BillTransaction,
+  type BillTransactionInvoiceGroup,
   type UpdateBillTransactionReviewedPayload,
 } from "@/services/balance";
 
 const todayDate = new Date().toISOString().split("T")[0];
+type QueryMode = "all-unreviewed" | "date-range";
+type InvoiceGroupFilter = "all" | BillTransactionInvoiceGroup;
 
 function formatAmount(value: number | string | undefined) {
   return Number(value || 0).toLocaleString("en-EG", {
@@ -30,32 +34,50 @@ export default function PhoneTransactions() {
     fromDate: todayDate,
     toDate: todayDate,
   });
+  const [queryMode, setQueryMode] = useState<QueryMode>("all-unreviewed");
   const [employeeFilter, setEmployeeFilter] = useState("all");
-  const [reviewedFilter, setReviewedFilter] = useState("all");
+  const [reviewedFilter, setReviewedFilter] = useState("false");
+  const [invoiceGroupFilter, setInvoiceGroupFilter] =
+    useState<InvoiceGroupFilter>("all");
 
   const queryKey = [
     "phone-transactions",
+    queryMode,
     appliedDateRange.fromDate,
     appliedDateRange.toDate,
     employeeFilter,
     reviewedFilter,
+    invoiceGroupFilter,
   ];
 
   const { data: response, isFetching, isLoading } = useQuery({
     queryKey,
     queryFn: () =>
       getBillTransactionsByDateRange({
-        fromDate: appliedDateRange.fromDate,
-        toDate: appliedDateRange.toDate,
+        fromDate:
+          queryMode === "date-range" ? appliedDateRange.fromDate : undefined,
+        toDate: queryMode === "date-range" ? appliedDateRange.toDate : undefined,
         employee: employeeFilter,
         reviewed: reviewedFilter,
         category: "phoneTotal",
+        allDates: queryMode === "all-unreviewed",
       }),
   });
 
-  const transactions: BillTransaction[] = response?.data || [];
+  const rawTransactions: BillTransaction[] = response?.data || [];
+  const transactions = useMemo(
+    () =>
+      rawTransactions.filter((transaction) =>
+        invoiceGroupFilter === "all"
+          ? true
+          : transaction.invoiceGroup === invoiceGroupFilter,
+      ),
+    [invoiceGroupFilter, rawTransactions],
+  );
   const appliedRangeLabel =
-    appliedDateRange.fromDate === appliedDateRange.toDate
+    queryMode === "all-unreviewed"
+      ? "All dates - not reviewed"
+      : appliedDateRange.fromDate === appliedDateRange.toDate
       ? appliedDateRange.fromDate
       : `${appliedDateRange.fromDate} - ${appliedDateRange.toDate}`;
 
@@ -106,6 +128,16 @@ export default function PhoneTransactions() {
     }
 
     setAppliedDateRange({ fromDate, toDate });
+    setQueryMode("date-range");
+  };
+
+  const handleShowDefaultTransactions = () => {
+    setReviewedFilter("false");
+    setInvoiceGroupFilter("all");
+    setAppliedDateRange({ fromDate: todayDate, toDate: todayDate });
+    setFromDate(todayDate);
+    setToDate(todayDate);
+    setQueryMode("all-unreviewed");
   };
 
   const columns = [
@@ -113,6 +145,7 @@ export default function PhoneTransactions() {
     { key: "customerNumber", label: "Number", sortable: true },
     { key: "customerDetails", label: "Details", sortable: true },
     { key: "invoiceNumber", label: "Invoice", sortable: true },
+    { key: "invoiceGroupLabel", label: "Invoice group", sortable: true },
     {
       key: "invoiceValue",
       label: "Amount",
@@ -156,7 +189,7 @@ export default function PhoneTransactions() {
           />
         </div>
 
-        <div className="grid gap-3 md:grid-cols-5">
+        <div className="grid gap-3 md:grid-cols-6">
           <div className="space-y-2">
             <label className="block text-sm font-medium">From date</label>
             <Input
@@ -203,9 +236,28 @@ export default function PhoneTransactions() {
             </select>
           </div>
 
-          <div className="flex items-end">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Invoice group</label>
+            <select
+              className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              onChange={(event) =>
+                setInvoiceGroupFilter(event.target.value as InvoiceGroupFilter)
+              }
+              value={invoiceGroupFilter}
+            >
+              <option value="all">All</option>
+              <option value="shopNumbers">
+                {BILL_TRANSACTION_INVOICE_GROUP_LABELS.shopNumbers}
+              </option>
+              <option value="otherNumbers">
+                {BILL_TRANSACTION_INVOICE_GROUP_LABELS.otherNumbers}
+              </option>
+            </select>
+          </div>
+
+          <div className="flex items-end gap-2">
             <Button
-              className="w-full"
+              className="flex-1"
               disabled={isFetching}
               loading={isFetching}
               onClick={handleGetTransactions}
@@ -213,6 +265,15 @@ export default function PhoneTransactions() {
             >
               <Search />
               Get transactions
+            </Button>
+            <Button
+              className="flex-1"
+              disabled={isFetching}
+              onClick={handleShowDefaultTransactions}
+              type="button"
+              variant="outline"
+            >
+              Default
             </Button>
           </div>
         </div>
