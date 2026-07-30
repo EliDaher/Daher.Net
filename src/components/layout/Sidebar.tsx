@@ -18,6 +18,7 @@ import {
   Table2Icon,
   Building2,
   Zap,
+  Phone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -229,18 +230,24 @@ const navigationGroups = [
     allowed: ["admin"],
   },
 
-  // {
-  //   title: "Services",
-  //   items: [
-  //     {
-  //       name: "Electricity Transactions",
-  //       href: "/ElectricityTransactions",
-  //       icon: Zap,
-  //       allowed: ["admin", "employee"],
-  //     },
-  //   ],
-  //   allowed: ["admin", "employee"],
-  // },
+  {
+    title: "Services",
+    items: [
+      {
+        name: "Electricity Transactions",
+        href: "/ElectricityTransactions",
+        icon: Zap,
+        allowed: ["admin", "employee"],
+      },
+      {
+        name: "Phone Transactions",
+        href: "/PhoneTransactions",
+        icon: Phone,
+        allowed: ["admin", "employee"],
+      },
+    ],
+    allowed: ["admin", "employee"],
+  },
 ];
 
 interface SidebarProps {

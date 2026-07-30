@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BoxIcon, Droplets, Phone, Plus, Wifi, Zap } from "lucide-react";
+import { BoxIcon, CircleEllipsis, Droplets, Phone, Plus, Wifi, Zap } from "lucide-react";
 import { DataTable } from "@/components/dashboard/DataTable";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import AddBalanceForm from "@/components/invoices/AddBalanceForm";
@@ -20,6 +20,7 @@ const categoryOptions = [
   { value: "elecTotal", label: "كهرباء" },
   { value: "waterTotal", label: "مياه" },
   { value: "phoneTotal", label: "أرضي" },
+  { value: "otherTotal", label: "أخرى" },
 ];
 
 const emptyTotals: BillCategoryTotals & { total: number } = {
@@ -27,6 +28,7 @@ const emptyTotals: BillCategoryTotals & { total: number } = {
   elecTotal: 0,
   waterTotal: 0,
   phoneTotal: 0,
+  otherTotal: 0,
   total: 0,
 };
 
@@ -91,6 +93,7 @@ export default function BillBalance() {
     { key: "elecTotal", label: "كهرباء", sortable: true },
     { key: "waterTotal", label: "مياه", sortable: true },
     { key: "phoneTotal", label: "أرضي", sortable: true },
+    { key: "otherTotal", label: "أخرى", sortable: true },
     { key: "total", label: "المجموع", sortable: true },
   ];
 
@@ -181,7 +184,7 @@ export default function BillBalance() {
     <>
       <DashboardLayout>
         <div dir="rtl" className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <div className="flex flex-col">
               <StatsCard
                 title="الرصيد الحالي"
@@ -289,6 +292,13 @@ export default function BillBalance() {
               value={formatAmount(categoryTotals.phoneTotal)}
               description={selectedDate}
               icon={Phone}
+              loading={categoryReportLoading}
+            />
+            <StatsCard
+              title="أخرى"
+              value={formatAmount(categoryTotals.otherTotal)}
+              description={selectedDate}
+              icon={CircleEllipsis}
               loading={categoryReportLoading}
             />
           </div>

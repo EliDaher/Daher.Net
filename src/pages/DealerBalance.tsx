@@ -3,6 +3,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { getPaymentDealer } from '@/services/dealer';
 import { useQuery } from '@tanstack/react-query';
 import React, { useMemo } from 'react'
+import { getStoredUser } from '@/lib/auth';
 
 interface Payment {
   Amount: number | string;
@@ -11,10 +12,12 @@ interface Payment {
 }
 
 export default function DealerBalance() {
+    const currentUser = getStoredUser();
+    const dealerName = currentUser?.role === "dealer" ? currentUser.username : undefined;
 
     const { data: DealerPayments, isLoading: DealerPaymentsLoading } = useQuery({
-        queryKey: ["dealerPayments-table"],
-        queryFn: getPaymentDealer,
+        queryKey: ["dealerPayments-table", dealerName || "all"],
+        queryFn: () => getPaymentDealer(dealerName),
     });
 
     const PaymentsColumns = [
@@ -46,6 +49,7 @@ export default function DealerBalance() {
                     description={"دفعات المشتركين لهذا الشهر " + ThisMonthPayments}
                     columns={PaymentsColumns}
                     data={DealerPayments ? Object.values(DealerPayments).reverse() : []}
+                    isLoading={DealerPaymentsLoading}
                 />
             </div>
         

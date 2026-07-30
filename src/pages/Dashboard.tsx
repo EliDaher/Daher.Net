@@ -151,7 +151,11 @@ export default function Dashboard() {
       }
 
       if (currentUser?.role === "dealer") {
-        return response.filter((customer) => customer.dealer === "habeb");
+        const dealerName = currentUser.username?.trim();
+
+        return response.filter(
+          (customer) => customer.dealer?.trim() === dealerName,
+        );
       }
 
       return response;

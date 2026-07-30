@@ -1,12 +1,18 @@
-import { useMemo, useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, Loader2, Search } from "lucide-react";
+import { CalendarDays, Loader2 } from "lucide-react";
 import { DateRange } from "react-day-picker";
 
-import { DataTable } from "@/components/dashboard/DataTable";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/dashboard/DataTable";
 import { Calendar } from "@/components/ui/calendar";
+
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -14,12 +20,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -27,18 +27,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
 import {
   getDoneInvoicesByDate,
   type DoneInternetPayment,
 } from "@/services/invoices";
-
-const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
-
-function getTodayRange(): DateRange {
-  const today = new Date();
-
-  return { from: today, to: today };
-}
 
 function formatDateParam(date?: Date) {
   if (!date) {
@@ -46,23 +39,26 @@ function formatDateParam(date?: Date) {
   }
 
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-
   return localDate.toISOString().split("T")[0];
 }
 
-function toNumber(value: unknown) {
-  const parsedValue = Number(value);
+function getTodayRange(): DateRange {
+  const today = new Date();
 
-  return Number.isFinite(parsedValue) ? parsedValue : 0;
+  return { from: today, to: today };
 }
 
-function formatAmount(value: number) {
-  return value.toLocaleString("en-US", { maximumFractionDigits: 0 });
+function getLastSevenDaysRange(): DateRange {
+  const today = new Date();
+  const from = new Date(today);
+  from.setDate(today.getDate() - 6);
+
+  return { from, to: today };
 }
 
 function DoneTransactionsLoader({
   title = "جاري تحميل التسديدات المنتهية",
-  description = "يتم جلب عمليات اليوم من الخادم...",
+  description = "يتم جلب العمليات حسب المدة الزمنية المحددة...",
 }: {
   title?: string;
   description?: string;
@@ -94,33 +90,46 @@ function DoneTransactionsLoader({
 }
 
 export default function DoneTransactions() {
-  const [dateRange, setDateRange] = useState<DateRange>(() => getTodayRange());
-  const [selectedCompany, setSelectedCompany] = useState("all");
-  const [selectedEmail, setSelectedEmail] = useState("all");
-  const [selectedStatus, setSelectedStatus] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
+  // 🔹 فلاتر الفرونت فقط
+  const [selectedCompany, setSelectedCompany] = useState<string>("all");
+  const [selectedEmail, setSelectedEmail] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+
+  // 🔸 تنسيق التواريخ
   const fromDate = formatDateParam(dateRange?.from);
   const toDate = formatDateParam(dateRange?.to ?? dateRange?.from);
 
+  // ⚙️ جلب البيانات من السيرفر فقط حسب التاريخ
   const {
-    data: doneResponse,
+    data: doneData = [],
     isLoading,
     isFetching,
     isError,
   } = useQuery({
-    queryKey: ["done-invoices", fromDate, toDate, page, limit],
-    queryFn: () => getDoneInvoicesByDate({ fromDate, toDate, page, limit }),
-    enabled: Boolean(fromDate && toDate),
+    queryKey: ["done-invoices", fromDate, toDate],
+    queryFn: () => getDoneInvoicesByDate(fromDate, toDate),
+    enabled: !!fromDate && !!toDate,
     placeholderData: (previousData) => previousData,
   });
+  const hasDateRange = Boolean(fromDate && toDate);
+  const showInitialLoader = isLoading && hasDateRange;
+  const showTableLoader = isFetching && !isLoading && hasDateRange;
 
-  const doneData = doneResponse?.data ?? [];
-  const totalRows = doneResponse?.total ?? 0;
-  const showInitialLoader = isLoading && !doneResponse;
-  const showTableLoader = isFetching && Boolean(doneResponse);
+  // 🧮 تطبيق الفلاتر محليًا في الفرونت
+  const filteredData = useMemo(() => {
+    return doneData
+      .filter((item: DoneInternetPayment) =>
+        selectedCompany === "all" ? true : item.company === selectedCompany,
+      )
+      .filter((item: DoneInternetPayment) =>
+        selectedStatus === "all" ? true : item.status === selectedStatus,
+      )
+      .filter((item: DoneInternetPayment) =>
+        selectedEmail === "all" ? true : item.email === selectedEmail,
+      );
+  }, [doneData, selectedCompany, selectedEmail, selectedStatus]);
 
   const columns = [
     { key: "_id", label: "المعرف", sortable: true, hidden: true },
@@ -131,196 +140,177 @@ export default function DoneTransactions() {
     { key: "amount", label: "المبلغ المسدد", sortable: true },
     { key: "status", label: "حالة العملية", sortable: true },
     // { key: "paymentMethod", label: "طريقة الدفع", sortable: true },
-    // { key: "note", label: "ملاحظات", sortable: true },
+    { key: "note", label: "ملاحظات", sortable: true },
     { key: "createdAt", label: "تاريخ العملية", sortable: true },
   ];
 
-  const filteredData = useMemo(() => {
-    const normalizedSearchTerm = searchTerm.trim().toLowerCase();
-
-    return doneData
-      .filter((item) =>
-        selectedCompany === "all" ? true : item.company === selectedCompany,
-      )
-      .filter((item) =>
-        selectedStatus === "all" ? true : item.status === selectedStatus,
-      )
-      .filter((item) =>
-        selectedEmail === "all" ? true : item.email === selectedEmail,
-      )
-      .filter((item) => {
-        if (!normalizedSearchTerm) {
-          return true;
-        }
-
-        return [
-          item.landline,
-          item.email,
-          item.note,
-          item.company,
-          item.status,
-          item.paymentMethod,
-        ].some((value) =>
-          String(value ?? "").toLowerCase().includes(normalizedSearchTerm),
-        );
-      });
-  }, [doneData, searchTerm, selectedCompany, selectedEmail, selectedStatus]);
-
   const companyList = useMemo(() => {
-    return Array.from(
-      new Set(doneData.map((item) => item.company).filter(Boolean) as string[]),
-    );
+    const unique = new Set<string>();
+    doneData.forEach((item: DoneInternetPayment) => {
+      if (item.company) unique.add(item.company);
+    });
+    return Array.from(unique);
   }, [doneData]);
 
-  const emailList = useMemo(() => {
-    return Array.from(
-      new Set(doneData.map((item) => item.email).filter(Boolean) as string[]),
-    );
-  }, [doneData]);
-
-  const statusList = useMemo(() => {
-    return Array.from(
-      new Set(doneData.map((item) => item.status).filter(Boolean) as string[]),
-    );
+  const posList = useMemo(() => {
+    const unique = new Set<string>();
+    doneData.forEach((item: DoneInternetPayment) => {
+      if (item.email) unique.add(item.email);
+    });
+    return Array.from(unique);
   }, [doneData]);
 
   const totalAmount = useMemo(() => {
-    return filteredData.reduce((total, item) => total + toNumber(item.amount), 0);
+    return filteredData.reduce((acc: number, item: DoneInternetPayment) => {
+      if (item.amount) acc += item.amount;
+      return acc;
+    }, 0);
   }, [filteredData]);
 
-  const handleDateRangeChange = (range: DateRange | undefined) => {
-    setDateRange(range ?? getTodayRange());
-    setPage(1);
-  };
-
-  const handlePageSizeChange = (nextLimit: number) => {
-    setLimit(nextLimit);
-    setPage(1);
-  };
-
-  const handleFilterChange = (setter: (value: string) => void) => (value: string) => {
-    setter(value);
-  };
+  const selectToday = () => setDateRange(getTodayRange());
+  const selectLastSevenDays = () => setDateRange(getLastSevenDaysRange());
+  const clearDateRange = () => setDateRange(undefined);
 
   return (
     <DashboardLayout>
       <div dir="rtl" className="space-y-6">
-        <Card>
-          <CardHeader className="pb-4">
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        {/* 🎛️ الفلاتر */}
+        <Card className="overflow-hidden">
+          <CardHeader className="border-b bg-muted/30 pb-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="space-y-1">
-                <CardTitle className="text-2xl">التسديدات المنتهية</CardTitle>
+                <CardTitle className="text-2xl">الفلاتر</CardTitle>
                 <CardDescription>
-                  مراجعة عمليات الإنترنت المنتهية حسب التاريخ والصفحة الحالية
+                  {hasDateRange
+                    ? `المدة المحددة: من ${fromDate} إلى ${toDate}`
+                    : "اختر مدة زمنية لعرض التسديدات المنتهية"}
                 </CardDescription>
               </div>
               {showTableLoader && (
-                <div className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm text-muted-foreground">
+                <div className="inline-flex w-fit items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  جاري التحديث...
+                  جاري تحديث البيانات...
                 </div>
               )}
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="justify-start whitespace-nowrap">
-                    <CalendarDays className="h-4 w-4" />
-                    {fromDate && toDate
-                      ? `من ${fromDate} إلى ${toDate}`
-                      : "اختر المدة الزمنية"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    initialFocus
-                    mode="range"
-                    selected={dateRange}
-                    onSelect={handleDateRangeChange}
-                    numberOfMonths={2}
-                  />
-                </PopoverContent>
-              </Popover>
+          <CardContent className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-4">
+            {/* الشركة */}
+            <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="الشركة" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">الكل</SelectItem>
+                {companyList.map((company) => (
+                  <SelectItem key={company} value={company}>
+                    {company}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-              <Select value={selectedCompany} onValueChange={handleFilterChange(setSelectedCompany)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="الشركة" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">كل الشركات</SelectItem>
-                  {companyList.map((company) => (
-                    <SelectItem key={company} value={company}>
-                      {company}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* البريد الإلكتروني */}
+            <Select value={selectedEmail} onValueChange={setSelectedEmail}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="الحساب المرسل" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">الكل</SelectItem>
+                {posList.map((email) => (
+                  <SelectItem key={email} value={email}>
+                    {email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-              <Select value={selectedEmail} onValueChange={handleFilterChange(setSelectedEmail)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="الحساب المرسل" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">كل الحسابات</SelectItem>
-                  {emailList.map((email) => (
-                    <SelectItem key={email} value={email}>
-                      {email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* الحالة */}
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="الحالة" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">الكل</SelectItem>
+                <SelectItem value="تم التسديد">تم التسديد</SelectItem>
+                <SelectItem value="غير مسددة">غير مسددة</SelectItem>
+                <SelectItem value="مرفوضة">مرفوضة</SelectItem>
+              </SelectContent>
+            </Select>
 
-              <Select value={selectedStatus} onValueChange={handleFilterChange(setSelectedStatus)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="الحالة" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">كل الحالات</SelectItem>
-                  {statusList.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <div className="relative">
-                <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="بحث في الصفحة الحالية"
-                  className="pr-9"
+            {/* المدة الزمنية */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-auto min-h-10 w-full justify-start gap-3 whitespace-normal px-3 py-2 text-right"
+                >
+                  <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="flex min-w-0 flex-col">
+                    <span className="text-xs text-muted-foreground">المدة الزمنية</span>
+                    <span className="truncate">
+                      {hasDateRange
+                        ? `من ${fromDate} إلى ${toDate}`
+                        : "اختر المدة الزمنية"}
+                    </span>
+                  </span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  numberOfMonths={2}
                 />
-              </div>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-md border bg-background p-4">
-                <p className="text-sm text-muted-foreground">إجمالي النتائج</p>
-                <p className="mt-2 text-2xl font-semibold">{formatAmount(totalRows)}</p>
-              </div>
-              <div className="rounded-md border bg-background p-4">
-                <p className="text-sm text-muted-foreground">نتائج الصفحة بعد الفلترة</p>
-                <p className="mt-2 text-2xl font-semibold">{formatAmount(filteredData.length)}</p>
-              </div>
-              <div className="rounded-md border bg-background p-4">
-                <p className="text-sm text-muted-foreground">مجموع الصفحة الحالية</p>
-                <p className="mt-2 text-2xl font-semibold">{formatAmount(totalAmount)}</p>
-              </div>
-            </div>
+                <div className="flex flex-wrap gap-2 border-t p-3">
+                  <Button type="button" variant="secondary" size="sm" onClick={selectToday}>
+                    اليوم
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={selectLastSevenDays}
+                  >
+                    آخر 7 أيام
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearDateRange}
+                  >
+                    مسح
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </CardContent>
         </Card>
 
         {isError && (
-          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-            حدث خطأ أثناء تحميل التسديدات المنتهية. تأكد من اختيار تاريخ صحيح ثم أعد المحاولة.
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm font-medium text-destructive">
+            حدث خطأ أثناء تحميل البيانات. تأكد من اختيار مدة صحيحة ثم حاول مرة أخرى.
           </div>
         )}
 
-        {showInitialLoader ? (
+        {!hasDateRange ? (
+          <div className="flex min-h-[320px] items-center justify-center rounded-md border bg-card p-6 text-center shadow-sm">
+            <div className="flex max-w-sm flex-col items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <CalendarDays className="h-7 w-7" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold">اختر مدة زمنية</h2>
+                <p className="text-sm text-muted-foreground">
+                  ستظهر التسديدات المنتهية بعد تحديد تاريخ البداية والنهاية.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : showInitialLoader ? (
           <DoneTransactionsLoader />
         ) : (
           <div className="relative">
@@ -333,29 +323,14 @@ export default function DoneTransactions() {
               </div>
             )}
 
-            {filteredData.length === 0 && !showTableLoader && (
-              <div className="mb-4 rounded-md border bg-muted/30 p-4 text-sm text-muted-foreground">
-                لا توجد عمليات مطابقة للتاريخ أو الفلاتر الحالية.
-              </div>
-            )}
-
             <div className={showTableLoader ? "pointer-events-none" : undefined}>
               <DataTable
                 title="التسديدات المنتهية"
-                description={`إجمالي المبلغ في الصفحة الحالية: ${formatAmount(totalAmount)}`}
+                description={`إجمالي المبلغ: ${totalAmount.toLocaleString()}`}
                 columns={columns}
                 data={filteredData}
-                searchable={false}
-                defaultPageSize={limit}
-                pageSizeOptions={PAGE_SIZE_OPTIONS}
-                isLoading={isLoading}
-                serverPagination={{
-                  page: doneResponse?.page ?? page,
-                  pageSize: doneResponse?.limit ?? limit,
-                  total: totalRows,
-                  onPageChange: setPage,
-                  onPageSizeChange: handlePageSizeChange,
-                }}
+                pageSizeOptions={[10,20,50,100,200,500]}
+                pagination={true}
               />
             </div>
           </div>

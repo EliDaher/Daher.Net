@@ -25,6 +25,13 @@ export default function InternetInvoiceTable({ loading, internetMatchingRows, in
         "10/26",
         "11/26",
         "12/26",
+        "1/27",
+        "2/27",
+        "3/27",
+        "4/27",
+        "5/27",
+        "6/27",
+        "7/27",
     ]);
 
 
@@ -171,7 +178,7 @@ export default function InternetInvoiceTable({ loading, internetMatchingRows, in
                                                                     invoiceNumber:thArr[cellIndex/3-3],
                                                                     invoiceValue:(invoice)[6],
                                                                 }
-                                                                setFinalTable(finalTable.filter(inv => 
+                                                                setFinalTable(current => current.filter(inv => 
                                                                     !(
                                                                         inv.customerName === deletedInvoice.customerName &&
                                                                         inv.customerNumber === deletedInvoice.customerNumber &&

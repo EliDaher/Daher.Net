@@ -31,6 +31,7 @@ import { addPayment } from "@/services/wifi";
 import { motion, AnimatePresence } from "framer-motion";
 import addPendingExchange from "@/services/exchange";
 import { toast } from "sonner";
+import { getStoredUser } from "@/lib/auth";
 
 /* ================= TYPES ================= */
 
@@ -44,6 +45,7 @@ type CustomerPaymentFormProps = {
     Contact?: string;
     Balance?: number;
     id?: string;
+    dealer?: string;
   };
 };
 
@@ -58,6 +60,7 @@ const CustomerPaymentForm = ({
 }: CustomerPaymentFormProps) => {
   const printRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+  const currentUser = getStoredUser();
 
   type Currency = "USD" | "SYP";
 
@@ -157,6 +160,9 @@ const CustomerPaymentForm = ({
       details: data.details,
       subscriberID: customer.id,
       total: customer.Balance ?? 0,
+      dealer:
+        customer.dealer?.trim() ||
+        (currentUser?.role === "dealer" ? currentUser.username : undefined),
       type: data.type,
     });
 

@@ -25,6 +25,7 @@ const POSPayments = lazy(() => import("@/pages/POSPayments"));
 const POSBalance = lazy(() => import("@/pages/POSBalance"));
 const BillBalance = lazy(() => import("@/pages/BillBalance"));
 const ElectricityTransactions = lazy(() => import("@/pages/ElectricityTransactions"));
+const PhoneTransactions = lazy(() => import("@/pages/PhoneTransactions"));
 const ViewProduct = lazy(() => import("@/pages/ViewProduct"));
 const InquiryLogs = lazy(() => import("@/pages/InquiryLogs"));
 const ViewBills = lazy(() => import("@/pages/ViewBills"));
@@ -129,6 +130,10 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/ElectricityTransactions",
     element: withPrivateRoute(<ElectricityTransactions />, ["admin", "employee"]),
+  },
+  {
+    path: "/PhoneTransactions",
+    element: withPrivateRoute(<PhoneTransactions />, ["admin", "employee"]),
   },
   {
     path: "/POSUsers",

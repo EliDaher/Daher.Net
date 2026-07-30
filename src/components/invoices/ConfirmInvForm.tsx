@@ -75,6 +75,11 @@ const categoryOptions: Array<{ value: CategoryKey; label: string; color: string 
     label: "أرضي",
     color: "border-orange-200 bg-orange-50 text-orange-800",
   },
+  {
+    value: "otherTotal",
+    label: "أخرى",
+    color: "border-gray-200 bg-gray-50 text-gray-800",
+  },
 ];
 
 const manualRowShortcuts = billManualRowShortcuts as ManualRowShortcut[];
@@ -90,6 +95,7 @@ const emptyTotals: BillCategoryTotals = {
   elecTotal: 0,
   waterTotal: 0,
   phoneTotal: 0,
+  otherTotal: 0,
 };
 
 function formatAmount(value: number | string | undefined) {
@@ -103,7 +109,8 @@ function sumTotals(totals: BillCategoryTotals) {
     Number(totals.internetTotal || 0) +
     Number(totals.elecTotal || 0) +
     Number(totals.waterTotal || 0) +
-    Number(totals.phoneTotal || 0)
+    Number(totals.phoneTotal || 0) +
+    Number(totals.otherTotal || 0)
   );
 }
 
@@ -134,7 +141,7 @@ function inferRowCategory(row: InvoiceRow): CategoryKey | undefined {
     return "phoneTotal";
   }
 
-  return undefined;
+  return "otherTotal";
 }
 
 function normalizeInvoiceRow(row: InvoiceRow): InvoiceRow {
@@ -186,6 +193,8 @@ function ConfirmInvForm({
         Number(categoryTotals.waterTotal || 0) + manualCategoryTotals.waterTotal,
       phoneTotal:
         Number(categoryTotals.phoneTotal || 0) + manualCategoryTotals.phoneTotal,
+      otherTotal:
+        Number(categoryTotals.otherTotal || 0) + manualCategoryTotals.otherTotal,
     }),
     [categoryTotals, manualCategoryTotals],
   );
@@ -423,7 +432,7 @@ function ConfirmInvForm({
 `,
     onAfterPrint: () => {
       if (printFinalizePendingRef.current) {
-        void finalizeInvoice("print");
+        //void finalizeInvoice("print");
       }
     },
   });

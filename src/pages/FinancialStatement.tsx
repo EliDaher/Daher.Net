@@ -1,34 +1,78 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import * as Popover from "@radix-ui/react-popover";
+import { toast } from "sonner";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import FormInput from "@/components/ui/custom/FormInput";
 import { searchInvoice } from "@/services/invoices";
-import * as Popover from "@radix-ui/react-popover";
-import { toast } from "sonner";
+
+type InvoiceResult = Record<string, any>;
+
+function getInvoiceDetails(item: InvoiceResult) {
+  const details = item?.invoiceData?.details ?? item?.details ?? [];
+
+  if (Array.isArray(details)) {
+    return details;
+  }
+
+  if (details && typeof details === "object") {
+    return Object.values(details);
+  }
+
+  return [];
+}
+
+function normalizeInvoiceResults(payload: any): InvoiceResult[] {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (Array.isArray(payload?.data)) {
+    return payload.data;
+  }
+
+  if (Array.isArray(payload?.results)) {
+    return payload.results;
+  }
+
+  if (Array.isArray(payload?.invoices)) {
+    return payload.invoices;
+  }
+
+  return [];
+}
 
 export default function FinancialStatement() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<InvoiceResult[]>([]);
 
   const searchMutation = useMutation({
     mutationFn: async () => {
       if (!searchTerm.trim()) {
         toast.error("الرجاء إدخال كلمة للبحث");
-        return;
+        return null;
       }
-      const data = await searchInvoice(searchTerm);
-      return data;
+
+      return searchInvoice(searchTerm);
     },
     onSuccess: (data) => {
       if (!data || data.message) {
         setResults([]);
         toast.error("لا توجد نتائج مطابقة");
-      } else {
-        console.log("Search Results:", data);
-        setResults(data); // ← لأنها مصفوفة مباشرة
+        return;
       }
+
+      const rows = normalizeInvoiceResults(data);
+
+      if (rows.length === 0) {
+        setResults([]);
+        toast.error("لا توجد نتائج مطابقة");
+        return;
+      }
+
+      setResults(rows);
     },
     onError: (error: any) => {
       console.error(error);
@@ -42,16 +86,16 @@ export default function FinancialStatement() {
 
   return (
     <DashboardLayout>
-      <div dir="rtl" className="p-4 space-y-4">
+      <div dir="rtl" className="space-y-4 p-2 sm:p-4">
         <Card>
           <CardHeader>
             <CardTitle>البحث في الفواتير (البيان المالي)</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <form
-              className="flex"
-              onSubmit={(e) => {
-                e.preventDefault();
+              className="flex flex-col gap-2 sm:flex-row"
+              onSubmit={(event) => {
+                event.preventDefault();
                 handleSearch();
               }}
             >
@@ -60,15 +104,15 @@ export default function FinancialStatement() {
                 id="BillSearch"
                 type="text"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="أدخل اسم الزبون أو رقم الفاتورة"
-                className="w-full rounded-l-none"
+                className="w-full sm:rounded-l-none"
               />
 
               <Button
                 type="submit"
                 disabled={searchMutation.isPending}
-                className="mt-1 rounded-r-none"
+                className="w-full sm:mt-1 sm:w-auto sm:rounded-r-none"
               >
                 {searchMutation.isPending ? "جاري البحث..." : "بحث"}
               </Button>
@@ -76,58 +120,53 @@ export default function FinancialStatement() {
           </CardContent>
         </Card>
 
-        {/* عرض النتائج */}
         {results.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>نتائج البحث</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-background rounded-xl shadow-md overflow-x-auto">
+              <div className="overflow-x-auto rounded-lg border bg-background shadow-sm">
                 {searchMutation.isPending ? (
                   <div className="p-6 text-center text-foreground">
                     جاري التحميل...
                   </div>
                 ) : (
-                  <table className="min-w-full text-sm text-foreground">
+                  <table className="min-w-[720px] text-sm text-foreground">
                     <thead>
-                      <tr className="bg-foreground/20 text-foreground text-right">
-                        <th className="py-3 px-4">#</th>
-                        <th className="py-3 px-4">الموظف</th>
-                        <th className="py-3 px-4">التفاصيل</th>
-                        <th className="py-3 px-4">المبلغ</th>
-                        <th className="py-3 px-4">التاريخ</th>
+                      <tr className="bg-foreground/20 text-right text-foreground">
+                        <th className="px-4 py-3">#</th>
+                        <th className="px-4 py-3">الموظف</th>
+                        <th className="px-4 py-3">التفاصيل</th>
+                        <th className="px-4 py-3">المبلغ</th>
+                        <th className="px-4 py-3">التاريخ</th>
                       </tr>
                     </thead>
                     <tbody>
                       {results.map((item, index) => {
-                        const details = item.invoiceData?.details
-                          ? Object.values(item.invoiceData.details)
-                          : [];
+                        const details = getInvoiceDetails(item);
 
                         return (
                           <tr
-                            key={index}
-                            className="border-b hover:bg-foreground/20 transition"
+                            key={item?._id ?? index}
+                            className="border-b transition hover:bg-foreground/20"
                           >
-                            <td className="py-3 px-4">{index + 1}</td>
-                            <td className="py-3 px-4 font-medium">
+                            <td className="px-4 py-3">{index + 1}</td>
+                            <td className="px-4 py-3 font-medium">
                               {item.employee}
                             </td>
 
-                            <td className="py-3 px-4">
+                            <td className="max-w-[360px] px-4 py-3">
                               {details.length > 0 ? (
                                 <Popover.Root>
                                   <Popover.Trigger asChild>
-                                    <button className="text-accent hover:underline">
+                                    <button className="max-w-full truncate text-accent hover:underline">
                                       {details
                                         .map(
-                                          (d: any) =>
-                                            d.customerName +
-                                            "//" +
-                                            d.invoiceNumber +
-                                            "//" +
-                                            d.customerDetails,
+                                          (detail: any) =>
+                                            `${detail.customerName || ""}//${
+                                              detail.invoiceNumber || ""
+                                            }//${detail.customerDetails || ""}`,
                                         )
                                         .join(", ")}
                                     </button>
@@ -135,9 +174,9 @@ export default function FinancialStatement() {
                                   <Popover.Content
                                     side="bottom"
                                     align="start"
-                                    className="bg-background border border-gray-200 rounded-lg shadow-lg p-4 max-w-lg"
+                                    className="max-w-[calc(100vw-2rem)] overflow-x-auto rounded-lg border border-gray-200 bg-background p-4 shadow-lg"
                                   >
-                                    <table className="text-sm w-full border-collapse">
+                                    <table className="w-full min-w-[560px] border-collapse text-sm">
                                       <thead>
                                         <tr className="bg-foreground/30 text-foreground">
                                           <th className="border px-2 py-1">
@@ -158,22 +197,22 @@ export default function FinancialStatement() {
                                         </tr>
                                       </thead>
                                       <tbody>
-                                        {details.map((d: any, idx) => (
+                                        {details.map((detail: any, idx) => (
                                           <tr key={idx}>
                                             <td className="border px-2 py-1">
-                                              {d.customerName}
+                                              {detail.customerName}
                                             </td>
                                             <td className="border px-2 py-1">
-                                              {d.customerNumber}
+                                              {detail.customerNumber}
                                             </td>
                                             <td className="border px-2 py-1">
-                                              {d.invoiceNumber}
+                                              {detail.invoiceNumber}
                                             </td>
                                             <td className="border px-2 py-1">
-                                              {d.invoiceValue}
+                                              {detail.invoiceValue}
                                             </td>
                                             <td className="border px-2 py-1">
-                                              {d.customerDetails}
+                                              {detail.customerDetails}
                                             </td>
                                           </tr>
                                         ))}
@@ -186,7 +225,7 @@ export default function FinancialStatement() {
                               )}
                             </td>
 
-                            <td className="py-3 px-4 text-blue-600 font-semibold">
+                            <td className="px-4 py-3 font-semibold text-blue-600">
                               {item.invoiceData?.amount?.toLocaleString(
                                 "en-EG",
                                 {
@@ -194,7 +233,7 @@ export default function FinancialStatement() {
                                 },
                               )}
                             </td>
-                            <td className="py-3 px-4">
+                            <td className="px-4 py-3">
                               {item.invoiceData?.timestamp || item.date}
                             </td>
                           </tr>

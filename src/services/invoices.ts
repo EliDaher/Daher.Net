@@ -83,12 +83,10 @@ export type PaginatedResponse<T> = {
 
 export type PaginatedPaymentsResponse = PaginatedResponse<PosPayment>;
 
-export type GetDoneInvoicesByDateParams = PaginationParams & {
+export type GetDoneInvoicesByDateParams = {
   fromDate: string;
   toDate: string;
 };
-
-export type PaginatedDoneInvoicesResponse = PaginatedResponse<DoneInternetPayment>;
 
 function toPositiveNumber(value: unknown, fallback: number) {
   const parsedValue = Number(value);
@@ -214,27 +212,29 @@ export async function startPayment(id: string) {
   }
 }
 
-export async function getDoneInvoicesByDate({
-  fromDate,
-  toDate,
-  page,
-  limit,
-}: GetDoneInvoicesByDateParams): Promise<PaginatedDoneInvoicesResponse> {
+export async function getDoneInvoicesByDate(
+  paramsOrFromDate: GetDoneInvoicesByDateParams | string,
+  toDateArg?: string,
+): Promise<DoneInternetPayment[]> {
+  const params =
+    typeof paramsOrFromDate === "string"
+      ? { fromDate: paramsOrFromDate, toDate: toDateArg ?? "" }
+      : paramsOrFromDate;
+  const { fromDate, toDate } = params;
+
   try {
     const response = await invoiceClient.get("/api/admin/payments/bydate", {
       params: {
         fromDate,
         toDate,
-        page,
-        limit,
       },
     });
-    return normalizePaginatedResponse<DoneInternetPayment>(response.data, {
-      fromDate,
-      toDate,
-      page,
-      limit,
-    });
+
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+
+    return normalizePaginatedResponse<DoneInternetPayment>(response.data, params).data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to get payments by date"));
   }

@@ -16,10 +16,10 @@ function getUtilityCategory(details) {
         return "phoneTotal";
     }
 
-    return "elecTotal";
+    return "otherTotal";
 }
 
-export default function ElecTable({ loading, elecMatchingRows, elecOriginalRows, finalTable, setFinalTable, searchText, work, setWork, elecTotal, phoneTotal, waterTotal, setElecTotal, setPhoneTotal, setWaterTotal }) {
+export default function ElecTable({ loading, elecMatchingRows, elecOriginalRows, finalTable, setFinalTable, searchText, work, setWork, elecTotal, phoneTotal, waterTotal, otherTotal, setElecTotal, setPhoneTotal, setWaterTotal, setOtherTotal }) {
     const [invoicesData, setInvoicesData] = useState([]);
     const [originalRows, setOriginalRows] = useState([]);
     const [error, setError] = useState(null);
@@ -66,6 +66,31 @@ export default function ElecTable({ loading, elecMatchingRows, elecOriginalRows,
             setWork(false);
         }
     }, [elecMatchingRows]);
+
+    const updateCategoryTotal = (category, amount) => {
+        const numericAmount = Number(amount);
+
+        if (!Number.isFinite(numericAmount)) {
+            return;
+        }
+
+        if (category === "phoneTotal") {
+            setPhoneTotal((current) => Number(current) + numericAmount);
+            return;
+        }
+
+        if (category === "waterTotal") {
+            setWaterTotal((current) => Number(current) + numericAmount);
+            return;
+        }
+
+        if (category === "otherTotal") {
+            setOtherTotal((current) => Number(current) + numericAmount);
+            return;
+        }
+
+        setElecTotal((current) => Number(current) + numericAmount);
+    };
     
 
     if (loading) return <div className="flex items-center justify-center"><div /></div>;
@@ -79,6 +104,7 @@ export default function ElecTable({ loading, elecMatchingRows, elecOriginalRows,
                     فواتير الخدمات الحكومية
                 </h2>
                 <div className="flex gap-5 items-right">
+                    <p className="font-bold text-text-950 p-2 rounded-lg shadow shadow-gray-400">أخرى {otherTotal}</p>
                     <p className="font-bold text-text-950 p-2 rounded-lg shadow shadow-orange-400">ارضي {phoneTotal}</p>
                     <p className="font-bold text-text-950 p-2 rounded-lg shadow shadow-yellow-400">كهرباء {elecTotal}</p>
                     <p className="font-bold text-text-950 p-2 rounded-lg shadow shadow-blue-400">مياه {waterTotal}</p>
@@ -112,15 +138,17 @@ export default function ElecTable({ loading, elecMatchingRows, elecOriginalRows,
                         <tbody>
                             {invoicesData.map((invoice, index) => {
                                 const invoiceValues: any = Object.values(invoice);
+                                const category = getUtilityCategory(invoiceValues[1]);
                                 const totalCells = 70;
 
                                 return (
                                     <tr
                                         key={index}
                                         className={`transition-all duration-200 
-                                        ${invoiceValues[1].includes("ارضي") ? `bg-orange-200/80` : ``}
-                                        ${invoiceValues[1].includes("كهربا") ? `bg-yellow-200/80` : ``}
-                                        ${invoiceValues[1].includes("ميا") ? `bg-blue-200/80` : ``}
+                                        ${category === "phoneTotal" ? `bg-orange-200/80` : ``}
+                                        ${category === "elecTotal" ? `bg-yellow-200/80` : ``}
+                                        ${category === "waterTotal" ? `bg-blue-200/80` : ``}
+                                        ${category === "otherTotal" ? `bg-gray-200/80` : ``}
                                         [&>*:nth-child(6n-1)>*:nth-child(1)>*]:w-1 [&>*:nth-child(1)>*>*]:w-12
                                         [&>*:nth-child(6n-1)>*>*]:w-20 [&>*:nth-child(6n-1)]:bg-primary-700 
                                         hover:bg-primary-100 [&>*:nth-child(6n)>*:nth-child(1)>*]:w-14
@@ -169,9 +197,7 @@ export default function ElecTable({ loading, elecMatchingRows, elecOriginalRows,
                                                                   [key]: ""
                                                                 };
                                                                 setInvoicesData(updatedInvoices);
-                                                                if(invoiceValues[1].includes("ارضي") && !isNaN(invoiceValues[cellIndex-1])){setPhoneTotal(Number(phoneTotal) - Number(invoiceValues[cellIndex-1]))}
-                                                                if(invoiceValues[1].includes("كهربا") && !isNaN(invoiceValues[cellIndex-1])){setElecTotal(Number(elecTotal) - Number(invoiceValues[cellIndex-1]))}
-                                                                if(invoiceValues[1].includes("ميا") && !isNaN(invoiceValues[cellIndex-1])){setWaterTotal(Number(waterTotal) - Number(invoiceValues[cellIndex-1]))}
+                                                                updateCategoryTotal(category, -Number(invoiceValues[cellIndex-1]));
                                                                 const rowKey = (e.target as HTMLElement).closest("tr")?.getAttribute("data-key");
                                                                 if (rowKey !== null && rowKey !== undefined) {
                                                                   const updateRow = originalRows[rowKey];
@@ -183,14 +209,14 @@ export default function ElecTable({ loading, elecMatchingRows, elecOriginalRows,
                                                                   updateElec(updateRow, updateCol, updateVal);
                                                                 }
                                                                 const deletedInvoice = {
-                                                                    category: getUtilityCategory((invoice)[1]),
-                                                                    customerName:(invoice)[1],
+                                                                    category,
+                                                                    customerName:(invoice)[2],
                                                                     customerNumber:(invoice)[3],
-                                                                    customerDetails:(invoice)[2],
+                                                                    customerDetails:(invoice)[1],
                                                                     invoiceNumber:(invoice)[cellIndex-3],
                                                                     invoiceValue:(invoice)[cellIndex-2],
                                                                 }
-                                                                setFinalTable(finalTable.filter(inv => 
+                                                                setFinalTable(current => current.filter(inv => 
                                                                     !(
                                                                         inv.customerName === deletedInvoice.customerName &&
                                                                         inv.customerNumber === deletedInvoice.customerNumber &&
@@ -210,9 +236,7 @@ export default function ElecTable({ loading, elecMatchingRows, elecOriginalRows,
                                                                 [key]: newDate
                                                               };
                                                               setInvoicesData(updatedInvoices);
-                                                              if(invoiceValues[1].includes("ارضي") && !isNaN(invoiceValues[cellIndex-1])){setPhoneTotal(Number(phoneTotal) + Number(invValue))}
-                                                              if(invoiceValues[1].includes("كهربا") && !isNaN(invoiceValues[cellIndex-1])){setElecTotal(Number(elecTotal) + Number(invValue))}
-                                                              if(invoiceValues[1].includes("ميا") && !isNaN(invoiceValues[cellIndex-1])){setWaterTotal(Number(waterTotal) + Number(invValue))}
+                                                              updateCategoryTotal(category, invValue);
                                                                 const rowKey = (e.target as HTMLElement).closest("tr")?.getAttribute("data-key");
                                                                 if (rowKey !== null && rowKey !== undefined) {
                                                                   const updateRow = originalRows[rowKey];
@@ -224,7 +248,7 @@ export default function ElecTable({ loading, elecMatchingRows, elecOriginalRows,
                                                                   updateElec(updateRow, updateCol, updateVal);
                                                                 }
                                                                 const newInvoice = {
-                                                                    category: getUtilityCategory((invoice)[1]),
+                                                                    category,
                                                                     customerName:(invoice)[2],
                                                                     customerNumber:(invoice)[3],
                                                                     customerDetails:(invoice)[1],

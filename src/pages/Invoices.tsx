@@ -32,6 +32,7 @@ function Invoice(){
     const [elecTotal, setElecTotal] = useState(0);
     const [phoneTotal, setPhoneTotal] = useState(0);
     const [waterTotal, setWaterTotal] = useState(0);
+    const [otherTotal, setOtherTotal] = useState(0);
     const [TotalInvoices, setTotalInvoices] = useState(0);
     const [finalTable, setFinalTable] = useState([]);
 
@@ -80,6 +81,7 @@ function Invoice(){
         setElecTotal(0)
         setWaterTotal(0)
         setPhoneTotal(0)
+        setOtherTotal(0)
         setFinalTable([])
         setElecOriginalRows([] as any)
         setElecMatchingRows([] as any)
@@ -110,8 +112,8 @@ function Invoice(){
     };
 
     useEffect(()=>{
-        setTotalInvoices(Number(internetTotal)+Number(elecTotal)+Number(phoneTotal)+Number(waterTotal))
-    }, [internetTotal, elecTotal, phoneTotal, waterTotal])
+        setTotalInvoices(Number(internetTotal)+Number(elecTotal)+Number(phoneTotal)+Number(waterTotal)+Number(otherTotal))
+    }, [internetTotal, elecTotal, phoneTotal, waterTotal, otherTotal])
 
     return<>
         <DashboardLayout>
@@ -237,6 +239,8 @@ function Invoice(){
                         setPhoneTotal={setPhoneTotal} 
                         waterTotal={waterTotal} 
                         setWaterTotal={setWaterTotal}
+                        otherTotal={otherTotal}
+                        setOtherTotal={setOtherTotal}
                         />
 
                     </div>
@@ -256,6 +260,7 @@ function Invoice(){
                             elecTotal,
                             waterTotal,
                             phoneTotal,
+                            otherTotal,
                         }}
                     />
                 </div>
