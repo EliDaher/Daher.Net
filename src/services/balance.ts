@@ -5,6 +5,7 @@ export type BillCategoryTotals = {
   elecTotal: number;
   waterTotal: number;
   phoneTotal: number;
+  otherTotal: number;
 };
 
 export type BillCategoryTotalsFilters = {
