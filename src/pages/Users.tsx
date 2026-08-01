@@ -340,7 +340,7 @@ export default function Users() {
     }
 
     const phone = customer.Contact.replace(/\D/g, "");
-    const message = `عزيزي المشترك ${customer.Name}، قيمة فاتورتك الحالية لشهر 7 هي: ${
+    const message = `عزيزي المشترك ${customer.Name}، قيمة فاتورتك الحالية لشهر 8 هي: ${
       customer.Balance * -1
     } دولار.
 يرجى التسديد قبل تاريخ 3-8-2026 لضمان استمرار الخدمة دون انقطاع.
