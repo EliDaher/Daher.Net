@@ -37,6 +37,8 @@ export default function ElecTable({ loading, elecMatchingRows, elecOriginalRows,
         "1",
         "1",
         "1",
+        "1",
+        "1",
         "1"
     ]);
 

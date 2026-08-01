@@ -10,9 +10,6 @@ export default function InternetInvoiceTable({ loading, internetMatchingRows, in
     
 
     const [thArr, setThArr] = useState([
-        "10/25",
-        "11/25",
-        "12/25",
         "1/26",
         "2/26",
         "3/26",

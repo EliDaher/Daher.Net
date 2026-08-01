@@ -12,13 +12,11 @@ import {
   CheckCircle2,
   FileText,
   RefreshCw,
-  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -36,12 +34,8 @@ import {
   disablePppUsers,
   getActivePppConnections,
   getMikrotikErrorMessage,
-  getStoredMikrotikCredentials,
-  saveMikrotikCredentials,
   testMikrotikConnection,
-  MIKROTIK_USERNAME,
   type MikrotikActiveConnection,
-  type MikrotikCredentials,
 } from "@/services/mikrotik";
 
 const invoiceMonths = Array.from({ length: 12 }, (_, index) => {
@@ -82,8 +76,6 @@ export default function Users() {
   const [activeData, setActiveData] = useState<MikrotikActiveConnection[]>([]);
   const [activeError, setActiveError] = useState("");
   const [isActiveLoading, setIsActiveLoading] = useState(false);
-  const [mikrotikCredentials, setMikrotikCredentials] =
-    useState<MikrotikCredentials>(() => getStoredMikrotikCredentials());
   const [isTestingMikrotik, setIsTestingMikrotik] = useState(false);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedUsernames, setSelectedUsernames] = useState<Set<string>>(
@@ -93,21 +85,12 @@ export default function Users() {
 
   const getPPPUsername = (customer: any) => (customer?.UserName || "").trim();
 
-  const requestActiveUsers = async (
-    credentials = mikrotikCredentials,
-    showSuccessToast = false,
-  ) => {
-    if (!credentials.username.trim() || !credentials.password) {
-      setActiveData([]);
-      setActiveError("Enter MikroTik REST username and password first.");
-      return;
-    }
-
+  const requestActiveUsers = async (showSuccessToast = false) => {
     setIsActiveLoading(true);
     setActiveError("");
 
     try {
-      const data = await getActivePppConnections(credentials);
+      const data = await getActivePppConnections();
       setActiveData(data);
       if (showSuccessToast) {
         toast.success(`Loaded ${data.length} active PPP connection(s).`);
@@ -122,19 +105,13 @@ export default function Users() {
     }
   };
 
-  const saveMikrotikSettings = () => {
-    saveMikrotikCredentials(mikrotikCredentials);
-    toast.success("MikroTik REST settings saved.");
-  };
-
   const handleTestMikrotikConnection = async () => {
-    saveMikrotikCredentials(mikrotikCredentials);
     setIsTestingMikrotik(true);
 
     try {
-      await testMikrotikConnection(mikrotikCredentials);
-      toast.success("MikroTik REST connection is working.");
-      await requestActiveUsers(mikrotikCredentials);
+      await testMikrotikConnection();
+      toast.success("MikroTik backend relay is working.");
+      await requestActiveUsers();
     } catch (error) {
       toast.error(getMikrotikErrorMessage(error));
     } finally {
@@ -188,7 +165,7 @@ export default function Users() {
     setIsSubmittingDeactivate(true);
 
     try {
-      const results = await disablePppUsers(mikrotikCredentials, usernames);
+      const results = await disablePppUsers(usernames);
       const successCount = results.filter((item) => item.ok).length;
       const failedResults = results.filter((item) => !item.ok);
 
@@ -208,7 +185,7 @@ export default function Users() {
         setIsSelectionMode(false);
       }
 
-      await requestActiveUsers(mikrotikCredentials);
+      await requestActiveUsers();
     } catch (error) {
       toast.error(getMikrotikErrorMessage(error));
     } finally {
@@ -217,7 +194,7 @@ export default function Users() {
   };
 
   useEffect(() => {
-    void requestActiveUsers(getStoredMikrotikCredentials());
+    void requestActiveUsers();
   }, []);
 
   const { data: customers, isLoading: customersLoading } = useQuery<any[]>({
@@ -544,21 +521,20 @@ export default function Users() {
             </div>
           </div>
 
-          {isAdmin && daherUser?.username == "elidaher" && (
+          {isAdmin && (
             <Card dir="ltr">
               <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-center gap-2">
-                  <Settings className="h-5 w-5 text-muted-foreground" />
-                  <CardTitle className="text-base">MikroTik REST</CardTitle>
+                <div>
+                  <CardTitle className="text-base">
+                    MikroTik backend relay
+                  </CardTitle>
+                  {activeError ? (
+                    <p className="mt-1 text-sm text-destructive">
+                      {activeError}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={saveMikrotikSettings}
-                    disabled={isTestingMikrotik || isActiveLoading}
-                  >
-                    Save
-                  </Button>
                   <Button
                     variant="outline"
                     onClick={handleTestMikrotikConnection}
@@ -571,9 +547,7 @@ export default function Users() {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() =>
-                      void requestActiveUsers(mikrotikCredentials, true)
-                    }
+                    onClick={() => void requestActiveUsers(true)}
                     disabled={isTestingMikrotik || isActiveLoading}
                   >
                     {isActiveLoading ? (
@@ -585,29 +559,6 @@ export default function Users() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="grid gap-3 md:grid-cols-[minmax(220px,1fr)_auto] md:items-end">
-                <div className="space-y-1">
-                  <Label htmlFor="mikrotik-base-url">Base URL</Label>
-                  <Input
-                    id="mikrotik-base-url"
-                    value={mikrotikCredentials.baseUrl}
-                    onChange={(event) =>
-                      setMikrotikCredentials((prev) => ({
-                        ...prev,
-                        baseUrl: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Username: {MIKROTIK_USERNAME}
-                </p>
-                {activeError ? (
-                  <p className="md:col-span-2 text-sm text-destructive">
-                    {activeError}
-                  </p>
-                ) : null}
-              </CardContent>
             </Card>
           )}
 
