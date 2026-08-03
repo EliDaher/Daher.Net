@@ -24,7 +24,8 @@ type DisablePppUsersResponse = {
 };
 
 const relayHeaders = () => ({
-  "x-mikrotik-relay-key": import.meta.env.VITE_MIKROTIK_RELAY_KEY || "",
+  "x-mikrotik-relay-key":
+    import.meta.env.VITE_MIKROTIK_RELAY_KEY || "relay56315",
 });
 
 export const getMikrotikErrorMessage = (error: unknown) => {
