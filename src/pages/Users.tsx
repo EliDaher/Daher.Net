@@ -154,7 +154,7 @@ export default function Users() {
     if (!isAdmin) return;
 
     const usernames = Array.from(selectedUsernames)
-      .map((name) => name.trim())
+      .map((name) => name.trim() + "@daher.sy")
       .filter(Boolean);
 
     if (usernames.length === 0) {
