@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Table,
   TableBody,
@@ -34,6 +34,11 @@ interface TableData {
   [key: string]: any;
 }
 
+type SortConfig = {
+  key: string;
+  direction: "asc" | "desc";
+};
+
 type ServerPaginationConfig = {
   page: number;
   pageSize: number;
@@ -58,6 +63,7 @@ interface DataTableProps {
   isLoading?: boolean;
   serverPagination?: ServerPaginationConfig;
   pagination?: boolean;
+  defaultSort?: SortConfig | null;
 }
 
 function stringifyTableValue(value: unknown): string {
@@ -140,13 +146,13 @@ export function DataTable({
   isLoading = false,
   serverPagination,
   pagination = true,
+  defaultSort = null,
 }: DataTableProps) {
   const daherUser = getStoredUser();
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState<{
-    key: string;
-    direction: "asc" | "desc";
-  } | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig | null>(
+    defaultSort,
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(defaultPageSize);
   const isPaginationEnabled = Boolean(serverPagination) || pagination;
@@ -154,6 +160,11 @@ export function DataTable({
   const activePageSize = serverPagination?.pageSize ?? pageSize;
 
   const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+
+  useEffect(() => {
+    setSortConfig(defaultSort);
+    setCurrentPage(1);
+  }, [defaultSort?.direction, defaultSort?.key]);
 
   const visibleColumns = useMemo(
     () =>
@@ -294,7 +305,9 @@ export function DataTable({
       key === "createdAt" ||
       key === "date" ||
       key === "timestamp" ||
-      key === "lastUpdate"
+      key === "lastUpdate" ||
+      key === "modifiedAt" ||
+      key === "reviewedAt"
     ) {
       return (
         <span className="text-muted-foreground">

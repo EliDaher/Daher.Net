@@ -153,7 +153,18 @@ export default function ElectricityTransactions() {
       accessor: (row: any) => formatAmount(row.invoiceValue),
     },
     { key: "employee", label: "Employee", sortable: true },
-    { key: "createdAt", label: "Created", sortable: true },
+    {
+      key: "createdAt",
+      label: "Created",
+      sortable: true,
+      hidden: reviewedFilter === "true",
+    },
+    {
+      key: "reviewedAt",
+      label: "Reviewed at",
+      sortable: true,
+      hidden: reviewedFilter !== "true",
+    },
     {
       key: "reviewedStatus",
       label: "Reviewed",
@@ -284,6 +295,13 @@ export default function ElectricityTransactions() {
           columns={columns}
           data={transactions}
           defaultPageSize={20}
+          defaultSort={
+            reviewedFilter === "true"
+              ? { key: "reviewedAt", direction: "desc" }
+              : reviewedFilter === "false"
+              ? { key: "createdAt", direction: "asc" }
+              : null
+          }
           isLoading={isLoading}
           renderRowActions={(row) => (
             <label className="inline-flex items-center justify-center">

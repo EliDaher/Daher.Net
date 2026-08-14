@@ -31,6 +31,7 @@ export type BillTransaction = {
   employee: string;
   date: string;
   createdAt: string;
+  modifiedAt: string;
   reviewed: boolean;
   reviewedAt?: string;
   category: BillTransactionCategory;
@@ -277,6 +278,45 @@ function transactionMatchesCategory(
   return details.includes("كهرب");
 }
 
+function getTransactionSortTime(
+  transaction: BillTransaction,
+  key: "createdAt" | "modifiedAt" | "reviewedAt",
+) {
+  const fallbackValue =
+    key === "createdAt"
+      ? transaction.date
+      : transaction.modifiedAt || transaction.createdAt;
+  const time = new Date(transaction[key] || fallbackValue).getTime();
+
+  return Number.isNaN(time) ? 0 : time;
+}
+
+function sortBillTransactionsByReviewMode(
+  transactions: BillTransaction[],
+  reviewed: string,
+) {
+  return [...transactions].sort((first, second) => {
+    if (reviewed === "false") {
+      return (
+        getTransactionSortTime(first, "createdAt") -
+        getTransactionSortTime(second, "createdAt")
+      );
+    }
+
+    if (reviewed === "true") {
+      return (
+        getTransactionSortTime(second, "reviewedAt") -
+        getTransactionSortTime(first, "reviewedAt")
+      );
+    }
+
+    return (
+      getTransactionSortTime(second, "createdAt") -
+      getTransactionSortTime(first, "createdAt")
+    );
+  });
+}
+
 export async function getBillTransactionsByDateRange({
   fromDate,
   toDate,
@@ -300,12 +340,7 @@ export async function getBillTransactionsByDateRange({
       );
 
     return {
-      data: data.sort((first, second) => {
-        const firstDate = new Date(first.createdAt || first.date).getTime();
-        const secondDate = new Date(second.createdAt || second.date).getTime();
-
-        return secondDate - firstDate;
-      }),
+      data: sortBillTransactionsByReviewMode(data, reviewed),
     };
   }
 
@@ -332,12 +367,7 @@ export async function getBillTransactionsByDateRange({
     );
 
   return {
-    data: data.sort((first, second) => {
-      const firstDate = new Date(first.createdAt || first.date).getTime();
-      const secondDate = new Date(second.createdAt || second.date).getTime();
-
-      return secondDate - firstDate;
-    }),
+    data: sortBillTransactionsByReviewMode(data, reviewed),
   };
 }
 
