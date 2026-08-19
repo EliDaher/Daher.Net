@@ -14,7 +14,7 @@ export type BillCategoryTotalsFilters = {
   category?: string;
 };
 
-export type BillTransactionCategory = "elecTotal" | "phoneTotal";
+export type BillTransactionCategory = "elecTotal" | "phoneTotal" | "waterTotal";
 export type BillTransactionInvoiceGroup = "shopNumbers" | "otherNumbers";
 
 export const BILL_TRANSACTION_INVOICE_GROUP_LABELS: Record<
@@ -215,6 +215,21 @@ export async function getElectricityTransactions(
   });
 }
 
+export async function getWaterTransactions(
+  filters: BillTransactionFilters = {},
+) {
+  try {
+    const response = await apiClient.get("/api/balance/waterTransactions", {
+      params: { ...filters, category: undefined },
+    });
+
+    return response.data;
+  } catch (err) {
+    console.error("خطأ في جلب حركات المياه:", err);
+    throw err;
+  }
+}
+
 function parseDateInput(date: string) {
   const [year, month, day] = date.split("-").map(Number);
 
@@ -275,6 +290,10 @@ function transactionMatchesCategory(
     );
   }
 
+  if (category === "waterTotal") {
+    return details.includes("مياه") || details.includes("ماء");
+  }
+
   return details.includes("كهرب");
 }
 
@@ -317,7 +336,7 @@ function sortBillTransactionsByReviewMode(
   });
 }
 
-export async function getBillTransactionsByDateRange({
+async function getBillTransactionsByDateRangeWithFetcher({
   fromDate,
   toDate,
   employee = "all",
@@ -325,9 +344,10 @@ export async function getBillTransactionsByDateRange({
   category = "elecTotal",
   allDates = false,
 }: Pick<BillTransactionFilters, "fromDate" | "toDate"> &
-  Pick<BillTransactionFilters, "employee" | "reviewed" | "category" | "allDates">) {
+  Pick<BillTransactionFilters, "employee" | "reviewed" | "category" | "allDates">,
+fetchTransactions: (filters: BillTransactionFilters) => Promise<any>) {
   if (allDates) {
-    const response = await getBillTransactions({
+    const response = await fetchTransactions({
       employee,
       reviewed,
       category,
@@ -351,7 +371,7 @@ export async function getBillTransactionsByDateRange({
   const dates = getDatesInRange(fromDate, toDate);
   const responses = await Promise.all(
     dates.map((date) =>
-      getBillTransactions({
+      fetchTransactions({
         date,
         employee,
         reviewed,
@@ -369,6 +389,23 @@ export async function getBillTransactionsByDateRange({
   return {
     data: sortBillTransactionsByReviewMode(data, reviewed),
   };
+}
+
+export async function getBillTransactionsByDateRange(
+  filters: Pick<BillTransactionFilters, "fromDate" | "toDate"> &
+    Pick<BillTransactionFilters, "employee" | "reviewed" | "category" | "allDates">,
+) {
+  return getBillTransactionsByDateRangeWithFetcher(filters, getBillTransactions);
+}
+
+export async function getWaterTransactionsByDateRange(
+  filters: Pick<BillTransactionFilters, "fromDate" | "toDate"> &
+    Pick<BillTransactionFilters, "employee" | "reviewed" | "allDates">,
+) {
+  return getBillTransactionsByDateRangeWithFetcher(
+    { ...filters, category: "waterTotal" },
+    getWaterTransactions,
+  );
 }
 
 export async function getElectricityTransactionsByDateRange(
@@ -407,4 +444,22 @@ export async function updateElectricityTransactionReviewed(
     ...payload,
     category: "elecTotal",
   });
+}
+
+export async function updateWaterTransactionReviewed({
+  id,
+  date,
+  reviewed,
+}: UpdateBillTransactionReviewedPayload) {
+  try {
+    const response = await apiClient.patch(
+      `/api/balance/waterTransactions/${id}`,
+      { date, reviewed },
+    );
+
+    return response.data;
+  } catch (err) {
+    console.error("خطأ في تحديث حالة حركة المياه:", err);
+    throw err;
+  }
 }

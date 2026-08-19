@@ -19,6 +19,7 @@ import {
   Building2,
   Zap,
   Phone,
+  Droplets,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -243,6 +244,12 @@ const navigationGroups = [
         name: "Phone Transactions",
         href: "/PhoneTransactions",
         icon: Phone,
+        allowed: ["admin", "employee"],
+      },
+      {
+        name: "Water Transactions",
+        href: "/WaterTransactions",
+        icon: Droplets,
         allowed: ["admin", "employee"],
       },
     ],
