@@ -58,6 +58,26 @@ export interface CompanyDetailsResponse {
   }>;
 }
 
+export interface ExpectedCompanyUsageResponse {
+  generatedAt: string;
+  baseDate: string;
+  historyMonths: number;
+  targets: Array<{
+    key: "today" | "tomorrow" | "dayAfterTomorrow";
+    label: string;
+    date: string;
+  }>;
+  rows: Array<{
+    companyId: string;
+    name: string;
+    currentBalance: number;
+    expectedToday: number;
+    expectedTomorrow: number;
+    expectedDayAfterTomorrow: number;
+    totalExpectedUsage: number;
+  }>;
+}
+
 function getErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError(error)) {
     return error.response?.data?.message || error.message || fallback;
@@ -182,5 +202,25 @@ export async function getCompanyDetails(
     return response.data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to get company details"));
+  }
+}
+
+export async function getExpectedCompanyUsage({
+  baseDate,
+  historyMonths = 3,
+}: {
+  baseDate: string;
+  historyMonths?: number;
+}): Promise<ExpectedCompanyUsageResponse> {
+  try {
+    const response = await apiClient.get("/api/company/expected-usage", {
+      params: { baseDate, historyMonths },
+    });
+
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      getErrorMessage(error, "Failed to get expected company usage"),
+    );
   }
 }

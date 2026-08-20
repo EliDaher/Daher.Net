@@ -5,6 +5,8 @@ import { DataTable } from "@/components/dashboard/DataTable";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import PopupForm from "@/components/ui/custom/PopupForm";
 import {
   Card,
   CardContent,
@@ -18,6 +20,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCompaniesContext } from "@/contexts/CompaniesProvider";
 import { cn } from "@/lib/utils";
 import {
+  getExpectedCompanyUsage,
+  type ExpectedCompanyUsageResponse,
+} from "@/services/companies";
+import {
   AlertTriangle,
   Building2,
   CalendarClock,
@@ -28,6 +34,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { useReactToPrint } from "react-to-print";
 import { useNavigate } from "react-router-dom";
 
@@ -42,12 +49,133 @@ type CompanyRow = {
   [key: string]: unknown;
 };
 
+type ExpectedUsagePrintColumn =
+  | "name"
+  | "total"
+  | "dailyAverage"
+  | "currentBalance";
+
+type ExpectedUsagePrintColumns = Record<ExpectedUsagePrintColumn, boolean>;
+
+type ExpectedUsagePrintScope = "all" | "overBalance";
+
 const companiesColumns = [
   { key: "name", label: "الشركة", sortable: true },
   { key: "balance", label: "الرصيد", sortable: true },
   { key: "balanceLimit", label: "الحد الأدنى", sortable: true },
   { key: "lastUpdate", label: "آخر عملية", sortable: true },
 ];
+
+const EXPECTED_USAGE_HISTORY_MONTHS = 3;
+
+const DEFAULT_EXPECTED_USAGE_PRINT_COLUMNS: ExpectedUsagePrintColumns = {
+  name: true,
+  total: true,
+  dailyAverage: false,
+  currentBalance: true,
+};
+
+const EXPECTED_USAGE_PRINT_COLUMN_OPTIONS: Array<{
+  key: ExpectedUsagePrintColumn;
+  label: string;
+}> = [
+  { key: "name", label: "اسم الشركة" },
+  { key: "total", label: "المجموع" },
+  { key: "dailyAverage", label: "متوسط اليومي" },
+  { key: "currentBalance", label: "الرصيد الحالي" },
+];
+
+const COMPANIES_PRINT_PAGE_STYLE = `
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  body {
+    font-family: Arial, sans-serif;
+  }
+
+  td, th {
+    border: 1px solid black;
+    padding: 2px;
+    font-weight: bold;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    text-align: center;
+    max-width: 120px;
+    height: auto;
+  }
+
+  .companies-balance-print,
+  .companies-expected-print {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: 80mm !important;
+    max-width: 80mm !important;
+  }
+
+  .companies-expected-print table {
+    font-size: 12px;
+    table-layout: fixed;
+  }
+
+  .companies-expected-print td,
+  .companies-expected-print th {
+    padding: 3px 2px;
+    line-height: 1.35;
+  }
+
+  .companies-expected-print .over-balance-row td {
+    border-top: 3px double black !important;
+    border-bottom: 3px double black !important;
+    font-weight: 700;
+    text-decoration: underline;
+  }
+
+  .totalValue {
+    font-weight: bold;
+    font-size: 20px;
+  }
+
+  @media print {
+    body, table, th, td {
+      color: black !important;
+    }
+
+    body {
+      width: 80mm;
+      height: auto;
+      margin: 0;
+      padding-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+    }
+
+    .header {
+      text-align: center;
+      font-size: 16px;
+      margin-bottom: 10px;
+      margin-top: 10px;
+      font-weight: 900;
+    }
+
+    .header span {
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+  }
+`;
 
 function formatNumber(value: number) {
   return Number(value || 0).toLocaleString("en-SY", {
@@ -79,10 +207,19 @@ function getCurrentDateTime(): string {
   return now.toLocaleDateString("en-GB", options);
 }
 
+function getLocalDateKey(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 export default function Companies() {
   const { data: companies, isLoading } = useCompaniesContext();
   const navigate = useNavigate();
   const printRef = useRef<HTMLDivElement>(null);
+  const expectedPrintRef = useRef<HTMLDivElement>(null);
 
   const [openTransferId, setOpenTransferId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -90,6 +227,50 @@ export default function Companies() {
   const [viewMode, setViewMode] = useState<"table" | "cards">("cards");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [expectedUsage, setExpectedUsage] =
+    useState<ExpectedCompanyUsageResponse | null>(null);
+  const [expectedUsageLoading, setExpectedUsageLoading] = useState(false);
+  const [isExpectedPrintOptionsOpen, setIsExpectedPrintOptionsOpen] =
+    useState(false);
+  const [expectedUsagePrintColumns, setExpectedUsagePrintColumns] =
+    useState<ExpectedUsagePrintColumns>(DEFAULT_EXPECTED_USAGE_PRINT_COLUMNS);
+  const [expectedUsagePrintScope, setExpectedUsagePrintScope] =
+    useState<ExpectedUsagePrintScope>("all");
+
+  const expectedUsageDaysLabel = useMemo(() => {
+    const targets = expectedUsage?.targets ?? [];
+    if (targets.length === 0) return "";
+
+    return targets
+      .map((target) => {
+        const day = Number(target.date.slice(8, 10));
+        return Number.isFinite(day) && day > 0 ? String(day) : target.date;
+      })
+      .join("/");
+  }, [expectedUsage?.targets]);
+
+  const selectedExpectedUsagePrintColumns = useMemo(
+    () =>
+      EXPECTED_USAGE_PRINT_COLUMN_OPTIONS.filter(
+        (column) => expectedUsagePrintColumns[column.key],
+      ),
+    [expectedUsagePrintColumns],
+  );
+
+  const hasExpectedUsagePrintColumns =
+    selectedExpectedUsagePrintColumns.length > 0;
+  const expectedUsagePrintColumnWidth = hasExpectedUsagePrintColumns
+    ? `${100 / selectedExpectedUsagePrintColumns.length}%`
+    : "100%";
+  const expectedUsagePrintRows = useMemo(() => {
+    const rows = expectedUsage?.rows ?? [];
+
+    if (expectedUsagePrintScope === "overBalance") {
+      return rows.filter((row) => row.totalExpectedUsage > row.currentBalance);
+    }
+
+    return rows;
+  }, [expectedUsage?.rows, expectedUsagePrintScope]);
 
   const normalizedCompanies = useMemo<CompanyRow[]>(() => {
     if (!Array.isArray(companies)) {
@@ -156,79 +337,66 @@ export default function Companies() {
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
-    pageStyle: `
-      @page {
-        size: 80mm auto;
-        margin: 0;
-      }
-
-      body {
-        font-family: Arial, sans-serif;
-      }
-
-      td, th {
-        border: 1px solid black;
-        padding: 2px;
-        font-weight: bold;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        white-space: normal;
-        text-align: center;
-        max-width: 120px;
-        height: auto;
-      }
-
-      .companies-balance-print {
-        position: static !important;
-        left: auto !important;
-        top: auto !important;
-        width: 80mm !important;
-        max-width: 80mm !important;
-      }
-
-      .totalValue {
-        font-weight: bold;
-        font-size: 20px;
-      }
-
-      @media print {
-        body, table, th, td {
-          color: black !important;
-        }
-
-        body {
-          width: 80mm;
-          height: auto;
-          margin: 0;
-          padding-bottom: 20px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: flex-start;
-          font-family: Arial, sans-serif;
-          font-size: 14px;
-        }
-
-        .header {
-          text-align: center;
-          font-size: 16px;
-          margin-bottom: 10px;
-          margin-top: 10px;
-          font-weight: 900;
-        }
-
-        .header span {
-          display: block;
-          margin-bottom: 2px;
-        }
-
-        table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-      }
-    `,
+    pageStyle: COMPANIES_PRINT_PAGE_STYLE,
   });
+
+  const handleExpectedUsagePrint = useReactToPrint({
+    contentRef: expectedPrintRef,
+    pageStyle: COMPANIES_PRINT_PAGE_STYLE,
+  });
+
+  const setExpectedUsagePrintColumn = (
+    column: ExpectedUsagePrintColumn,
+    checked: boolean,
+  ) => {
+    setExpectedUsagePrintColumns((current) => ({
+      ...current,
+      [column]: checked,
+    }));
+  };
+
+  const getExpectedUsagePrintCellValue = (
+    row: ExpectedCompanyUsageResponse["rows"][number],
+    column: ExpectedUsagePrintColumn,
+  ) => {
+    switch (column) {
+      case "name":
+        return row.name;
+      case "total":
+        return formatNumber(row.totalExpectedUsage);
+      case "dailyAverage":
+        return formatNumber(row.totalExpectedUsage / 3);
+      case "currentBalance":
+        return formatNumber(row.currentBalance);
+      default:
+        return "";
+    }
+  };
+
+  const printExpectedUsage = async () => {
+    if (!hasExpectedUsagePrintColumns) return;
+
+    setExpectedUsageLoading(true);
+
+    try {
+      const data = await getExpectedCompanyUsage({
+        baseDate: getLocalDateKey(),
+        historyMonths: EXPECTED_USAGE_HISTORY_MONTHS,
+      });
+
+      flushSync(() => {
+        setExpectedUsage(data);
+      });
+      handleExpectedUsagePrint();
+      setIsExpectedPrintOptionsOpen(false);
+    } catch (error) {
+      window.alert(
+        (error as Error)?.message || "حدث خطأ أثناء تحميل الرصيد المتوقع",
+      );
+    } finally {
+      setExpectedUsageLoading(false);
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -267,6 +435,65 @@ export default function Companies() {
           </table>
         </div>
 
+        <div
+          ref={expectedPrintRef}
+          className="companies-expected-print fixed left-[-10000px] top-0 bg-white p-3 text-gray-950"
+          dir="rtl"
+        >
+          <div className="header text-center font-bold">
+            <span className="block text-lg">Daher.Net</span>
+            <span className="block text-sm">
+              {expectedUsageDaysLabel
+                ? `توقع استخدام الرصيد للأيام ${expectedUsageDaysLabel}`
+                : "توقع استخدام الرصيد"}
+            </span>
+            <span className="block text-xs">{getCurrentDateTime()}</span>
+            <span className="block text-xs">
+              متوسط آخر{" "}
+              {expectedUsage?.historyMonths ?? EXPECTED_USAGE_HISTORY_MONTHS} أشهر
+            </span>
+          </div>
+
+          <table className="w-full border-collapse text-xs">
+            <thead>
+              <tr>
+                {selectedExpectedUsagePrintColumns.map((column) => (
+                  <th
+                    key={column.key}
+                    className="px-1 py-2"
+                    style={{ width: expectedUsagePrintColumnWidth }}
+                  >
+                    {column.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {expectedUsagePrintRows.map((row) => {
+                const isOverCurrentBalance =
+                  row.totalExpectedUsage > row.currentBalance;
+
+                return (
+                  <tr
+                    key={row.companyId}
+                    className={isOverCurrentBalance ? "over-balance-row" : ""}
+                  >
+                    {selectedExpectedUsagePrintColumns.map((column) => (
+                      <td
+                        key={column.key}
+                        className="px-1 py-2"
+                        style={{ width: expectedUsagePrintColumnWidth }}
+                      >
+                        {getExpectedUsagePrintCellValue(row, column.key)}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
         <div className="rounded-2xl border bg-gradient-to-l from-primary-50/40 via-background to-accent-900/10 p-5 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-1">
@@ -292,6 +519,102 @@ export default function Companies() {
                   <Printer className="mr-2 h-4 w-4" />
                   Print
                 </Button>
+                <PopupForm
+                  title="اختيار أعمدة الطباعة"
+                  description="حدد الأعمدة التي تريد ظهورها في تقرير الاستخدام المتوقع."
+                  isOpen={isExpectedPrintOptionsOpen}
+                  setIsOpen={setIsExpectedPrintOptionsOpen}
+                  trigger={
+                    <Button
+                      variant="outline"
+                      disabled={isLoading || normalizedCompanies.length === 0}
+                    >
+                      <Printer className="mr-2 h-4 w-4" />
+                      طباعة المتوقع
+                    </Button>
+                  }
+                >
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">نطاق الطباعة</p>
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <Button
+                          type="button"
+                          variant={
+                            expectedUsagePrintScope === "all"
+                              ? "default"
+                              : "outline"
+                          }
+                          onClick={() => setExpectedUsagePrintScope("all")}
+                        >
+                          كل الشركات
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={
+                            expectedUsagePrintScope === "overBalance"
+                              ? "default"
+                              : "outline"
+                          }
+                          onClick={() =>
+                            setExpectedUsagePrintScope("overBalance")
+                          }
+                        >
+                          المجموع أكبر من الرصيد الحالي
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">الأعمدة</p>
+                      {EXPECTED_USAGE_PRINT_COLUMN_OPTIONS.map((column) => (
+                        <label
+                          key={column.key}
+                          htmlFor={`expected-print-column-${column.key}`}
+                          className="flex cursor-pointer items-center justify-between gap-3 rounded-md border bg-background px-3 py-2 text-sm"
+                        >
+                          <span>{column.label}</span>
+                          <Checkbox
+                            id={`expected-print-column-${column.key}`}
+                            checked={expectedUsagePrintColumns[column.key]}
+                            onCheckedChange={(checked) =>
+                              setExpectedUsagePrintColumn(
+                                column.key,
+                                checked === true,
+                              )
+                            }
+                          />
+                        </label>
+                      ))}
+                    </div>
+
+                    {!hasExpectedUsagePrintColumns && (
+                      <p className="text-sm text-destructive">
+                        اختر عمودًا واحدًا على الأقل.
+                      </p>
+                    )}
+
+                    <div className="flex justify-end gap-2 border-t pt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsExpectedPrintOptionsOpen(false)}
+                      >
+                        إلغاء
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={printExpectedUsage}
+                        disabled={
+                          expectedUsageLoading || !hasExpectedUsagePrintColumns
+                        }
+                      >
+                        <Printer className="mr-2 h-4 w-4" />
+                        {expectedUsageLoading ? "جاري التحميل..." : "طباعة"}
+                      </Button>
+                    </div>
+                  </div>
+                </PopupForm>
                 <Button
                   variant={viewMode === "cards" ? "default" : "outline"}
                   onClick={() => setViewMode("cards")}
