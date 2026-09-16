@@ -220,6 +220,7 @@ export async function getDoneInvoicesByDate(
     typeof paramsOrFromDate === "string"
       ? { fromDate: paramsOrFromDate, toDate: toDateArg ?? "" }
       : paramsOrFromDate;
+
   const { fromDate, toDate } = params;
 
   try {
@@ -227,6 +228,7 @@ export async function getDoneInvoicesByDate(
       params: {
         fromDate,
         toDate,
+        pagination: false,
       },
     });
 
@@ -234,7 +236,10 @@ export async function getDoneInvoicesByDate(
       return response.data;
     }
 
-    return normalizePaginatedResponse<DoneInternetPayment>(response.data, params).data;
+    return normalizePaginatedResponse<DoneInternetPayment>(
+      response.data,
+      params,
+    ).data;
   } catch (error) {
     throw new Error(getErrorMessage(error, "Failed to get payments by date"));
   }
