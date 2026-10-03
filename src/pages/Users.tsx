@@ -340,7 +340,7 @@ export default function Users() {
     }
 
     const phone = customer.Contact.replace(/\D/g, "");
-    const message = `عزيزي المشترك ${customer.Name}، قيمة فاتورتك الحالية لشهر 9 هي: ${
+    const message = `عزيزي المشترك ${customer.Name}، قيمة فاتورتك الحالية لشهر 10 هي: ${
       customer.Balance * -1
     } دولار.
 يرجى التسديد قبل 5-10-2026 لضمان استمرار الخدمة دون انقطاع.
@@ -429,6 +429,19 @@ export default function Users() {
                 عرض كجدول
               </Button>
 
+              <UsersPopForm
+                userList={activeData?.filter((p) => {
+                  const pUser = (p.name as string)
+                    .split("@")[0]
+                    .trim()
+                    .toLowerCase();
+
+                  return !customers?.some(
+                    (c) => c.UserName.trim().toLowerCase() === pUser,
+                  );
+                })}
+              />
+              
               {isAdmin && (
                 <>
                   {!isSelectionMode ? (
@@ -462,18 +475,6 @@ export default function Users() {
                     </>
                   )}
 
-                  <UsersPopForm
-                    userList={activeData?.filter((p) => {
-                      const pUser = (p.name as string)
-                        .split("@")[0]
-                        .trim()
-                        .toLowerCase();
-
-                      return !customers?.some(
-                        (c) => c.UserName.trim().toLowerCase() === pUser,
-                      );
-                    })}
-                  />
                   {daherUser?.username == "elidaher" && (
                     <>
                       <div className="flex items-end gap-2">
@@ -836,8 +837,7 @@ export default function Users() {
                           </Button>
                         </>
                       )}
-                      {
-                        ["admin", "employee"].includes(daherUser?.role) && (
+                      {["admin", "employee"].includes(daherUser?.role) && (
                         <Button
                           variant="outline"
                           className="w-full bg-green-500 rounded-t-none rounded-b-lg"
