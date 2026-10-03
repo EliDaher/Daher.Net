@@ -429,20 +429,7 @@ export default function Users() {
                 عرض كجدول
               </Button>
 
-              <UsersPopForm
-                userList={activeData?.filter((p) => {
-                  const pUser = (p.name as string)
-                    .split("@")[0]
-                    .trim()
-                    .toLowerCase();
-
-                  return !customers?.some(
-                    (c) => c.UserName.trim().toLowerCase() === pUser,
-                  );
-                })}
-              />
-              
-              {isAdmin && (
+              {isAdmin || daherUser?.username === "jozef" && (
                 <>
                   {!isSelectionMode ? (
                     <Button variant="destructive" onClick={startSelectionMode}>
@@ -475,6 +462,18 @@ export default function Users() {
                     </>
                   )}
 
+                  <UsersPopForm
+                    userList={activeData?.filter((p) => {
+                      const pUser = (p.name as string)
+                        .split("@")[0]
+                        .trim()
+                        .toLowerCase();
+
+                      return !customers?.some(
+                        (c) => c.UserName.trim().toLowerCase() === pUser,
+                      );
+                    })}
+                  />
                   {daherUser?.username == "elidaher" && (
                     <>
                       <div className="flex items-end gap-2">
@@ -837,7 +836,8 @@ export default function Users() {
                           </Button>
                         </>
                       )}
-                      {["admin", "employee"].includes(daherUser?.role) && (
+                      {
+                        ["admin", "employee"].includes(daherUser?.role) && (
                         <Button
                           variant="outline"
                           className="w-full bg-green-500 rounded-t-none rounded-b-lg"
