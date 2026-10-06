@@ -429,7 +429,7 @@ export default function Users() {
                 عرض كجدول
               </Button>
 
-              {isAdmin || daherUser?.username === "jozef" && (
+              {(isAdmin || daherUser?.username === "jozef") && (
                 <>
                   {!isSelectionMode ? (
                     <Button variant="destructive" onClick={startSelectionMode}>
