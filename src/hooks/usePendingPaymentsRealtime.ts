@@ -1,14 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { io, type Socket } from "socket.io-client";
-
-interface PendingPayment {
-  _id: string;
-  amount?: number | string;
-  company?: string;
-}
-
-const PENDING_PAYMENTS_QUERY_KEY = ["pending-table"];
+import { subscribePendingPayments, type PendingPayment } from "@/lib/pendingPaymentsRealtime";
 const PAYMENTS_SOCKET_URL =
   import.meta.env.VITE_INVOICE_SOCKET_URL ||
   import.meta.env.VITE_API_BASE_URL ||
@@ -37,7 +30,7 @@ function notifyForNewPayment(payment: PendingPayment) {
 
 export function usePendingPaymentsRealtime(enabled = true) {
   const queryClient = useQueryClient();
-  const previousIdsRef = useRef<Set<string>>(new Set());
+  const previousIdsRef = useRef<Set<string> | null>(null);
 
   useEffect(() => {
     if (!enabled) {
@@ -45,26 +38,26 @@ export function usePendingPaymentsRealtime(enabled = true) {
     }
 
     requestNotificationPermission();
+    previousIdsRef.current = null;
 
     const socket: Socket = io(PAYMENTS_SOCKET_URL);
 
-    socket.on("pendingPaymentsUpdate", (updatedPayments: PendingPayment[]) => {
-      const nextPayments = Array.isArray(updatedPayments) ? updatedPayments : [];
+    const unsubscribe = subscribePendingPayments(socket, queryClient, (nextPayments) => {
       const nextIds = new Set(nextPayments.map((payment) => payment._id));
 
       const newPayment = nextPayments.find(
-        (payment) => payment._id && !previousIdsRef.current.has(payment._id),
+        (payment) => payment._id && !previousIdsRef.current?.has(payment._id),
       );
 
-      if (newPayment && previousIdsRef.current.size > 0) {
+      if (newPayment && previousIdsRef.current !== null) {
         notifyForNewPayment(newPayment);
       }
 
       previousIdsRef.current = nextIds;
-      queryClient.setQueryData(PENDING_PAYMENTS_QUERY_KEY, nextPayments);
     });
 
     return () => {
+      unsubscribe();
       socket.disconnect();
     };
   }, [enabled, queryClient]);
