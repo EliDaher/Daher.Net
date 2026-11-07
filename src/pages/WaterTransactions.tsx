@@ -1,3 +1,4 @@
+import { ManualServiceInvoice } from "@/components/invoices/ManualServiceInvoice";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Circle, Droplets, Search } from "lucide-react";
@@ -175,6 +176,9 @@ export default function WaterTransactions() {
   return (
     <DashboardLayout>
       <div className="space-y-6" dir="rtl">
+        <div className="flex justify-start">
+          <ManualServiceInvoice category="waterTotal" />
+        </div>
         <div className="grid gap-4 md:grid-cols-3">
           <StatsCard
             title="Water Total"
