@@ -69,8 +69,10 @@ export default function CustomerDetails() {
     const message = `عزيزي المشترك ${customer.Name}، قيمة فاتورتك الحالية هي: ${
       customer.Balance * -1
     } دولار.
-يرجى التسديد قبل تاريخ 8-3-2026 لضمان استمرار الخدمة دون انقطاع.
-شكرًا لثقتك بخدماتنا.`;
+يرجى تسديد المبالغ المستحقة لضمان استمرار الخدمة دون انقطاع.
+شكرًا لثقتكم بخدماتنا
+Daher.Net
+.`;
 
     window.open(
       `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
