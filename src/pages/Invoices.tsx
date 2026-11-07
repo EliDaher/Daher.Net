@@ -237,7 +237,7 @@ function Invoice(){
     .balance-operation-meta {
       border-top: 1px dashed black;
       border-bottom: 1px dashed black;
-      padding: 5px 0;
+      padding: 4px 0;
       margin-bottom: 5px;
       font-size: 11px;
       font-weight: 800;
@@ -254,7 +254,7 @@ function Invoice(){
     .balance-operation-row {
       break-inside: avoid;
       border-bottom: 1px dashed black;
-      padding: 4px 0;
+      padding: 3px 0;
       font-size: 10.5px;
       font-weight: 700;
     }
@@ -292,8 +292,8 @@ function Invoice(){
 
     .balance-operation-total {
       border-top: 2px solid black;
-      margin-top: 8px;
-      padding-top: 7px;
+      margin-top: 6px;
+      padding-top: 5px;
       font-weight: 900;
       font-size: 19px;
     }
@@ -605,8 +605,11 @@ function Invoice(){
                     ) : (
                         <div className="balance-operation-row">
                             {selectedPrintOperation
-                                ? getOperationDetailsSummary(selectedPrintOperation)
-                                : "لا تفاصيل"}
+                                ?
+                                getOperationDetailsSummary(selectedPrintOperation)
+                                : 
+                                "لا تفاصيل"
+                            }
                         </div>
                     )}
 

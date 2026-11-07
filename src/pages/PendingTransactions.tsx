@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import SendToPay from "@/components/companies/SendToPay";
 import { DataTable } from "@/components/dashboard/DataTable";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -20,7 +20,8 @@ import getPendingInvoices, {
 import { createPosProfitLog } from "@/services/profitLogs";
 import {
   createReportedTransaction,
-  deleteReportedTransaction,
+  updateReportedTransaction,
+  getReportedTransactionHistory,
   getReportedTransactions,
   type ReportedTransaction,
 } from "@/services/reportedTransactions";
@@ -115,12 +116,24 @@ export default function PendingTransactions() {
 
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [selectedRow, setSelectedRow] = useState<PendingTransaction | null>(null);
+  const [selectedRow, setSelectedRow] = useState<PendingTransaction | null>(
+    null,
+  );
   const [sendToPayOpen, setSendToPayOpen] = useState(false);
   const [reportedDialogOpen, setReportedDialogOpen] = useState(false);
   const [reportedNumber, setReportedNumber] = useState("");
   const [reportedCompany, setReportedCompany] = useState("");
   const [reportedNote, setReportedNote] = useState("");
+  const [editingReport, setEditingReport] =
+    useState<ReportedTransaction | null>(null);
+  const [reportTab, setReportTab] = useState<"active" | "done">("active");
+  const [historyReport, setHistoryReport] =
+    useState<ReportedTransaction | null>(null);
+  const historyQuery = useQuery({
+    queryKey: ["reported-history", historyReport?.id],
+    queryFn: () => getReportedTransactionHistory(historyReport!.id),
+    enabled: !!historyReport,
+  });
   const [startedTransactionOpen, setStartedTransactionOpen] = useState(false);
   const [startedTransaction, setStartedTransaction] =
     useState<PendingTransaction | null>(null);
@@ -142,13 +155,18 @@ export default function PendingTransactions() {
   const {
     data: reportedTransactions = [],
     isLoading: reportedLoading,
+    error: reportedError,
   } = useQuery<ReportedTransaction[]>({
     queryKey: ["reported-transactions"],
     queryFn: getReportedTransactions,
   });
 
   useEffect(() => {
-    if (isError && error instanceof Error && error.message === "No token found") {
+    if (
+      isError &&
+      error instanceof Error &&
+      error.message === "No token found"
+    ) {
       navigate("/login");
     }
   }, [error, isError, navigate]);
@@ -199,7 +217,9 @@ export default function PendingTransactions() {
   const createReportedMutation = useMutation({
     mutationFn: createReportedTransaction,
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["reported-transactions"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["reported-transactions"],
+      });
       setReportedDialogOpen(false);
       setReportedNumber("");
       setReportedCompany("");
@@ -207,12 +227,27 @@ export default function PendingTransactions() {
     },
   });
 
-  const deleteReportedMutation = useMutation({
-    mutationFn: deleteReportedTransaction,
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["reported-transactions"] });
+  const updateReportedMutation = useMutation({
+    mutationFn: updateReportedTransaction,
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ["reported-transactions"],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["reported-history", variables.id],
+      });
+      if (variables.status === undefined) setReportedDialogOpen(false);
     },
   });
+  const openReportForm = (report: ReportedTransaction | null) => {
+    setEditingReport(report);
+    setReportedNumber(report?.number || "");
+    setReportedCompany(report?.company || "");
+    setReportedNote(report?.note || "");
+    createReportedMutation.reset();
+    updateReportedMutation.reset();
+    setReportedDialogOpen(true);
+  };
 
   const companyIdByName = useMemo(
     () =>
@@ -228,7 +263,8 @@ export default function PendingTransactions() {
       {
         key: "landline",
         label: "الرقم / ID",
-        accessor: (row: PendingTransaction) => row.extra?.playerId || row.landline,
+        accessor: (row: PendingTransaction) =>
+          row.extra?.playerId || row.landline,
       },
       { key: "company", label: "الشركة", sortable: true },
       { key: "speed", label: "السرعة", sortable: true },
@@ -236,8 +272,7 @@ export default function PendingTransactions() {
       { key: "amount", label: "المبلغ الواجب دفعه", sortable: true },
       { key: "status", label: "حالة العملية", sortable: true },
       { key: "createdAt", label: "الوقت", sortable: true },
-      {key : 'extra' , label : 'معلومات اضافية'}
-      
+      { key: "extra", label: "معلومات اضافية" },
     ],
     [],
   );
@@ -249,6 +284,8 @@ export default function PendingTransactions() {
       { key: "note", label: "ملاحظة" },
       { key: "createdBy", label: "المستخدم", sortable: true },
       { key: "createdAt", label: "الوقت", sortable: true },
+      { key: "completedBy", label: "أنجز بواسطة", sortable: true },
+      { key: "completedAt", label: "وقت الإنجاز", sortable: true },
     ],
     [],
   );
@@ -256,12 +293,14 @@ export default function PendingTransactions() {
   const reportedMatchKeys = useMemo(
     () =>
       new Set(
-        reportedTransactions.map((transaction) =>
-          buildReportedMatchKey(
-            normalizeNumberForReportedMatch(transaction.number),
-            transaction.company,
+        reportedTransactions
+          .filter((transaction) => transaction.status !== "done")
+          .map((transaction) =>
+            buildReportedMatchKey(
+              normalizeNumberForReportedMatch(transaction.number),
+              transaction.company,
+            ),
           ),
-        ),
       ),
     [reportedTransactions],
   );
@@ -360,6 +399,16 @@ export default function PendingTransactions() {
   const handleReportedSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (editingReport) {
+      updateReportedMutation.mutate({
+        id: editingReport.id,
+        number: reportedNumber,
+        company: reportedCompany,
+        note: reportedNote,
+        updatedBy: currentUser?.username || "",
+      });
+      return;
+    }
     createReportedMutation.mutate({
       number: reportedNumber,
       company: reportedCompany,
@@ -513,7 +562,9 @@ export default function PendingTransactions() {
       <PopupForm
         isOpen={reportedDialogOpen}
         setIsOpen={setReportedDialogOpen}
-        title={REPORTED_FORM_TITLE}
+        title={
+          editingReport ? "تعديل العملية المبلغ عنها" : REPORTED_FORM_TITLE
+        }
         trigger={<></>}
       >
         <form onSubmit={handleReportedSubmit} className="space-y-4" dir="rtl">
@@ -537,6 +588,10 @@ export default function PendingTransactions() {
               required
             >
               <option value="">اختر الشركة</option>
+              {reportedCompany &&
+                !companies.some(
+                  (company: any) => company.name === reportedCompany,
+                ) && <option value={reportedCompany}>{reportedCompany}</option>}
               {companies.map((company: any) => (
                 <option key={company.id || company.name} value={company.name}>
                   {company.name}
@@ -555,10 +610,13 @@ export default function PendingTransactions() {
             />
           </div>
 
-          {createReportedMutation.isError && (
+          {(createReportedMutation.isError ||
+            updateReportedMutation.isError) && (
             <p className="text-sm text-destructive">
-              {createReportedMutation.error instanceof Error
-                ? createReportedMutation.error.message
+              {(updateReportedMutation.error ||
+                createReportedMutation.error) instanceof Error
+                ? (updateReportedMutation.error || createReportedMutation.error)
+                    ?.message
                 : "فشل تسجيل العملية"}
             </p>
           )}
@@ -566,16 +624,22 @@ export default function PendingTransactions() {
           <Button
             type="submit"
             className="w-full"
-            disabled={createReportedMutation.isPending}
+            disabled={
+              createReportedMutation.isPending ||
+              updateReportedMutation.isPending
+            }
           >
-            {createReportedMutation.isPending ? "..." : "حفظ"}
+            {createReportedMutation.isPending ||
+            updateReportedMutation.isPending
+              ? "..."
+              : "حفظ"}
           </Button>
         </form>
       </PopupForm>
 
       <div dir="rtl" className="space-y-6">
         <div className="flex justify-end">
-          <Button onClick={() => setReportedDialogOpen(true)}>
+          <Button onClick={() => openReportForm(null)}>
             <Plus className="h-4 w-4" />
             إضافة عملية مبلغ عنها
           </Button>
@@ -598,10 +662,12 @@ export default function PendingTransactions() {
                   size="sm"
                   onClick={() => handleConfirm(row)}
                   disabled={
-                    confirmMutation.isPending || decreaseBalanceMutation.isPending
+                    confirmMutation.isPending ||
+                    decreaseBalanceMutation.isPending
                   }
                 >
-                  {confirmMutation.isPending || decreaseBalanceMutation.isPending
+                  {confirmMutation.isPending ||
+                  decreaseBalanceMutation.isPending
                     ? "..."
                     : "تأكيد"}
                 </Button>
@@ -629,24 +695,160 @@ export default function PendingTransactions() {
           }
         />
 
+        {reportedError && (
+          <p role="alert" className="text-destructive">
+            {reportedError.message}
+          </p>
+        )}
+        <div className="flex gap-2" role="tablist" aria-label="حالة البلاغات">
+          <Button
+            role="tab"
+            aria-selected={reportTab === "active"}
+            variant={reportTab === "active" ? "default" : "outline"}
+            onClick={() => setReportTab("active")}
+          >
+            النشطة
+          </Button>
+          <Button
+            role="tab"
+            aria-selected={reportTab === "done"}
+            variant={reportTab === "done" ? "default" : "outline"}
+            onClick={() => setReportTab("done")}
+          >
+            المنجزة
+          </Button>
+        </div>
+        {updateReportedMutation.isError && !reportedDialogOpen && (
+          <p role="alert" className="text-destructive">
+            {updateReportedMutation.error.message}
+          </p>
+        )}
         <DataTable
           title="العمليات المبلغ عنها"
           description=""
           columns={reportedColumns}
-          data={reportedTransactions}
+          data={reportedTransactions.filter(
+            (row) => (row.status || "active") === reportTab,
+          )}
           isLoading={reportedLoading}
           renderRowActions={(row: ReportedTransaction) => (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => deleteReportedMutation.mutate(row.id)}
-              disabled={deleteReportedMutation.isPending}
-            >
-              <Trash2 className="h-4 w-4" />
-              {deleteReportedMutation.isPending ? "..." : "حذف"}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={updateReportedMutation.isPending}
+                onClick={() => openReportForm(row)}
+              >
+                تعديل
+              </Button>
+              <Button
+                size="sm"
+                disabled={updateReportedMutation.isPending}
+                onClick={() =>
+                  updateReportedMutation.mutate({
+                    id: row.id,
+                    status: row.status === "done" ? "active" : "done",
+                    updatedBy: currentUser?.username || "",
+                  })
+                }
+              >
+                {row.status === "done" ? "إعادة فتح" : "تم"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setHistoryReport(row)}
+              >
+                السجل
+              </Button>
+            </div>
           )}
         />
+        <PopupForm
+          isOpen={!!historyReport}
+          setIsOpen={(open) => {
+            if (!open) setHistoryReport(null);
+          }}
+          title="سجل التغييرات"
+          trigger={<></>}
+        >
+          <div dir="rtl" className="space-y-4 max-h-[65vh] overflow-y-auto">
+            <p>
+              إنشاء البلاغ: {historyReport?.createdBy || "غير معروف"} —{" "}
+              {historyReport?.createdAt &&
+                new Date(historyReport.createdAt).toLocaleString("ar")}
+            </p>
+            {historyQuery.isLoading && <p>جار تحميل السجل...</p>}
+            {historyQuery.isError && (
+              <div role="alert">
+                <p className="text-destructive">{historyQuery.error.message}</p>
+                <Button
+                  variant="outline"
+                  onClick={() => void historyQuery.refetch()}
+                >
+                  إعادة المحاولة
+                </Button>
+              </div>
+            )}
+            {historyQuery.data?.length === 0 && (
+              <p>لا توجد تغييرات مسجلة لهذا البلاغ.</p>
+            )}
+            {historyQuery.data?.map((entry) => (
+              <div key={entry.id} className="rounded-md border p-3 space-y-2">
+                <p className="font-medium">
+                  {
+                    {
+                      created: "إنشاء",
+                      edited: "تعديل",
+                      done: "إنجاز",
+                      reopened: "إعادة فتح",
+                    }[entry.action]
+                  }
+                </p>
+                <p>
+                  {entry.user || "غير معروف"} —{" "}
+                  {new Date(entry.at).toLocaleString("ar")}
+                </p>
+                {Object.entries(entry.changes).map(([field, change]) => (
+                  <div key={field} className="break-words">
+                    <span className="font-medium">
+                      {(
+                        {
+                          number: "الرقم",
+                          company: "الشركة",
+                          note: "ملاحظة",
+                          status: "الحالة",
+                        } as Record<string, string>
+                      )[field] || field}
+                      :{" "}
+                    </span>
+                    <span>
+                      {(field === "status"
+                        ? (
+                            { active: "نشطة", done: "منجزة" } as Record<
+                              string,
+                              string
+                            >
+                          )[change.before]
+                        : change.before) || "—"}
+                    </span>
+                    <span> ← </span>
+                    <span>
+                      {(field === "status"
+                        ? (
+                            { active: "نشطة", done: "منجزة" } as Record<
+                              string,
+                              string
+                            >
+                          )[change.after]
+                        : change.after) || "—"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </PopupForm>
       </div>
     </DashboardLayout>
   );

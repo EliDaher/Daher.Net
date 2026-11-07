@@ -319,7 +319,7 @@ function ConfirmInvForm({
       max-width: 80mm !important;
       margin: 0 !important;
       padding: 0 !important;
-      font-size: 12px;
+      font-size: 13px;
     }
 
     .receipt-print {
@@ -334,13 +334,14 @@ function ConfirmInvForm({
       color: black !important;
       background: white !important;
       font-family: Arial, sans-serif;
-      line-height: 1.35;
+      font-size: 13px;
+      line-height: 1.45;
       overflow: visible !important;
     }
 
     .receipt-header {
       text-align: center;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 900;
       margin: 0 0 8px 0;
     }
@@ -348,6 +349,11 @@ function ConfirmInvForm({
     .receipt-header span {
       display: block;
       margin-bottom: 2px;
+    }
+
+    .receipt-header span + span {
+      font-size: 12px;
+      font-weight: 800;
     }
 
     .receipt-section {
@@ -365,9 +371,9 @@ function ConfirmInvForm({
     .receipt-customer {
       display: flex;
       justify-content: space-between;
-      gap: 5px;
+      gap: 3.5px;
       margin-bottom: 2px;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 900;
     }
 
@@ -379,16 +385,17 @@ function ConfirmInvForm({
 
     .receipt-customer-number {
       flex: 0 0 auto;
+      direction: ltr;
       text-align: left;
     }
 
     .receipt-row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 15mm 18mm;
+      grid-template-columns: minmax(0, 1fr) minmax(12mm, max-content) minmax(18mm, max-content);
       align-items: start;
-      gap: 3px;
-      padding: 1px 0;
-      font-size: 10.5px;
+      gap: 5px;
+      padding: 3px 0;
+      font-size: 13px;
       font-weight: 700;
     }
 
@@ -400,21 +407,51 @@ function ConfirmInvForm({
 
     .receipt-cycle,
     .receipt-amount {
+      direction: ltr;
       text-align: left;
       white-space: nowrap;
+      word-break: normal;
+      overflow-wrap: normal;
     }
 
     .receipt-amount {
-      font-weight: 900;
+      font-weight: 800;
     }
 
     .receipt-total-line {
       display: flex;
       justify-content: space-between;
       gap: 8px;
-      padding: 3px 0;
-      font-size: 12px;
-      font-weight: 900;
+      padding: 2px 0;
+      font-size: 18px;
+      font-weight: 550;
+    }
+
+    .receipt-category-totals {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 0;
+      break-inside: avoid;
+    }
+
+    .receipt-category-totals .receipt-total-line {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 2px 6px;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .receipt-category-totals .receipt-total-line + .receipt-total-line {
+      border-inline-start: 1px solid black;
+    }
+
+    .receipt-category-totals .receipt-total-line span:last-child {
+      direction: ltr;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
     }
 
     .receipt-grand-total {
@@ -422,7 +459,7 @@ function ConfirmInvForm({
       margin-top: 8px;
       padding-top: 7px;
       font-weight: 900;
-      font-size: 19px;
+      font-size: 21px;
     }
 
     .no-print {
@@ -661,8 +698,10 @@ function ConfirmInvForm({
                   )}
                 </div>
 
-                <div className="receipt-section">
-                  {categoryOptions.map((category) => (
+                <div className="receipt-section receipt-category-totals">
+                  {categoryOptions.filter(
+                    (category) => Number(adjustedCategoryTotals[category.value]) !== 0,
+                  ).map((category) => (
                     <div className="receipt-total-line" key={category.value}>
                       <span>{category.label}</span>
                       <span>{formatAmount(adjustedCategoryTotals[category.value])}</span>

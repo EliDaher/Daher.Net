@@ -6,6 +6,10 @@ export interface ReportedTransaction {
   number: string;
   company: string;
   note?: string;
+  status?: "active" | "done";
+  updatedAt?: string;
+  completedAt?: string;
+  completedBy?: string;
   createdAt: string;
   createdBy?: string;
 }
@@ -49,13 +53,39 @@ export async function createReportedTransaction(data: {
   }
 }
 
-export async function deleteReportedTransaction(id: string) {
+export interface ReportHistoryEntry {
+  id: string;
+  action: "created" | "edited" | "done" | "reopened";
+  user: string;
+  at: string;
+  changes: Record<string, { before: string; after: string }>;
+}
+export async function updateReportedTransaction(data: {
+  id: string;
+  number?: string;
+  company?: string;
+  note?: string;
+  status?: "active" | "done";
+  updatedBy?: string;
+}) {
   try {
-    const response = await apiClient.delete(`/api/reported-transactions/${id}`);
-    return response.data;
-  } catch (error) {
-    throw new Error(
-      getErrorMessage(error, "Failed to delete reported transaction"),
+    const { id, ...body } = data;
+    const response = await apiClient.patch(
+      `/api/reported-transactions/${id}`,
+      body,
     );
+    return response.data.data as ReportedTransaction;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to update report"));
+  }
+}
+export async function getReportedTransactionHistory(id: string) {
+  try {
+    const response = await apiClient.get(
+      `/api/reported-transactions/${id}/history`,
+    );
+    return response.data.data as ReportHistoryEntry[];
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Failed to load history"));
   }
 }
