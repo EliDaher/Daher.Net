@@ -299,6 +299,7 @@ export default function ElectricityTransactions() {
           columns={columns}
           data={transactions}
           defaultPageSize={20}
+          pageSizeOptions={[10, 20, 50, 100, 1000]}
           defaultSort={
             reviewedFilter === "true"
               ? { key: "reviewedAt", direction: "desc" }

@@ -51,6 +51,7 @@ interface DataTableProps {
   title: string;
   totalPend?: boolean;
   description?: string;
+  emptyMessage?: string;
   columns: TableColumn[];
   data: TableData[];
   searchable?: boolean;
@@ -134,6 +135,7 @@ export function DataTable({
   title,
   totalPend,
   description,
+  emptyMessage = "No data found.",
   columns,
   data,
   searchable = true,
@@ -461,7 +463,7 @@ export function DataTable({
                     colSpan={visibleColumns.length + (renderRowActions ? 1 : 0)}
                     className="text-center"
                   >
-                    No data found.
+                    {emptyMessage}
                   </TableCell>
                 </TableRow>
               )}

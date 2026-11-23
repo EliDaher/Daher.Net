@@ -151,10 +151,12 @@ function normalizePaginatedResponse<T>(
 
 export async function getPayments(
   params: GetPaymentsParams = {},
+  signal?: AbortSignal,
 ): Promise<PaginatedPaymentsResponse> {
   try {
     const response = await invoiceClient.get("/api/saveBalance/all-admin", {
       params,
+      signal,
     });
     return normalizePaginatedResponse<PosPayment>(response.data, params);
   } catch (error) {

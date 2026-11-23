@@ -25,6 +25,7 @@ import {
   getReportedTransactions,
   type ReportedTransaction,
 } from "@/services/reportedTransactions";
+import UnitChargeFrom from "@/components/pos/UnitChargeFrom";
 
 interface PendingTransaction {
   _id: string;
@@ -119,6 +120,8 @@ export default function PendingTransactions() {
   const [selectedRow, setSelectedRow] = useState<PendingTransaction | null>(
     null,
   );
+
+  const [unitChargeFromOpen, setUnitChargeFromOpen] = useState(false);
   const [sendToPayOpen, setSendToPayOpen] = useState(false);
   const [reportedDialogOpen, setReportedDialogOpen] = useState(false);
   const [reportedNumber, setReportedNumber] = useState("");
@@ -461,8 +464,20 @@ export default function PendingTransactions() {
 
   return (
     <DashboardLayout>
-      <SendToPay isOpen={sendToPayOpen} setIsOpen={setSendToPayOpen} />
+      <div dir="rtl" className="flex gap-4">
+        <SendToPay isOpen={sendToPayOpen} setIsOpen={setSendToPayOpen} />
+        <UnitChargeFrom
+          isOpen={unitChargeFromOpen}
+          setIsOpen={setUnitChargeFromOpen}
+        />
 
+        <div className="flex justify-end">
+          <Button onClick={() => openReportForm(null)}>
+            <Plus className="h-4 w-4" />
+            إضافة عملية مبلغ عنها
+          </Button>
+        </div>
+      </div>
       <PopupForm
         isOpen={isRejectDialogOpen}
         setIsOpen={setIsRejectDialogOpen}
@@ -638,13 +653,6 @@ export default function PendingTransactions() {
       </PopupForm>
 
       <div dir="rtl" className="space-y-6">
-        <div className="flex justify-end">
-          <Button onClick={() => openReportForm(null)}>
-            <Plus className="h-4 w-4" />
-            إضافة عملية مبلغ عنها
-          </Button>
-        </div>
-
         <DataTable
           amountBold
           title="تسديدات معلقة"

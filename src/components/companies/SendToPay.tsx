@@ -114,7 +114,7 @@ export default function SendToPay({ isOpen, setIsOpen }: Props) {
       setIsOpen={setIsOpen}
       title="إرسال رقم للتسديد"
       trigger={
-        <Button className="absolute bottom-8 right-8 z-50">
+        <Button className="">
           إرسال رقم للتسديد
         </Button>
       }
